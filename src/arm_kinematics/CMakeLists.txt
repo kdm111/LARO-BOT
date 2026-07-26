@@ -32,6 +32,10 @@ if(BUILD_TESTING)
   ament_add_gtest(test_ik test/test_ik.cpp)
   # 테스트 실행파일을 우리 라이브러리와 링크해라.
   target_link_libraries(test_ik arm_kinematics)
+  # orocos_kdl
+  find_package(orocos_kdl_vendor REQUIRED)
+  ament_add_gtest(test_kdl_chain test/test_kdl_chain.cpp)
+  target_link_libraries(test_kdl_chain arm_kinematics orocos-kdl)
 endif()
 
 ament_package()
