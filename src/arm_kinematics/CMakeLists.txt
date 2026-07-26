@@ -22,6 +22,10 @@ find_package(orocos_kdl_vendor REQUIRED)
 add_executable(bench_ik src/bench_ik.cpp)
 target_link_libraries(bench_ik arm_kinematics orocos-kdl)
 install(TARGETS bench_ik DESTINATION lib/${PROJECT_NAME})
+
+add_executable(reach_once src/reach_once.cpp)
+target_link_libraries(reach_once arm_kinematics)
+install(TARGETS reach_once DESTINATION lib/${PROJECT_NAME})
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
