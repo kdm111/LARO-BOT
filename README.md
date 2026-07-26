@@ -522,3 +522,14 @@ solve_ik  공식 밖 0, 오류 494 중 tip.r <0: 494
 
 ROS 패키지로 빼는 값어치가 있는건 **ROS 그래프에 참여하는 노드**이다.
 토픽, 서비스, 액션으로 통신하고 rclcpp를 사용해야 한다.
+
+arm_skills 서버 생성
+arm_kinematics는 ros없이 순수 lib로 유지된다.
+**노드는 도구가 아니다.**
+reach_once.bench_ik는 통신 안 하는 계산 도구라 arm_kinematics에 두고 액션으로 통신하는 arm_skills 서버를 생성한다.
+
+노드는 ros 그래프에 들어가 있는 프로세스로 계속 떠 있으면서 액션으로 명령 받고 moveit에 계획 시키고 결과를 돌려준다.
+arm_kinematics는 순수 라이브러리로 계산만하고 reach_once.bench_ik는 계산기로 답을 뽑아 보여준다.
+skill_server는 인터폰으로 주문 받아 일하고 보고한다.
+도구는 ros가 필요하지 않고 노드는 무거운 ros 의존성이 필요하다.
+따라 arm_skills는 별도 패키지로 분리한다.
