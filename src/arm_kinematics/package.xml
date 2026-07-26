@@ -14,7 +14,7 @@
   <!-- gtest 의존성 선언 -->
   <test_depend>ament_cmake_gtest</test_depend>
   <!-- orocos_kdl -->
-  <test_depend>orocos_kdl_vendor</test_depend>
+  <depend>orocos_kdl_vendor</depend>
   <export>
     <build_type>ament_cmake</build_type>
   </export>

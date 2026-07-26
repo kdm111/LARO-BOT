@@ -16,6 +16,12 @@ add_library(arm_kinematics src/ik.cpp)
 # 이 라이브러리를 빌드할 때, 링크하는 애들도 include/ 폴더를 헤더 검색 경로에 넣어라.(PUBLIC)
 target_include_directories(arm_kinematics PUBLIC include)
 
+# orocos_kdl
+find_package(orocos_kdl_vendor REQUIRED)
+
+add_executable(bench_ik src/bench_ik.cpp)
+target_link_libraries(bench_ik arm_kinematics orocos-kdl)
+install(TARGETS bench_ik DESTINATION lib/${PROJECT_NAME})
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -32,8 +38,7 @@ if(BUILD_TESTING)
   ament_add_gtest(test_ik test/test_ik.cpp)
   # 테스트 실행파일을 우리 라이브러리와 링크해라.
   target_link_libraries(test_ik arm_kinematics)
-  # orocos_kdl
-  find_package(orocos_kdl_vendor REQUIRED)
+
   ament_add_gtest(test_kdl_chain test/test_kdl_chain.cpp)
   target_link_libraries(test_kdl_chain arm_kinematics orocos-kdl)
 endif()
