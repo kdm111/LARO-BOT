@@ -3,7 +3,7 @@
 랜덤한 도달 가능한 자세 하나를 만들고 그 손끝을 두 solver의 프레임으로 각각 표현 -> 각자 자기 목표를 풀게 한다.
 그 각각 solver를 풀게 만들고 KDL은 local minima로 일부 실패함. 게다가 KDL엔 방향 자유를 줌
 
-정기구학으로 각도에서 위치를 내놓은다. 이걸로 목표를 만들고 
+정기구학으로 각도에서 위치를 내놓은다. 이걸로 목표를 만들고
 위치를 통해 각도를 내놓는다. 이걸로 solver들이 해결할 것
 */
 #include <chrono>  // 시간 측정
@@ -45,7 +45,7 @@ KDL::JntArray to_jntarray(const arm_kinematics::IkSolution & a)
   q(4) = a.theta5;
   return q;
 }
-// KDL 100% 결과가 
+// KDL 100% 결과가
 double kdl_reach_error(
   KDL::ChainFkSolverPos_recursive & fk, const KDL::JntArray & q, const KDL::Frame & goal)
 {
@@ -63,7 +63,7 @@ BenchTarget make_target(std::mt19937 & rng, KDL::ChainFkSolverPos_recursive & fk
   std::uniform_real_distribution<double> yaw(-M_PI, M_PI);  // 한 바퀴 전체
   std::uniform_real_distribution<double> shoulder(-1.0, 1.0);  // +-1 rad
   std::uniform_real_distribution<double> elbow(0.3, 2.0);   // 0.3~2.0 양수이고 쫙 편 특이 자세(0)와 완전 접힘(n)을 피함
-  std::uniform_real_distribution<double> approach(-M_PI / 2 - 0.4, -M_PI / 2 + 0.4);  // phi(접근각), -n/2 아래 근처 +-0.4 위에서 아래로 집는 각도들 
+  std::uniform_real_distribution<double> approach(-M_PI / 2 - 0.4, -M_PI / 2 + 0.4);  // phi(접근각), -n/2 아래 근처 +-0.4 위에서 아래로 집는 각도들
 
   const double th1 = yaw(rng);  // 실제로 yaw 주사위를 rng로 한번 굴려라.
   const double th2 = shoulder(rng);
@@ -71,7 +71,7 @@ BenchTarget make_target(std::mt19937 & rng, KDL::ChainFkSolverPos_recursive & fk
   const double phi = approach(rng);
   const double th4 = phi - th2 - th3;
 
-  BenchTarget t;  // 결과 담을 구조체를 만들고 
+  BenchTarget t;  // 결과 담을 구조체를 만들고
   t.phi = phi;  // phi 저장
 
   // 프레임 목표 : 기하 FK 손끝(r,z) -> wolder(x,y,z)
@@ -127,7 +127,7 @@ int main()
     const auto t1 = std::chrono::steady_clock::now();
     const double solve_ik_us = std::chrono::duration<double, std::micro>(t1 - t0).count();
     solve_ik_total += solve_ik_us;
-    if (solve_ik_us > solve_ik_us_max) { solve_ik_us_max = solve_ik_us; }
+    if (solve_ik_us > solve_ik_us_max) {solve_ik_us_max = solve_ik_us;}
     const KDL::JntArray solve_ik_q = to_jntarray(arm_kinematics::to_motor_angles(sol));
     if (!sol.reachable) {
       ++solve_ik_unreachable;
@@ -148,16 +148,16 @@ int main()
     const auto t3 = std::chrono::steady_clock::now();
     const double kdl_us = std::chrono::duration<double, std::micro>(t3 - t2).count();
     kdl_total += kdl_us;
-    if (kdl_us > kdl_us_max) { kdl_us_max = kdl_us; }
-    if(kdl_reach_error(fk, q_out, t.kdl_goal) < eps) { ++kdl_ok; }
+    if (kdl_us > kdl_us_max) {kdl_us_max = kdl_us;}
+    if(kdl_reach_error(fk, q_out, t.kdl_goal) < eps) {++kdl_ok;}
   }
   std::printf("목표 %d개 채점 KDL FK로 1mm이내 도달\n\n", N);
   std::printf("       성공률    평균시간    최악시간\n");
-  std::printf("solve_ik  %5.1f%% %9.3f us %9.3f us\n", 
-              100.0 * solve_ik_ok / N, solve_ik_total / N, solve_ik_us_max );
-  std::printf("kdl_ik  %5.1f%% %9.3f us %9.3f us\n", 
+  std::printf("solve_ik  %5.1f%% %9.3f us %9.3f us\n",
+              100.0 * solve_ik_ok / N, solve_ik_total / N, solve_ik_us_max);
+  std::printf("kdl_ik  %5.1f%% %9.3f us %9.3f us\n",
               100.0 * kdl_ok / N, kdl_total / N, kdl_us_max);
-  std::printf("solve_ik  공식 밖 %d, 오류 %d 중 tip.r <0: %d\n", 
+  std::printf("solve_ik  공식 밖 %d, 오류 %d 중 tip.r <0: %d\n",
               solve_ik_unreachable, solve_ik_missed, missed_neg_r);
   return 0;
 }
