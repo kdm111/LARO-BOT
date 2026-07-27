@@ -59,11 +59,23 @@ private:
   void execute(const std::shared_ptr<GoalHandleMoveTo> goal_handle)
   {
     const auto goal = goal_handle->get_goal();
-    RCLCPP_INFO(get_logger(), "실행(placeholder): %s로 이동한다고 치자", goal->target_name.c_str());
+    RCLCPP_INFO(get_logger(), "move_to 실행 : %s", goal->target_name.c_str());
+
+    // SRDF에 정의된 이름 자세로 목표 설정 (arm group init /home)
+    move_group_->setNamedTarget(goal->target_name);
+
+    // plan + execute (블로킹). SUCCESS면 성공. 벤더 qnode.cpp와 같은 판정
+    const bool ok = (move_group_->move() == moveit::core::MoveItErrorCode::SUCCESS);
 
     auto result = std::make_shared<MoveTo::Result>();
-    result->success = true; // 아직 실제 이동은 넣지 않음
-    goal_handle->succeed(result);
+    result->success = ok;
+    if (ok) {
+      goal_handle->succeed(result);
+      RCLCPP_INFO(get_logger(), "move_to 성공 : %s", goal->target_name.c_str());
+    } else {
+      goal_handle->abort(result);
+      RCLCPP_WARN(get_logger(), "move_to 실패 : %s", goal->target_name.c_str());
+    }
   }
 };
 
