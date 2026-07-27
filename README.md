@@ -595,3 +595,10 @@ MGI -latched 토픽으로 모델을 받는다. 그래서 gazebo + moveit(use_sim
 3. 접근 자세 계산 : 기존 solve_ik를 사용하여 물체 위 phi 아래 방향으로 접근각을 풀기(move_group position_only KDL이 못 하는 방향 제어)
 4. 시퀀스 조립 : approach + grasp + lift + 파지판정(GripperCommand result)
 
+```c++
+std::thread{std::bind(&SkillServer::execute_move_to, this, goal_handle)}.detach();
+```
+함수는 detached 스레드에 실어서 단일 동작을 blocking 하지만 노든느 다른 스레드에서 계속 spin되어 서버 자체는 멈추지 않고 goal도 받고 로그도 찍을 수 있다.
+
+이제 skill_server가 solve_ik를 부를 건데 solve_ik는 다른 패키지에 존재한다. 하지만 arm_kinematics는 라이브러리를 자기 안에서만 쓰게 만들어서 밖에서 쓰지 못한다. 
+따라서 열어 놔야 한다.
