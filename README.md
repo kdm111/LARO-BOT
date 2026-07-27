@@ -559,3 +559,5 @@ moveit 띄우기 : `ros2 launch open_manipulator_moveit_config omx_f_moveit.laun
 스킬 서버 띄우기 : `ros2 run arm_skills skill_server`
 
 MGI -latched 토픽으로 모델을 받는다. 그래서 gazebo + moveit(use_sim:=true)를 반드시 띄워야 한다.
+
+현재는 move가 어느 단계에서 실패했는지 구분을 하지 못한다. 정밀하게 할 경우 다시 수정해야 한다.

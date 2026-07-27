@@ -1,11 +1,16 @@
 #include <memory>
 #include <thread>
+#include <string>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <moveit/move_group_interface/move_group_interface.hpp>
 
 #include <arm_interfaces/action/move_to.hpp>
+
+#include <arm_interfaces/msg/error_code.hpp>
+#include <arm_interfaces/msg/failure_report.hpp>
+#include <arm_interfaces/msg/stage.hpp>
 
 using MoveTo = arm_interfaces::action::MoveTo;
 using GoalHandleMoveTo = rclcpp_action::ServerGoalHandle<MoveTo>;
@@ -54,6 +59,19 @@ private:
   void handle_accepted(const std::shared_ptr<GoalHandleMoveTo> goal_handle)
   {
     std::thread{std::bind(&SkillServer::execute, this, goal_handle)}.detach();
+  }
+  // FailureReport를 만드는 유일한 통로 (make_failure와 같은 계약)
+  arm_interfaces::msg::FailureReport make_failure(
+    int32_t code, const std::string & stage, const std::string & detail, uint8_t attempt)
+  {
+    arm_interfaces::msg::FailureReport report;
+    report.code = code;
+    report.stage = stage;
+    report.object_id = "";   // move_to는 팔만 움직이는 동작으로 대상 물체가 존재하지 않음.
+    report.detail = detail;
+    report.attempt = attempt;
+    report.stamp = now();   // rclcpp::Node::now() -> Time
+    return report;
   }
   // 실제 일 - 지금은 자리표시자: 로그만 찍고 성공 반환 (MoveGroupInterface는 다음 스텝)
   void execute(const std::shared_ptr<GoalHandleMoveTo> goal_handle)
