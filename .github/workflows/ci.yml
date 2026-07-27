@@ -23,7 +23,7 @@ jobs:
       - name: 도구 설치
         run: |
           apt-get update
-          apt-get install -y --no-installl-recommends \
+          apt-get install -y --no-install-recommends \
             git python3-colcon-common-extensions python3-rosdep
           rosdep init 2>/dev/null || true
           rosdep update
