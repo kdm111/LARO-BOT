@@ -535,3 +535,21 @@ skill_server는 인터폰으로 주문 받아 일하고 보고한다.
 따라 arm_skills는 별도 패키지로 분리한다.
 
 ### 8일차
+
+github 액션 환경에서 자동 테스트 확립을 위해 ci.yml 파일 생성
+
+MoveIt의 제어구조
+skill_server(무엇을=명령) -> move_group(IK+OMPL+시간파라미터화+궤적발사) -> ros2_control(그대로 추종)
+
+**경로를 짜는 것이 아니라 move_group을 운전할 뿐이다.**
+skill_server.cpp는 액션을 받으면 로그만 찍고 succeed하는 place 홀더이다.
+MoveGroupInterface는 플래너가 아니라 리모컨이다.
+진짜 일을 하는 건 벤더 launch(omx_f_moveit.launch.py)가 띄우는 move_gruop 노드이다.
+IK + OMPL 경로 계획 + 시간 파라미터화를 다해서 컨트롤러로 궤적을 쏜다.
+
+skill_server의 execute()는 그 옆에 붙어서 arm그룹이 home 자세로 가게 명령을 던진다.
+우리는 경로계획은 짜지 않는다.
+
+qnode.cpp 는 ROBOTIS OpenMANIPULATOR GUI 뒤에서 도는 ROS 노드이다. 
+q = Qt, node = ROS 노드
+

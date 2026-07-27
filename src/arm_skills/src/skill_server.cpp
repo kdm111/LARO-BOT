@@ -3,6 +3,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
+#include <moveit/move_group_interface/move_group_interface.hpp>
 
 #include <arm_interfaces/action/move_to.hpp>
 
@@ -23,9 +24,19 @@ public:
       std::bind(&SkillServer::handle_accepted, this, std::placeholders::_1));
     RCLCPP_INFO(get_logger(), "skill_server 시작: move_to 대기 중");
   }
+  void init_move_group()
+  {
+    move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
+      shared_from_this(), "arm");   // "arm" = SRDF 그룹명
+    RCLCPP_INFO(
+      get_logger(), "arm 연결됨 : %zu개, planning frame=%s",
+      move_group_->getJointNames().size(),
+      move_group_->getPlanningFrame().c_str());
+  }
 
 private:
   rclcpp_action::Server<MoveTo>::SharedPtr move_to_server_;
+  std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
 
   // 목표 수락 여부 > 지금은 무조건 수락
   rclcpp_action::GoalResponse handle_goal(
@@ -59,7 +70,15 @@ private:
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<SkillServer>());
+  auto node = std::make_shared<SkillServer>();
+
+  // MGI가 로봇 모델을 토픽으로 받으려면 노드가 spin 중이여야 한다. -> 백그라운드 executor
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(node);
+  std::thread spin_thread([&executor]() {executor.spin();});
+
+  node->init_move_group();   // spin 시작 후 모델 수신 + shared_from_this 유효
+  spin_thread.join();
   rclcpp::shutdown();
   return 0;
 }
