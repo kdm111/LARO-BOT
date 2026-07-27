@@ -627,3 +627,21 @@ plan() = 계획만 실행하지 않고 성공/실패를 알려준다.
 
 두 가지 해가 나오므로 각 가지를 plan으로 분리하고 성공하는 첫 가지를 execute로 실행. qnode.cpp 역시 plan하고 실행하는 방식을 쓴다.
 
+그에 따라 skill_server에서 각 해를 도출하도록 설정 후 도달하지 못할 경우 다른 값으로 도달하도록 설정
+
+파지 판정은 GripperCommand result의 stalled로 하고 있는데 MGI로는 result에 접근이 안된다. MGI는 그리퍼를 여닫을 뿐, GripperCommand 액션의 raw result(stalled/reached_goal)을 돌려주지 않는다.
+
+그리고 가제보에서 물리 마찰이 안잡히면 stalled 자체가 안 뜰 수도 있다.(sim 그리퍼는 물체를 통과하기도 한다).
+
+
+approach와 grasp는 높이만 다른 가지 선택 이동이다.
+execute_pick에 인라인된 파지 함수를 헬퍼 함수 move_to_pose(x,y,z,phi,label)로 빼서 approach, grasp, lift에 높이만 바꿔서 부른다.
+
+pick 시퀀스
+1. move_gripper(open)
+2. move_to_pose(물체 위 접근)
+3. move_to_pose(물체 높이로 내려감)
+4. move_gripper(close) 
+5. move_to_pose(obj_z + 0.06) lift
+
+

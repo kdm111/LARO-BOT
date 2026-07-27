@@ -110,6 +110,51 @@ private:
     report.stamp = now();   // rclcpp::Node::now() -> Time
     return report;
   }
+  // 목표(base 좌표, phi)로 이동. elbow up/down 둘 다 plan()으로 시도해 되는 가지를 execute
+  // 성공하면 true, (approach, grasp가 이 함수를 높이만 바꿔서 두 번 부를 예정)
+  bool move_to_pose(double x, double y, double z, double phi, const char *label)
+  {
+    bool approached = false;
+
+    for (bool elbow_up : {true, false}) {
+      const auto geometry = arm_kinematics::solve_ik(x, y, z, phi, elbow_up);
+      if (!geometry.reachable) {
+        continue;   // 이 가지는 기하학적으로 도달 불가
+      }
+      const auto motor_angles = arm_kinematics::to_motor_angles(geometry);   // 기하각 -> 모터각 변환
+      RCLCPP_INFO(
+        get_logger(), "%s 가지 %s 관절각(모터), [%.3f, %.3f, %.3f, %.3f, %.3f]",
+        label, elbow_up ? "up" : "down",
+        motor_angles.theta1, motor_angles.theta2, motor_angles.theta3, motor_angles.theta4,
+        motor_angles.theta5);
+      // solve_ik가 푼 관절각을 move_group에 목표로 준다
+      // Move는 이름 자세이지만 여기에서는 목표 지점으로 관절을 전달해야 한다.
+      // move_group은 관젉밧까지 충돌없는 경로를 계획한다
+      const std::vector<double> joint_target = {
+        motor_angles.theta1, motor_angles.theta2, motor_angles.theta3, motor_angles.theta4,
+        motor_angles.theta5};
+      move_group_->setJointValueTarget(joint_target);
+
+      // plan()은 움직이지 않고 계획만 진행 충돌,리밋에 걸리면 실패하고 다음으로 이동
+      moveit::planning_interface::MoveGroupInterface::Plan plan;
+      if (move_group_->plan(plan) == moveit::core::MoveItErrorCode::SUCCESS) {
+        move_group_->execute(plan);   // 이 가지의 계획을 실행
+        RCLCPP_INFO(get_logger(), "%s 자세 도달(가지 %s)", label, elbow_up ? "up" : "down");
+        approached = true;
+        break;    // 성공한 가지에서 멈춤 (up 먼저 시도하므로 up이 되면 up으로)
+      }
+      RCLCPP_WARN(get_logger(), "가지 %s 도달 불가 (%.2f, %.2f, %.2f)", elbow_up ? "up" : "down", x,
+        y, z);
+    }
+    return approached;
+  }
+  // 그리퍼를 이름 자세로 (open/close). MGI로 여닫기만 하고 파지 판정은 추후 예정
+  void move_gripper(const char *named)
+  {
+    gripper_group_->setNamedTarget(named);
+    gripper_group_->move();
+    RCLCPP_INFO(get_logger(), "그리퍼 %s", named);
+  }
   // 실제 일 - 지금은 자리표시자: 로그만 찍고 성공 반환 (MoveGroupInterface는 다음 스텝)
   void execute_move_to(const std::shared_ptr<GoalHandleMoveTo> goal_handle)
   {
@@ -146,53 +191,35 @@ private:
     const double obj_y = 0.0;
     const double obj_z = 0.0475;
     const double approach_phi = -M_PI / 2;   // 그리퍼가 아래를 향하는 접근각
+    const double approach_dz = 0.06;    // 물체 위 6cm 에서 접근
 
-    bool approached = false;
-    for (bool elbow_up : {true, false}) {
-      const auto geometry = arm_kinematics::solve_ik(obj_x, obj_y, obj_z, approach_phi, elbow_up);
-      if (!geometry.reachable) {
-        continue;   // 이 가지는 기하학적으로 도달 불가
-      }
-      const auto motor_angles = arm_kinematics::to_motor_angles(geometry);   // 기하각 -> 모터각 변환
-      RCLCPP_INFO(
-        get_logger(), "접근 가지 %s 관절각(모터), [%.3f, %.3f, %.3f, %.3f, %.3f]",
-        elbow_up ? "up" : "down",
-        motor_angles.theta1, motor_angles.theta2, motor_angles.theta3, motor_angles.theta4,
-        motor_angles.theta5);
-      // solve_ik가 푼 관절각을 move_group에 목표로 준다
-      // Move는 이름 자세이지만 여기에서는 목표 지점으로 관절을 전달해야 한다.
-      // move_group은 관젉밧까지 충돌없는 경로를 계획한다
-      const std::vector<double> joint_target = {
-        motor_angles.theta1, motor_angles.theta2, motor_angles.theta3, motor_angles.theta4,
-        motor_angles.theta5};
-      move_group_->setJointValueTarget(joint_target);
-
-      // plan()은 움직이지 않고 계획만 진행 충돌,리밋에 걸리면 실패하고 다음으로 이동
-      moveit::planning_interface::MoveGroupInterface::Plan plan;
-      if (move_group_->plan(plan) == moveit::core::MoveItErrorCode::SUCCESS) {
-        move_group_->execute(plan);   // 이 가지의 계획을 실행
-        RCLCPP_INFO(get_logger(), "접근 자세 도달(가지 %s)", elbow_up ? "up" : "down");
-        approached = true;
-        break;    // 무조건 엘보우 업이 도달 가능하면 무조건 elbow_up 부터
-      }
-      RCLCPP_WARN(get_logger(), "가지 %s 도달 불가 (%.2f, %.2f, %.2f)", elbow_up ? "up" : "down", obj_x,
-        obj_y, obj_z);
+    move_gripper("open");
+    if (!move_to_pose(obj_x, obj_y, obj_z + approach_dz, approach_phi, "approach")) {
+      goal_handle->abort(make_pick_result(false, goal->attempt));
+      return;
     }
-    if (!approached) {
-      RCLCPP_WARN(get_logger(), "두 가지 모두 도달 불가 (%.2f, %.2f, %.2f)", obj_x, obj_y, obj_z);
+    if (!move_to_pose(obj_x, obj_y, obj_z, approach_phi, "grasp")) {
+      goal_handle->abort(make_pick_result(false, goal->attempt));
+      return;
     }
-    gripper_group_->setNamedTarget("open");
-    gripper_group_->move();   // 그리퍼가 다 열릴 때까지 기다림
-    RCLCPP_INFO(get_logger(), "그리퍼 open");   // 그리퍼 open
-
-    gripper_group_->setNamedTarget("close");
-    gripper_group_->move();   // 그리퍼가 다 닫힐때까지 기다림
-    RCLCPP_INFO(get_logger(), "그리퍼 close");
-
+    move_gripper("close");
+    if (!move_to_pose(obj_x, obj_y, obj_z + approach_dz, approach_phi, "lift")) {
+      goal_handle->abort(make_pick_result(false, goal->attempt));
+      return;
+    }
+    RCLCPP_INFO(get_logger(), "pick 완료 : %s", goal->object_id.c_str());
+    goal_handle->succeed(make_pick_result(true, goal->attempt));
+  }
+  std::shared_ptr<Pick::Result> make_pick_result(bool ok, uint8_t attempt)
+  {
     auto result = std::make_shared<Pick::Result>();
-    result->success = true; // 아직 진짜 파지 판정은 넣지 않음
-    result->failure = make_failure(arm_interfaces::msg::ErrorCode::SUCCESS, "", "", goal->attempt);
-    goal_handle->succeed(result);
+    result->success = ok;
+    result->failure = make_failure(
+      ok ? arm_interfaces::msg::ErrorCode::SUCCESS :
+           arm_interfaces::msg::ErrorCode::PLANNING_FAILED,
+      ok ? "" : arm_interfaces::msg::Stage::APPROACH,
+      ok ? "" : "pick 이동 실패", attempt);
+    return result;
   }
 };
 
