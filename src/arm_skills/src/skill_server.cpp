@@ -7,13 +7,17 @@
 #include <moveit/move_group_interface/move_group_interface.hpp>
 
 #include <arm_interfaces/action/move_to.hpp>
+#include <arm_interfaces/action/pick.hpp>
 
 #include <arm_interfaces/msg/error_code.hpp>
 #include <arm_interfaces/msg/failure_report.hpp>
 #include <arm_interfaces/msg/stage.hpp>
 
 using MoveTo = arm_interfaces::action::MoveTo;
+using Pick = arm_interfaces::action::Pick;
+
 using GoalHandleMoveTo = rclcpp_action::ServerGoalHandle<MoveTo>;
+using GoalHandlePick = rclcpp_action::ServerGoalHandle<Pick>;
 
 class SkillServer : public rclcpp::Node
 {
@@ -28,6 +32,12 @@ public:
       std::bind(&SkillServer::handle_cancel, this, std::placeholders::_1),
       std::bind(&SkillServer::handle_accepted, this, std::placeholders::_1));
     RCLCPP_INFO(get_logger(), "skill_server 시작: move_to 대기 중");
+    // pick 액션 서버
+    pick_server_ = rclcpp_action::create_server<Pick>(
+      this, "pick",
+      std::bind(&SkillServer::handle_goal_pick, this, std::placeholders::_1, std::placeholders::_2),
+      std::bind(&SkillServer::handle_cancel_pick, this, std::placeholders::_1),
+      std::bind(&SkillServer::handle_accepted_pick, this, std::placeholders::_1));
   }
   void init_move_group()
   {
@@ -37,11 +47,20 @@ public:
       get_logger(), "arm 연결됨 : %zu개, planning frame=%s",
       move_group_->getJointNames().size(),
       move_group_->getPlanningFrame().c_str());
+    gripper_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
+      shared_from_this(), "gripper");   // gripper = SRDF 두 번째 그룹
+    RCLCPP_INFO(
+      get_logger(), "gripper 연결됨 : %zu개",
+      gripper_group_->getJointNames().size());
   }
 
 private:
   rclcpp_action::Server<MoveTo>::SharedPtr move_to_server_;
+  rclcpp_action::Server<Pick>::SharedPtr pick_server_;
+
   std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
+  // 팔과는 별개로 그리퍼는 움직일 수 있다.
+  std::shared_ptr<moveit::planning_interface::MoveGroupInterface> gripper_group_;
 
   // 목표 수락 여부 > 지금은 무조건 수락
   rclcpp_action::GoalResponse handle_goal(
@@ -55,10 +74,24 @@ private:
   {
     return rclcpp_action::CancelResponse::ACCEPT;
   }
+  rclcpp_action::GoalResponse handle_goal_pick(
+    const rclcpp_action::GoalUUID &, std::shared_ptr<const Pick::Goal> goal)
+  {
+    RCLCPP_INFO(get_logger(), "pick 목표 수신: object=%s", goal->object_id.c_str());
+    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+  }
+  rclcpp_action::CancelResponse handle_cancel_pick(const std::shared_ptr<GoalHandlePick>)
+  {
+    return rclcpp_action::CancelResponse::ACCEPT;
+  }
   // 수락 되면 실행은 별도의 스레드로 진행 (콜백 스레드를 막으면 안됨)
   void handle_accepted(const std::shared_ptr<GoalHandleMoveTo> goal_handle)
   {
-    std::thread{std::bind(&SkillServer::execute, this, goal_handle)}.detach();
+    std::thread{std::bind(&SkillServer::execute_move_to, this, goal_handle)}.detach();   // detach 함수가 끝나면 자동 반환된다.
+  }
+  void handle_accepted_pick(const std::shared_ptr<GoalHandlePick> goal_handle)
+  {
+    std::thread{std::bind(&SkillServer::execute_pick, this, goal_handle)}.detach();
   }
   // FailureReport를 만드는 유일한 통로 (make_failure와 같은 계약)
   arm_interfaces::msg::FailureReport make_failure(
@@ -74,26 +107,49 @@ private:
     return report;
   }
   // 실제 일 - 지금은 자리표시자: 로그만 찍고 성공 반환 (MoveGroupInterface는 다음 스텝)
-  void execute(const std::shared_ptr<GoalHandleMoveTo> goal_handle)
+  void execute_move_to(const std::shared_ptr<GoalHandleMoveTo> goal_handle)
   {
     const auto goal = goal_handle->get_goal();
     RCLCPP_INFO(get_logger(), "move_to 실행 : %s", goal->target_name.c_str());
 
     // SRDF에 정의된 이름 자세로 목표 설정 (arm group init /home)
     move_group_->setNamedTarget(goal->target_name);
-
     // plan + execute (블로킹). SUCCESS면 성공. 벤더 qnode.cpp와 같은 판정
     const bool ok = (move_group_->move() == moveit::core::MoveItErrorCode::SUCCESS);
 
     auto result = std::make_shared<MoveTo::Result>();
     result->success = ok;
     if (ok) {
+      result->failure = make_failure(
+        arm_interfaces::msg::ErrorCode::SUCCESS, "", "", goal->attempt);
       goal_handle->succeed(result);
       RCLCPP_INFO(get_logger(), "move_to 성공 : %s", goal->target_name.c_str());
     } else {
+      result->failure = make_failure(
+        arm_interfaces::msg::ErrorCode::PLANNING_FAILED,
+        arm_interfaces::msg::Stage::PLAN,
+        "move() 실패 : " + goal->target_name, goal->attempt);
       goal_handle->abort(result);
       RCLCPP_WARN(get_logger(), "move_to 실패 : %s", goal->target_name.c_str());
     }
+  }
+  void execute_pick(const std::shared_ptr<GoalHandlePick> goal_handle)
+  {
+    const auto goal = goal_handle->get_goal();
+    RCLCPP_INFO(get_logger(), "pick 실행 : object=%s", goal->object_id.c_str());
+
+    gripper_group_->setNamedTarget("open");
+    gripper_group_->move();   // 그리퍼가 다 열릴 때까지 기다림
+    RCLCPP_INFO(get_logger(), "그리퍼 open");   // 그리퍼 open
+
+    gripper_group_->setNamedTarget("close");
+    gripper_group_->move();   // 그리퍼가 다 닫힐때까지 기다림
+    RCLCPP_INFO(get_logger(), "그리퍼 close");
+
+    auto result = std::make_shared<Pick::Result>();
+    result->success = true; // 아직 진짜 파지 판정은 넣지 않음
+    result->failure = make_failure(arm_interfaces::msg::ErrorCode::SUCCESS, "", "", goal->attempt);
+    goal_handle->succeed(result);
   }
 };
 
