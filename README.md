@@ -538,18 +538,44 @@ skill_server는 인터폰으로 주문 받아 일하고 보고한다.
 
 github 액션 환경에서 자동 테스트 확립을 위해 ci.yml 파일 생성
 
+**MoveGroupInterface(MGI)**
+moveit2가 준 c++ 클라이언트 라이브러리 클래스
+1. 노드도 아니고 플래너도 아니다. 프로세스 안에 사는 객체이다. 계산등등은 move_group이 한다.
+2. 생성할 때 하는 일 (MoveGroupInterface(node, "arm"))
+* /robot_description + /robot_description_semantic : 토픽에서 모델을 받아온다.
+* /joint_state를 구독해서 현재 자세를 계속 추적한다.
+* move_group과 통신할 액션,서비스 클라이언트들을 세팅한다.
+세 가지가 다 토픽/통신이라 노드가 spin 중이여야 했다. 
+3. 메서드는 전부 요청을 포장한뒤 move_group에 전송하고 결과를 대기한다.
+setNamedTarget("home"), setPoseTarget(), plan(), move() 다 나의 요청을 메시지로 포장해서 move_group에 보내고 답을 기다리는 함수이다. MGI는 그 성공/실패 코드만 받아온다.
+
+**MoveIt**
+launch 파일은 두 노드를 띄운다. move_group + rviz2_moveit. 
+move_group = MoveIt 서버(두뇌), MoveItConfigsBuilder
+파라미터
+SRDF : 그룹, 이름자세,충돌쌍
+kinematics : IK 솔버
+joint_limits : 속도/가속 스케일
+controllers : 궤적을 어느 컨트롤러에 보낼지(arm=FollowJointTrajectory, gripper=GripperCommand)
+OMPL 파이프라인 : 샘플링 플래너
+
+move_group은 URDF를 /robot_description 토픽에서 받는다. 따라서 가제보를 먼저 띄워야 한다.
+skill_server는 move_group은 /robot_description_semantic을 발행하는걸 받아온다.
+
+
 MoveIt의 제어구조
 skill_server(무엇을=명령) -> move_group(IK+OMPL+시간파라미터화+궤적발사) -> ros2_control(그대로 추종)
 
 **경로를 짜는 것이 아니라 move_group을 운전할 뿐이다.**
 skill_server.cpp는 액션을 받으면 로그만 찍고 succeed하는 place 홀더이다.
 MoveGroupInterface는 플래너가 아니라 리모컨이다.
-진짜 일을 하는 건 벤더 launch(omx_f_moveit.launch.py)가 띄우는 move_gruop 노드이다.
+진짜 일을 하는 건 벤더 launch(omx_f_moveit.launch.py)가 띄우는 move_group 노드이다.
 IK + OMPL 경로 계획 + 시간 파라미터화를 다해서 컨트롤러로 궤적을 쏜다.
 execute() : setNamedTarget(target) -> move() -> moveit::core::MoveItErrorCode::Success로 성공 판정
 
 skill_server의 execute()는 그 옆에 붙어서 arm그룹이 home 자세로 가게 명령을 던진다.
 우리는 경로계획은 짜지 않는다.
+
 
 qnode.cpp 는 ROBOTIS OpenMANIPULATOR GUI 뒤에서 도는 ROS 노드이다. 
 q = Qt, node = ROS 노드
@@ -560,4 +586,12 @@ moveit 띄우기 : `ros2 launch open_manipulator_moveit_config omx_f_moveit.laun
 
 MGI -latched 토픽으로 모델을 받는다. 그래서 gazebo + moveit(use_sim:=true)를 반드시 띄워야 한다.
 
+**MoveTo**
 현재는 move가 어느 단계에서 실패했는지 구분을 하지 못한다. 정밀하게 할 경우 다시 수정해야 한다.
+
+**Pick**
+1. 그리퍼 제어 : 그리퍼는 또하나의 MoveGroup - arm이랑 똑같이 운전
+2. Pick 액션 서버 골격 : Pick.action으로 서버를 하나 더 띄운뒤 MoveTo 골격을 재사용한다.
+3. 접근 자세 계산 : 기존 solve_ik를 사용하여 물체 위 phi 아래 방향으로 접근각을 풀기(move_group position_only KDL이 못 하는 방향 제어)
+4. 시퀀스 조립 : approach + grasp + lift + 파지판정(GripperCommand result)
+
