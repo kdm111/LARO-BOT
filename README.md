@@ -533,3 +533,5 @@ arm_kinematics는 순수 라이브러리로 계산만하고 reach_once.bench_ik�
 skill_server는 인터폰으로 주문 받아 일하고 보고한다.
 도구는 ros가 필요하지 않고 노드는 무거운 ros 의존성이 필요하다.
 따라 arm_skills는 별도 패키지로 분리한다.
+
+### 8일차

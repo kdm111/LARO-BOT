@@ -1,0 +1,49 @@
+# push/PR 마다 패키지를 colcon으로 빌드 + 테스트 -> gtest 26개 python lint를 회귀로 지킴
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+# 빌드 / 테스트할 패키지 목록(한 곳에서 관리). third_party는 우리 build-dep이 아니라 제외.
+# arm_skills를 쓰기 시작하면 여기에 arm_skills를 추가
+env:
+  PKGS: arm_interfaces arm_kinematics arm_agent arm_skills_mock
+
+jobs:
+  build-test:
+    runs-on: ubuntu-24.04
+    container: ros:jazzy-ros-base # local sim 이미지와 같은 베이스
+    defaults:
+      run:
+        shell: bash # setup.bash 소싱하려면 sh가 아니라 bash
+    steps:
+      # 도구는 먼저 깔게 된다.
+      - name: 도구 설치
+        run: |
+          apt-get update
+          apt-get install -y --no-installl-recommends \
+            git python3-colcon-common-extensions python3-rosdep
+          rosdep init 2>/dev/null || true
+          rosdep update
+      - uses: actions/checkout@v4
+      # 의존성 해석은 src/의 package.xml을 읽어야 한다. 경로를 4개로 명시하고 third_pary 스캔은 회피한다.
+      - name: 의존성 설치(rosdep)
+        run: |
+          rosdep install -y --ignore-src \
+            --from-paths src/arm_interfaces src/arm_kinematics src/arm_agent src/arm_skills_mock
+      - name: colcon build
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          colcon build ---packages-select $PKGS --event-handlers console_direct+
+      # colcon test는 테스트가 깨져도 종료코드가 0일수 있음
+      # colcon test-result가 실패를 감지해 job을 빨간 불로 만든다.
+      - name: colcon test
+        run: |
+          source /opt/ros/jazzy/setup.bash
+          source install/setup.bash
+          colcon test --packages-select $PKGS --event-handlers console_direct+
+          colcon test-result --verbose
+
+      
