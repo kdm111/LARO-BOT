@@ -160,6 +160,18 @@ TEST(SolveIk, BackfoldGuard)
   auto sol = arm_kinematics::solve_ik(-0.05, 0.0, 0.0, -M_PI / 2);
   EXPECT_FALSE(sol.reachable);
 }
+TEST(SolveIK, ElbowBranchesDiffer)
+{
+  // 같은 목표라 할지라도 해는 두 가지가 나올 수 있다.
+  // 둘 다 도달 가능하고 theta3부호가 반대여야 한다.
+  const double x = 0.169, z = 0.0475, phi = -M_PI / 2;
+  auto up = arm_kinematics::solve_ik(x, 0.0, z, phi, true);
+  auto down = arm_kinematics::solve_ik(x, 0.0, z, phi, false);
+  ASSERT_TRUE(up.reachable);
+  ASSERT_TRUE(down.reachable);
+  EXPECT_GT(up.theta3, 0.0);   // 위 해
+  EXPECT_LT(down.theta3, 0.0);   // 아래 해
+}
 TEST(ToMotorAngles, StraightToMotor)
 {
   arm_kinematics::IkSolution geometry{};

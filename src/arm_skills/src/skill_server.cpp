@@ -142,21 +142,23 @@ private:
     const auto goal = goal_handle->get_goal();
     RCLCPP_INFO(get_logger(), "pick 실행 : object=%s", goal->object_id.c_str());
 
-    const double obj_x = 0.20;
+    const double obj_x = 0.169;
     const double obj_y = 0.0;
-    const double obj_z = 0.05;
+    const double obj_z = 0.0475;
     const double approach_phi = -M_PI / 2;   // 그리퍼가 아래를 향하는 접근각
 
-    const auto geometry = arm_kinematics::solve_ik(obj_x, obj_y, obj_z, approach_phi);
-    if (!geometry.reachable) {
-      RCLCPP_WARN(get_logger(), "sovle_ik 도달 불가 (%.2f, %.2f, %.2f)", obj_x, obj_y, obj_z);
-    } else {
+    bool approached = false;
+    for (bool elbow_up : {true, false}) {
+      const auto geometry = arm_kinematics::solve_ik(obj_x, obj_y, obj_z, approach_phi, elbow_up);
+      if (!geometry.reachable) {
+        continue;   // 이 가지는 기하학적으로 도달 불가
+      }
       const auto motor_angles = arm_kinematics::to_motor_angles(geometry);   // 기하각 -> 모터각 변환
       RCLCPP_INFO(
-        get_logger(), "접근 관절각(모터), [%.3f, %.3f, %.3f, %.3f, %.3f]",
+        get_logger(), "접근 가지 %s 관절각(모터), [%.3f, %.3f, %.3f, %.3f, %.3f]",
+        elbow_up ? "up" : "down",
         motor_angles.theta1, motor_angles.theta2, motor_angles.theta3, motor_angles.theta4,
         motor_angles.theta5);
-
       // solve_ik가 푼 관절각을 move_group에 목표로 준다
       // Move는 이름 자세이지만 여기에서는 목표 지점으로 관절을 전달해야 한다.
       // move_group은 관젉밧까지 충돌없는 경로를 계획한다
@@ -164,12 +166,20 @@ private:
         motor_angles.theta1, motor_angles.theta2, motor_angles.theta3, motor_angles.theta4,
         motor_angles.theta5};
       move_group_->setJointValueTarget(joint_target);
-      const bool ok = (move_group_->move() == moveit::core::MoveItErrorCode::SUCCESS);
-      if (!ok) {
-        RCLCPP_WARN(get_logger(), "접근 이동 실패");  // 현재는 로그만
-      } else {
-        RCLCPP_INFO(get_logger(), "접근 자세 도달");
+
+      // plan()은 움직이지 않고 계획만 진행 충돌,리밋에 걸리면 실패하고 다음으로 이동
+      moveit::planning_interface::MoveGroupInterface::Plan plan;
+      if (move_group_->plan(plan) == moveit::core::MoveItErrorCode::SUCCESS) {
+        move_group_->execute(plan);   // 이 가지의 계획을 실행
+        RCLCPP_INFO(get_logger(), "접근 자세 도달(가지 %s)", elbow_up ? "up" : "down");
+        approached = true;
+        break;    // 무조건 엘보우 업이 도달 가능하면 무조건 elbow_up 부터
       }
+      RCLCPP_WARN(get_logger(), "가지 %s 도달 불가 (%.2f, %.2f, %.2f)", elbow_up ? "up" : "down", obj_x,
+        obj_y, obj_z);
+    }
+    if (!approached) {
+      RCLCPP_WARN(get_logger(), "두 가지 모두 도달 불가 (%.2f, %.2f, %.2f)", obj_x, obj_y, obj_z);
     }
     gripper_group_->setNamedTarget("open");
     gripper_group_->move();   // 그리퍼가 다 열릴 때까지 기다림

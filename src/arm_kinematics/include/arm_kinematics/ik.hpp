@@ -35,7 +35,7 @@ struct IkSolution
   bool reachable;
 };
 // IK의 해를 다 알고있음.
-IkSolution solve_ik(double x, double y, double z, double phi);
+IkSolution solve_ik(double x, double y, double z, double phi, bool elbow_up = true);
 // gazebo로 해당 위치로 팔 이동
 IkSolution to_motor_angles(const IkSolution & geometry);
 // 손목점이 실제도 도달 해야 하는 점. 접근 방향에서 그리퍼 크기만큼 물러난 곳
