@@ -606,3 +606,18 @@ std::thread{std::bind(&SkillServer::execute_move_to, this, goal_handle)}.detach(
 
 build/ : 임시 패키지별 작업 폴더 여기 있는건 그 패키지만 본다.
 install/ : 공유공간. ros2와 다른 패키지가 여기에서 찾는다. 
+
+solve_ik의 좌표 프레임은 왜 base_link 기준인가?
+역기구학은 joint2 원점에서 푸는게 더 편하다. 
+하지만 공개 API가 어깨 기준이면 tf2,카메라 좌표(둘다 base/world 기준)와 대조가 안된다.
+내부 기하함수는 어깨 프레임을 유지하고 공개 solve_ik는 base_link 기준으로 입력을 받는다.
+입구에서 어깨 오프셋을 빼서 내부 좌표로 변환한다.
+joint1 origin(-0.01125, 0, 0.034), joint2(0,0,0.0635)
+base_to_shoulder_x = -0.01125, base_to_shoulder_z = 0.0975
+변환 px = x - X_off, pz = z - Z_off
+
+또한 팔이 뒤집히는 자세는 도달 불가로 처리. Moveit에서는 팔이 뒤집혀도 도달가능하다고 처리할 수 있으나 팔의 특성상 뒤집히는 동작이 늘어날 수록 안됨
+
+지금까지 한 일
+**해석 IK -> base 프레임 변환 -> 모터각 변환 -> move_group 경로 계획 -> 가제보에서 움직임**
+

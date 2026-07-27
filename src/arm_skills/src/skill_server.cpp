@@ -2,6 +2,7 @@
 #include <thread>
 #include <string>
 #include <cmath>
+#include <vector>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
@@ -143,7 +144,7 @@ private:
 
     const double obj_x = 0.20;
     const double obj_y = 0.0;
-    const double obj_z = 0.10;
+    const double obj_z = 0.05;
     const double approach_phi = -M_PI / 2;   // 그리퍼가 아래를 향하는 접근각
 
     const auto geometry = arm_kinematics::solve_ik(obj_x, obj_y, obj_z, approach_phi);
@@ -153,7 +154,22 @@ private:
       const auto motor_angles = arm_kinematics::to_motor_angles(geometry);   // 기하각 -> 모터각 변환
       RCLCPP_INFO(
         get_logger(), "접근 관절각(모터), [%.3f, %.3f, %.3f, %.3f, %.3f]",
-        motor_angles.theta1, motor_angles.theta2, motor_angles.theta3, motor_angles.theta4, motor_angles.theta5);
+        motor_angles.theta1, motor_angles.theta2, motor_angles.theta3, motor_angles.theta4,
+        motor_angles.theta5);
+
+      // solve_ik가 푼 관절각을 move_group에 목표로 준다
+      // Move는 이름 자세이지만 여기에서는 목표 지점으로 관절을 전달해야 한다.
+      // move_group은 관젉밧까지 충돌없는 경로를 계획한다
+      const std::vector<double> joint_target = {
+        motor_angles.theta1, motor_angles.theta2, motor_angles.theta3, motor_angles.theta4,
+        motor_angles.theta5};
+      move_group_->setJointValueTarget(joint_target);
+      const bool ok = (move_group_->move() == moveit::core::MoveItErrorCode::SUCCESS);
+      if (!ok) {
+        RCLCPP_WARN(get_logger(), "접근 이동 실패");  // 현재는 로그만
+      } else {
+        RCLCPP_INFO(get_logger(), "접근 자세 도달");
+      }
     }
     gripper_group_->setNamedTarget("open");
     gripper_group_->move();   // 그리퍼가 다 열릴 때까지 기다림
