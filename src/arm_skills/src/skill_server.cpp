@@ -10,6 +10,7 @@
 
 #include <arm_interfaces/action/move_to.hpp>
 #include <arm_interfaces/action/pick.hpp>
+#include <arm_interfaces/action/place.hpp>
 
 #include <arm_interfaces/msg/error_code.hpp>
 #include <arm_interfaces/msg/failure_report.hpp>
@@ -19,9 +20,11 @@
 
 using MoveTo = arm_interfaces::action::MoveTo;
 using Pick = arm_interfaces::action::Pick;
+using Place = arm_interfaces::action::Place;
 
 using GoalHandleMoveTo = rclcpp_action::ServerGoalHandle<MoveTo>;
 using GoalHandlePick = rclcpp_action::ServerGoalHandle<Pick>;
+using GoalHandlePlace = rclcpp_action::ServerGoalHandle<Place>;
 
 class SkillServer : public rclcpp::Node
 {
@@ -42,6 +45,13 @@ public:
       std::bind(&SkillServer::handle_goal_pick, this, std::placeholders::_1, std::placeholders::_2),
       std::bind(&SkillServer::handle_cancel_pick, this, std::placeholders::_1),
       std::bind(&SkillServer::handle_accepted_pick, this, std::placeholders::_1));
+    // place 액션 서버
+    place_server_ = rclcpp_action::create_server<Place>(
+      this, "place",
+      std::bind(&SkillServer::handle_goal_place, this, std::placeholders::_1,
+      std::placeholders::_2),
+      std::bind(&SkillServer::handle_cancel_place, this, std::placeholders::_1),
+      std::bind(&SkillServer::handle_accepted_place, this, std::placeholders::_1));
   }
   void init_move_group()
   {
@@ -61,6 +71,7 @@ public:
 private:
   rclcpp_action::Server<MoveTo>::SharedPtr move_to_server_;
   rclcpp_action::Server<Pick>::SharedPtr pick_server_;
+  rclcpp_action::Server<Place>::SharedPtr place_server_;
 
   std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
   // 팔과는 별개로 그리퍼는 움직일 수 있다.
@@ -88,6 +99,17 @@ private:
   {
     return rclcpp_action::CancelResponse::ACCEPT;
   }
+  rclcpp_action::GoalResponse handle_goal_place(
+    const rclcpp_action::GoalUUID &, std::shared_ptr<const Place::Goal> goal)
+  {
+    RCLCPP_INFO(get_logger(), "place 목표 수신: object=%s target=%s", goal->object_id.c_str(),
+      goal->target_id.c_str());
+    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+  }
+  rclcpp_action::CancelResponse handle_cancel_place(const std::shared_ptr<GoalHandlePlace>)
+  {
+    return rclcpp_action::CancelResponse::ACCEPT;
+  }
   // 수락 되면 실행은 별도의 스레드로 진행 (콜백 스레드를 막으면 안됨)
   void handle_accepted(const std::shared_ptr<GoalHandleMoveTo> goal_handle)
   {
@@ -96,6 +118,10 @@ private:
   void handle_accepted_pick(const std::shared_ptr<GoalHandlePick> goal_handle)
   {
     std::thread{std::bind(&SkillServer::execute_pick, this, goal_handle)}.detach();
+  }
+  void handle_accepted_place(const std::shared_ptr<GoalHandlePlace> goal_handle)
+  {
+    std::thread{std::bind(&SkillServer::execute_place, this, goal_handle)}.detach();
   }
   // FailureReport를 만드는 유일한 통로 (make_failure와 같은 계약)
   arm_interfaces::msg::FailureReport make_failure(
@@ -219,6 +245,44 @@ private:
            arm_interfaces::msg::ErrorCode::PLANNING_FAILED,
       ok ? "" : arm_interfaces::msg::Stage::APPROACH,
       ok ? "" : "pick 이동 실패", attempt);
+    return result;
+  }
+  void execute_place(const std::shared_ptr<GoalHandlePlace> goal_handle)
+  {
+    const auto goal = goal_handle->get_goal();
+    RCLCPP_INFO(get_logger(), "place 실행 : target=%s", goal->target_id.c_str());
+
+    const double tgt_x = 0.169;
+    const double tgt_y = 0.10;  // pick 자리와 다른 곳에
+    const double tgt_z = 0.0475;
+    const double approach_phi = -M_PI / 2;   // 그리퍼가 아래를 향하는 접근각
+    const double approach_dz = 0.06;    // 물체 위 6cm 에서 접근
+
+    if (!move_to_pose(tgt_x, tgt_y, tgt_z + approach_dz, approach_phi, "place-approach")) {
+      goal_handle->abort(make_place_result(false, goal->attempt));
+      return;
+    }
+    if (!move_to_pose(tgt_x, tgt_y, tgt_z, approach_phi, "place-lower")) {
+      goal_handle->abort(make_place_result(false, goal->attempt));
+      return;
+    }
+    move_gripper("open");
+    if (!move_to_pose(tgt_x, tgt_y, tgt_z + approach_dz, approach_phi, "place-retreat")) {
+      goal_handle->abort(make_place_result(false, goal->attempt));
+      return;
+    }
+    RCLCPP_INFO(get_logger(), "place 완료 : %s", goal->target_id.c_str());
+    goal_handle->succeed(make_place_result(true, goal->attempt));
+  }
+  std::shared_ptr<Place::Result> make_place_result(bool ok, uint8_t attempt)
+  {
+    auto result = std::make_shared<Place::Result>();
+    result->success = ok;
+    result->failure = make_failure(
+      ok ? arm_interfaces::msg::ErrorCode::SUCCESS :
+           arm_interfaces::msg::ErrorCode::PLANNING_FAILED,
+      ok ? "" : arm_interfaces::msg::Stage::TRANSFER,
+      ok ? "" : "place 이동 실패", attempt);
     return result;
   }
 };

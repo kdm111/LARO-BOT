@@ -645,3 +645,8 @@ pick 시퀀스
 5. move_to_pose(obj_z + 0.06) lift
 
 
+place 시퀀스
+1. place-approach
+2. place-lower
+3. open
+4. place-retreat
