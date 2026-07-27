@@ -602,3 +602,7 @@ std::thread{std::bind(&SkillServer::execute_move_to, this, goal_handle)}.detach(
 
 이제 skill_server가 solve_ik를 부를 건데 solve_ik는 다른 패키지에 존재한다. 하지만 arm_kinematics는 라이브러리를 자기 안에서만 쓰게 만들어서 밖에서 쓰지 못한다. 
 따라서 열어 놔야 한다.
+컴파일된 라이브러리와 헤더가 공유공간 install/ 로 나가야 한다.
+
+build/ : 임시 패키지별 작업 폴더 여기 있는건 그 패키지만 본다.
+install/ : 공유공간. ros2와 다른 패키지가 여기에서 찾는다. 

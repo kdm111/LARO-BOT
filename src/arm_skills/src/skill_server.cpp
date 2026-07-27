@@ -1,6 +1,7 @@
 #include <memory>
 #include <thread>
 #include <string>
+#include <cmath>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
@@ -12,6 +13,8 @@
 #include <arm_interfaces/msg/error_code.hpp>
 #include <arm_interfaces/msg/failure_report.hpp>
 #include <arm_interfaces/msg/stage.hpp>
+
+#include <arm_kinematics/ik.hpp>   // solve_ik, to_motor_angles
 
 using MoveTo = arm_interfaces::action::MoveTo;
 using Pick = arm_interfaces::action::Pick;
@@ -138,6 +141,20 @@ private:
     const auto goal = goal_handle->get_goal();
     RCLCPP_INFO(get_logger(), "pick 실행 : object=%s", goal->object_id.c_str());
 
+    const double obj_x = 0.20;
+    const double obj_y = 0.0;
+    const double obj_z = 0.10;
+    const double approach_phi = -M_PI / 2;   // 그리퍼가 아래를 향하는 접근각
+
+    const auto geometry = arm_kinematics::solve_ik(obj_x, obj_y, obj_z, approach_phi);
+    if (!geometry.reachable) {
+      RCLCPP_WARN(get_logger(), "sovle_ik 도달 불가 (%.2f, %.2f, %.2f)", obj_x, obj_y, obj_z);
+    } else {
+      const auto motor_angles = arm_kinematics::to_motor_angles(geometry);   // 기하각 -> 모터각 변환
+      RCLCPP_INFO(
+        get_logger(), "접근 관절각(모터), [%.3f, %.3f, %.3f, %.3f, %.3f]",
+        motor_angles.theta1, motor_angles.theta2, motor_angles.theta3, motor_angles.theta4, motor_angles.theta5);
+    }
     gripper_group_->setNamedTarget("open");
     gripper_group_->move();   // 그리퍼가 다 열릴 때까지 기다림
     RCLCPP_INFO(get_logger(), "그리퍼 open");   // 그리퍼 open

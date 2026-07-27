@@ -67,10 +67,21 @@ IkSolution solve_ik(double x, double y, double z, double phi)
 {
   IkSolution sol{};   // 전부 0/false로 초기화
 
-  sol.theta1 = get_base_angle(x, y);   // theta1 base yaw 값
-  double r = get_reach_distance(x, y);   // 평면 안 수평거리
+  const double px = x - BASE_TO_SHOULDER_X;  // 어깨 기준 x (base x-offset이 여기서 반영)
+  const double py = y;  // y는 항상 축이 같음
+  const double pz = z - BASE_TO_SHOULDER_Z;   // 어깨 기준 높이 (어깨보다 아래면 음수)
 
-  Point2D wrist = get_wrist_point(r, z, L3, phi);   // 2R이 닿을 손목점
+  sol.theta1 = get_base_angle(px, py);   // theta1 base yaw 값
+  double r = get_reach_distance(px, py);   // 평면 안 수평거리
+
+  // 뒤접힘 가드 : 어깨 기준 앞쪽으로만 유효
+  // px < 0 은 팔이 뒤로 접히는 자세로 theta1을 180도 뒤집어 거짓 성공을 내던 스팟
+  // 도달 불가로 표현
+  if (px < 0.0) {
+    sol.reachable = false;
+    return sol;
+  }
+  Point2D wrist = get_wrist_point(r, pz, L3, phi);   // 2R이 닿을 손목점
   double d = get_reach_distance(wrist.r, wrist.z);   // 손목 점까지의 거리
 
   auto t3 = get_elbow_angle(d, L1, L2, true);   // elbow_up 해당 위치까지 닿을 팔꿈치 각도

@@ -12,6 +12,7 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
   <depend>arm_interfaces</depend>
+  <depend>arm_kinematics</depend>
   <depend>moveit_ros_planning_interface</depend>
 
   <test_depend>ament_lint_auto</test_depend>

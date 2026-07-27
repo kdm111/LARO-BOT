@@ -138,7 +138,9 @@ TEST(SolveIk, ReachableRoundTrips)
   // 도달 가능한 목표(평면, y=0) -> solve -> FK로 재구성하면 목표로 돌아오나
   // 15cm 5cm
   double tx = 0.15, tz = 0.05, phi = -M_PI / 2;   // 아래 쪽으로 접근
-  auto sol = arm_kinematics::solve_ik(tx, 0.0, tz, phi);
+  double ux = tx + arm_kinematics::BASE_TO_SHOULDER_X;
+  double uz = tz + arm_kinematics::BASE_TO_SHOULDER_Z;
+  auto sol = arm_kinematics::solve_ik(ux, 0.0, uz, phi);
   ASSERT_TRUE(sol.reachable);
   auto tip = arm_kinematics::get_forward_kinematics(
     sol.theta2, sol.theta3, sol.theta4,
@@ -148,8 +150,14 @@ TEST(SolveIk, ReachableRoundTrips)
 }
 TEST(SolveIk, Unreachable)
 {
-  // 가로로 30cm 초과 상황에 도달
+  // 가로로 30cm 초과 상황에 도달, base 기준 좌표 전달
   auto sol = arm_kinematics::solve_ik(0.3, 0.0, 0.1, -M_PI / 2);   // 팔 길이 밖
+  EXPECT_FALSE(sol.reachable);
+}
+TEST(SolveIk, BackfoldGuard)
+{
+  // px < 0이 되는 목표는 도달 불가가 맞다.
+  auto sol = arm_kinematics::solve_ik(-0.05, 0.0, 0.0, -M_PI / 2);
   EXPECT_FALSE(sol.reachable);
 }
 TEST(ToMotorAngles, StraightToMotor)

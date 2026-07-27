@@ -15,6 +15,10 @@ constexpr double L3 = 0.12063;   // 손목 -> TCP 0.0287 + 0.09193
 // joint2와 joint3는 서로 이어져 있다.
 // joint3는 joint2를 기준으로 앞으로 0.0415m, 위로 0.11315m 뻗어있다.
 constexpr double UPPER_ARM_TILT = 1.2192;
+// base_link(link0) 원점 -> 어깨(joint2) 위이. URDF joint1+joint2 origin 누적
+// solve_ik는 이제 base_link 기준 좌표를 받고 도입에서 이값을 빼 어깨 기준으로 바꾼다.
+constexpr double BASE_TO_SHOULDER_X = -0.01125;
+constexpr double BASE_TO_SHOULDER_Z = 0.0975;
 struct Point2D
 {
   double r;
