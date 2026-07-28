@@ -650,3 +650,26 @@ place 시퀀스
 2. place-lower
 3. open
 4. place-retreat
+
+
+### 9일차
+
+에이전트 e2e 현재 까지의 흐름
+/command String : agent 구독
+_build_plan : 명령 문자열 파싱하여 스텝 리스트로 생성
+_run_step : 스텝 하나를 액션 goal로 전송
+skill_server
+solve_ik 
+가지선택
+move_group
+팔 이동
+on_result 성공이면 다음 스텝, 실패면 재시도 abort
+
+현재 agent와 실서버(skill_server) 연동 확인. 
+
+DetectedObject 메시지
+검출된 물체들과 마지막으로 검출된 시간 정리
+
+SceneState 메시지
+지금 보이는 카메라 화면에 어떤 물체들이 어디 있나의 스냅샷. 물체 여러 개를 담고 각 물체는 id + pose 마지막 관측시각
+

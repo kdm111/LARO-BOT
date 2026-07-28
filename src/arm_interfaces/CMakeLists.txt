@@ -26,6 +26,8 @@ find_package(builtin_interfaces REQUIRED)
 # motion (server) depend on this package, so the contract lives here once.
 rosidl_generate_interfaces(${PROJECT_NAME}
   # 메시지
+  "msg/DetectedObject.msg"
+  "msg/SceneState.msg"
   "msg/ErrorCode.msg"
   "msg/FailureReport.msg"
   "msg/Stage.msg"
