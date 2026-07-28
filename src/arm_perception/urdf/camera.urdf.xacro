@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<!-- 고정(eye-to-hand) RGB 카메라. 삼각대에 올린 것처럼 world에 붙박이로 고정한다.
+     팔 URDF(벤더)는 건드리지 않고, 이 파일을 가제보에 따로 spawn해서 같은 world에 얹는다.
+     실물로 갈 때(M6)는 이 origin 값이 곧 삼각대 캘리브레이션 값이 된다. -->
+<robot name="fixed_camera" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ⓪ world 링크 : 이 카메라 모델의 루트(고정 기준점).
+         카메라는 별도 모델로 spawn되므로 팔의 world를 공유하지 못한다 →
+         자기 안에 world를 정의해야 camera_joint의 parent가 유효해진다(URDF 규칙).
+         spawn을 (0,0,0)에 하면 이 world가 가제보 원점과 겹쳐 팔의 world와 같은 원점이 된다. -->
+  <link name="world"/>
+
+  <!-- ① 카메라 몸체(링크) : 가제보에서 눈에 보이는 작은 검은 상자.
+         TF 트리에 camera_link 프레임이 생긴다 -> 나중에 "카메라->base" 변환의 출발점. -->
+  <link name="camera_link">
+    <visual>
+      <geometry>
+        <box size="0.03 0.09 0.03"/>   <!-- 폭3 x 길이9 x 높이3 cm, 그냥 표식용 -->
+      </geometry>
+      <material name="camera_black">
+        <color rgba="0.1 0.1 0.1 1"/>
+      </material>
+    </visual>
+    <!-- 관성(inertial) : gz-sim은 fixed 조인트로 world에 붙은 링크가 관성이 없으면
+         world에 흡수해 버려 "모델에 링크가 없다"는 에러를 낸다(벤더 팔의 link0엔 관성이 있어 OK).
+         고정 카메라라 물리적으로 안 움직이므로 값은 형식적(작은 상자 근사). -->
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <!-- ② 어디에 놓나(조인트) : world에 fixed로 고정 -> 팔과 완전히 독립.
+         origin의 xyz = 위치, rpy = 회전(roll, pitch, yaw), 단위는 미터 / 라디안.
+
+         xyz = (-0.10, 0.0, 0.50)
+           x=-0.10 : base보다 10cm 뒤 (팔 뒤통수 쪽)
+           y= 0.00 : 정면 중앙
+           z= 0.50 : 바닥에서 50cm 위 (팔을 세운 높이보다 살짝 위 = 눈높이)
+
+         rpy = (0, 0.9, 0)
+           카메라 광축은 기본적으로 +x(정면)를 향한다.
+           pitch(가운데 값)를 +0.9 rad(약 50도) 주면 광축이 앞+아래로 숙는다.
+           -> 똑바로 아래(1.5708=90도)가 아니라 "앞쪽 테이블을 비스듬히" 본다.
+           값을 키우면 더 바닥을, 줄이면 더 정면을 본다(스폰 후 눈으로 보고 조정). -->
+  <joint name="camera_joint" type="fixed">
+    <parent link="world"/>
+    <child link="camera_link"/>
+    <origin xyz="-0.10 0.0 0.50" rpy="0 0.9 0"/>
+  </joint>
+
+  <!-- ③ 가제보 센서 플러그인 : 위 링크를 "진짜 RGB 카메라"로 만든다.
+         이게 없으면 그냥 검은 상자일 뿐. 이 블록이 image_raw를 렌더링해 뱉게 한다. -->
+  <gazebo reference="camera_link">
+    <sensor name="fixed_camera" type="camera">
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>   <!-- 시야각 60도(=1.047 rad) -->
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>                <!-- RGB 8bit. 뎁스 아님(RGB 단안 확정) -->
+        </image>
+        <clip>
+          <near>0.05</near>                       <!-- 5cm보다 가까운 건 안 보임 -->
+          <far>3.0</far>                          <!-- 3m보다 먼 건 안 보임 -->
+        </clip>
+      </camera>
+      <always_on>1</always_on>                    <!-- 항상 켜짐 -->
+      <update_rate>24</update_rate>               <!-- 초당 24장 -->
+      <topic>camera/image_raw</topic>             <!-- 이미지가 나올 (gz)토픽 이름 -->
+    </sensor>
+  </gazebo>
+
+</robot>

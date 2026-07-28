@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<!-- 빨간 직육면체 블록 — 카메라가 감지할 대상(피킹 목표).
+     센서 플러그인 없음: 이 물체는 "감지당하는 쪽"이라 색·모양·충돌만 있으면 된다.
+     가로로 긴 모양 = 길이축을 y(월드 좌우 = 카메라 화면 좌우)로 길게 뒀다.
+     크기(x,y,z) = 0.025 x 0.06 x 0.025 m (폭 x 길이 x 높이). -->
+<sdf version="1.10">
+  <model name="red_block">
+    <!-- spawn 위치(월드 기준). 팔 앞쪽(x=0.20) + 살짝 옆(y=0.06)으로 두어
+         현재 쫙 펴진 팔에 가리지 않고 화면에 보이게. 바닥(z=0) 위에 얹히도록 살짝 띄워 놓음.
+         값은 잠정 — 화면 보고 조정한다(피킹 도달 범위 안: 이전 pick/place가 x≈0.2, y≈0~0.1에서 성공). -->
+    <pose>0.20 0.06 0.015 0 0 0</pose>
+
+    <link name="link">
+      <!-- 관성 : 박스(질량 0.05kg) 근사. 동적 물체라 바닥에 얹혀 있다가 나중에 집혀 들린다. -->
+      <inertial>
+        <mass>0.05</mass>
+        <inertia>
+          <ixx>0.000018</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.0000052</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.000018</izz>
+        </inertia>
+      </inertial>
+
+      <!-- 충돌 형상 : 바닥·그리퍼와 부딪히는 실제 몸체 -->
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.025 0.06 0.025</size>
+          </box>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+
+      <!-- 시각 형상 : 카메라가 보는 빨간 겉모습. HSV 검출이 이 빨강을 찾는다. -->
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.025 0.06 0.025</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>1.0 0.0 0.0 1</ambient>
+          <diffuse>1.0 0.0 0.0 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>
