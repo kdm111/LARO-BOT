@@ -14,6 +14,12 @@ install(
   DIRECTORY urdf launch worlds models
   DESTINATION share/${PROJECT_NAME}
 )
+# 파이썬 노드는 lib/<패키지>에 실행 파일로 설치해야 ros2 run이 찾는다.
+# PROGRAMS(=실행 권한 부여)로 설치한다. DIRECTORY와 목적지가 다르다는 점에 주의.
+install(PROGRAMS
+  scripts/red_block_detector.py
+  DESTINATION lib/${PROJECT_NAME}
+)
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights

@@ -15,6 +15,11 @@
   <exec_depend>open_manipulator_bringup</exec_depend>
   <exec_depend>open_manipulator_moveit_config</exec_depend>
   <exec_depend>arm_skills</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>python3-opencv</exec_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
