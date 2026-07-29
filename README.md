@@ -674,7 +674,57 @@ SceneState 메시지
 지금 보이는 카메라 화면에 어떤 물체들이 어디 있나의 스냅샷. 물체 여러 개를 담고 각 물체는 id + pose 마지막 관측시각
 
 
-팔은 현재 gazebo 안에서 돈다. 인지는 물체 위치를 만들어서 skill_server 혹은 agent에 전달해야 한다.
+팔은 현재 gazebo 안에서 돈다. 인지는 물체 위치를 만들어서 skill_server에 전달해야 한다.
 같은 가제보 안에서 가상 카메라로 하면 카메라도 블록도 팔도 가제보 안에에 있으므로집을 수 있다.
 
 카메라와 물체를 생성해야 하므로 둘다 urdf/sdf 가제보 센서 플러그인으로 만든다. 
+
+커스텀 패키지에 카메라를 따로 정의해야 한다.
+카메라 링크 + 조인트 + 가제보 센서 플러그인
+
+```
+gz topic -e -t /camera/image_raw -n 1
+```
+현재 가제보 환경에서 카메라가 나오는지 확인
+
+현재 omx 가제보 환경은 physical 만 존재하지 sensors 환경이 존재하지 않는다. 
+따라서 새로운 환경을 만들어야 하고 환경을 그쪽으로 옮겨줘야 한다.
+
+가제보 환경의 world를 명시해야 한다.
+```
+ros2 launch open_manipulator_bringup omx_f_gazebo.launch.py world:=$(ros2 pkg prefix arm_perception)/share/arm_perception/worlds/sensors_world
+```
+카메라 환경으로 보는 방법
+```
+ros2 run rqt_image_view rqt_image_view
+```
+Unified Robot Description Format : ROS의 표준 로봇 설명 언어
+Simulation Description Format : 가제보 시뮬레이터의 네이티브 언어
+XACRO : URDF, SDF를 프로그래밍 하게 만드는 도구
+
+빨간 블록 gz sim에 띄우기
+```
+ros2 run ros_gz_sim create -world empty -file $(ros2 pkg prefix arm_perception)/share/arm_perception/models/red_block.sdf -name red_block
+``
+가제보 환경 모델 확인
+```
+gz model -m red_block -p
+```
+
+### 10일차
+
+환경 gazebo, moveit, agent, block spawn까지 한번에 띄우는 너무 많아서 통합 laucnh 파일 생성
+launch 하나에서 gazebo moveit, skill-server까지 같이 띄우게 된다.
+
+
+```
+ros2 launch arm_perception sim_bringup.launch.py scene:=''
+```
+
+```
+ros2 run rqt_image_view rqt_image_view
+```
+
+**opencv**
+
+
