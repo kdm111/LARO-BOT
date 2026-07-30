@@ -3,9 +3,11 @@
 #include <string>
 #include <cmath>
 #include <vector>
+#include <mutex>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
+#include <arm_interfaces/msg/scene_state.hpp>
 #include <moveit/move_group_interface/move_group_interface.hpp>
 
 #include <arm_interfaces/action/move_to.hpp>
@@ -52,6 +54,9 @@ public:
       std::placeholders::_2),
       std::bind(&SkillServer::handle_cancel_place, this, std::placeholders::_1),
       std::bind(&SkillServer::handle_accepted_place, this, std::placeholders::_1));
+      // 인지 노드가 발행하는 스냅샷 구독
+      scene_sub_ = create_subscription<arm_interfaces::msg::SceneState>(
+        "/scene_state", 10, std::bind(&SkillServer::on_scene_state, this, std::placeholders::_1));
   }
   void init_move_group()
   {
@@ -72,6 +77,9 @@ private:
   rclcpp_action::Server<MoveTo>::SharedPtr move_to_server_;
   rclcpp_action::Server<Pick>::SharedPtr pick_server_;
   rclcpp_action::Server<Place>::SharedPtr place_server_;
+  rclcpp::Subscription<arm_interfaces::msg::SceneState>::SharedPtr scene_sub_;
+  arm_interfaces::msg::SceneState latest_scene_;  // 최신 스냅샷 scene_mutex_로만 접근
+  std::mutex scene_mutex_;
 
   std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
   // 팔과는 별개로 그리퍼는 움직일 수 있다.
@@ -122,6 +130,26 @@ private:
   void handle_accepted_place(const std::shared_ptr<GoalHandlePlace> goal_handle)
   {
     std::thread{std::bind(&SkillServer::execute_place, this, goal_handle)}.detach();
+  }
+  // 최신 스냅샷을 저장하고 executor 콜백 스레드에서 실행
+  void on_scene_state(const arm_interfaces::msg::SceneState::SharedPtr msg)
+  {
+    std::lock_guard<std::mutex> lock(scene_mutex_);
+    latest_scene_ = *msg;
+  }
+  // object_id를 통해 최신 스냅샷을 뒤져 위치를 꺼냄
+  bool lookup_object(const std::string & object_id, double & x, double & y, double & z)
+  {
+    std::lock_guard<std::mutex> lock(scene_mutex_);
+    for (const auto & obj : latest_scene_.objects) {
+      if (obj.object_id == object_id) {
+        x = obj.pose.pose.position.x;
+        y = obj.pose.pose.position.y;
+        z = obj.pose.pose.position.z;
+        return true;
+      }
+    }
+    return false;
   }
   // FailureReport를 만드는 유일한 통로 (make_failure와 같은 계약)
   arm_interfaces::msg::FailureReport make_failure(
@@ -213,9 +241,18 @@ private:
     const auto goal = goal_handle->get_goal();
     RCLCPP_INFO(get_logger(), "pick 실행 : object=%s", goal->object_id.c_str());
 
-    const double obj_x = 0.169;
-    const double obj_y = 0.0;
-    const double obj_z = 0.0475;
+    double obj_x, obj_y, obj_z;
+    if (!lookup_object(goal->object_id, obj_x, obj_y, obj_z)) {
+      RCLCPP_WARN(get_logger(), "/scene_state에 %s 없음", goal->object_id.c_str());
+      auto result = std::make_shared<Pick::Result>();
+      result->success = false;
+      result->failure = make_failure(
+        arm_interfaces::msg::ErrorCode::OBJECT_NOT_FOUND,
+        arm_interfaces::msg::Stage::PLAN,
+        "/scene_state에서 " + goal->object_id + " 못 찾음", goal->attempt);
+      goal_handle->abort(result);
+      return ;
+    }
     const double approach_phi = -M_PI / 2;   // 그리퍼가 아래를 향하는 접근각
     const double approach_dz = 0.06;    // 물체 위 6cm 에서 접근
 
