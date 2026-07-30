@@ -1,0 +1,212 @@
+<?xml version='1.0'?>
+<!-- 도넛(링) 근사 모델. 사각 단면 링 = 상자 16개 원형 배치.
+     구멍이 진짜 뚫려 있어야 내부 파지를 sim에서 검증할 수 있다.
+     실물 치수로 교체할 것: 바깥지름 7.0cm,
+     안쪽지름 3.6cm, 두께 1.8cm.
+     ★ 회전 대칭이라 yaw(theta5)가 파지에 영향을 주지 않는다.
+     ★ 납작해서 PLANE_Z = 높이의 절반 = 0.0090 로 블록과 같은 방식이 통한다. -->
+<sdf version='1.10'>
+  <model name='blue_ring'>
+    <link name='link'>
+      <inertial>
+        <mass>0.040</mass>
+        <inertia>
+          <ixx>1.5e-05</ixx><ixy>0</ixy><ixz>0</ixz>
+          <iyy>1.5e-05</iyy><iyz>0</iyz><izz>2.9e-05</izz>
+        </inertia>
+      </inertial>
+      <collision name='ring_col_0'>
+        <pose>0.02650 0.00000 0.00900 0 0 0.00000</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_0'>
+        <pose>0.02650 0.00000 0.00900 0 0 0.00000</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_1'>
+        <pose>0.02448 0.01014 0.00900 0 0 0.39270</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_1'>
+        <pose>0.02448 0.01014 0.00900 0 0 0.39270</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_2'>
+        <pose>0.01874 0.01874 0.00900 0 0 0.78540</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_2'>
+        <pose>0.01874 0.01874 0.00900 0 0 0.78540</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_3'>
+        <pose>0.01014 0.02448 0.00900 0 0 1.17810</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_3'>
+        <pose>0.01014 0.02448 0.00900 0 0 1.17810</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_4'>
+        <pose>0.00000 0.02650 0.00900 0 0 1.57080</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_4'>
+        <pose>0.00000 0.02650 0.00900 0 0 1.57080</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_5'>
+        <pose>-0.01014 0.02448 0.00900 0 0 1.96350</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_5'>
+        <pose>-0.01014 0.02448 0.00900 0 0 1.96350</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_6'>
+        <pose>-0.01874 0.01874 0.00900 0 0 2.35619</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_6'>
+        <pose>-0.01874 0.01874 0.00900 0 0 2.35619</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_7'>
+        <pose>-0.02448 0.01014 0.00900 0 0 2.74889</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_7'>
+        <pose>-0.02448 0.01014 0.00900 0 0 2.74889</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_8'>
+        <pose>-0.02650 0.00000 0.00900 0 0 3.14159</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_8'>
+        <pose>-0.02650 0.00000 0.00900 0 0 3.14159</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_9'>
+        <pose>-0.02448 -0.01014 0.00900 0 0 3.53429</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_9'>
+        <pose>-0.02448 -0.01014 0.00900 0 0 3.53429</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_10'>
+        <pose>-0.01874 -0.01874 0.00900 0 0 3.92699</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_10'>
+        <pose>-0.01874 -0.01874 0.00900 0 0 3.92699</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_11'>
+        <pose>-0.01014 -0.02448 0.00900 0 0 4.31969</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_11'>
+        <pose>-0.01014 -0.02448 0.00900 0 0 4.31969</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_12'>
+        <pose>-0.00000 -0.02650 0.00900 0 0 4.71239</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_12'>
+        <pose>-0.00000 -0.02650 0.00900 0 0 4.71239</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_13'>
+        <pose>0.01014 -0.02448 0.00900 0 0 5.10509</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_13'>
+        <pose>0.01014 -0.02448 0.00900 0 0 5.10509</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_14'>
+        <pose>0.01874 -0.01874 0.00900 0 0 5.49779</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_14'>
+        <pose>0.01874 -0.01874 0.00900 0 0 5.49779</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_15'>
+        <pose>0.02448 -0.01014 0.00900 0 0 5.89049</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_15'>
+        <pose>0.02448 -0.01014 0.00900 0 0 5.89049</pose>
+        <geometry><box><size>0.01700 0.01093 0.01800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

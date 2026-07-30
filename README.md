@@ -854,9 +854,10 @@ PLANE_Z는 블록 중심의 높이이다. 즉 블록 높이의 절반
 far_w.z - near_w.z 가 0보다 크면 하늘을 찍은 픽셀이니 버린다.
 
 
+skill_server에서 /scene_state 구독으로 하드코딩된 포즈를 대체한다.
 
+1. 스레드가 두 갈래로 이 데이터를 만진다. MultiThreadedExecutor가 돌리는 콜백 스레드와 실행 스레드가 동시에 같은 변수를 읽고 쓸 수 있다.
 
-
-
+2. Place.target_id는 카메라가 보는 대상이 아니다. /red_block은 /scene_state에 있다.
 
 

@@ -1,0 +1,353 @@
+<?xml version='1.0'?>
+<!-- 종이컵 근사 모델. 벽 = 상자 16개를 원형 배치(구멍이 진짜 비어 있어야
+     내부 파지 = 그리퍼를 닫은 채 넣고 벌려서 안쪽 벽을 미는 방식을 검증할 수 있다).
+     색: 안쪽과 테두리는 흰색, 바깥면만 파랑(시각 전용 얇은 스킨).
+     실물 치수로 교체할 것: 바깥지름 6.7cm, 높이 9.0cm,
+     안지름 5.9cm.
+     ★ 검출용 참고: 이 물체는 키가 크다 -> 카메라 실루엣 무게중심이
+       테이블이 아니라 중간 높이에 뜬다. PLANE_Z를 블록과 다른 값으로 써야 한다. -->
+<sdf version='1.10'>
+  <model name='paper_cup'>
+    <link name='link'>
+      <inertial>
+        <mass>0.030</mass>
+        <inertia>
+          <ixx>2.5e-05</ixx><ixy>0</ixy><ixz>0</ixz>
+          <iyy>2.5e-05</iyy><iyz>0</iyz><izz>1.7e-05</izz>
+        </inertia>
+      </inertial>
+      <collision name='floor_col'>
+        <pose>0 0 0.00200 0 0 0</pose>
+        <geometry><cylinder><radius>0.03350</radius><length>0.00400</length></cylinder></geometry>
+      </collision>
+      <visual name='floor_vis'>
+        <pose>0 0 0.00200 0 0 0</pose>
+        <geometry><cylinder><radius>0.03350</radius><length>0.00400</length></cylinder></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_0'>
+        <pose>0.03150 0.00000 0.04700 0 0 0.00000</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_0'>
+        <pose>0.03150 0.00000 0.04700 0 0 0.00000</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_1'>
+        <pose>0.02910 0.01205 0.04700 0 0 0.39270</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_1'>
+        <pose>0.02910 0.01205 0.04700 0 0 0.39270</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_2'>
+        <pose>0.02227 0.02227 0.04700 0 0 0.78540</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_2'>
+        <pose>0.02227 0.02227 0.04700 0 0 0.78540</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_3'>
+        <pose>0.01205 0.02910 0.04700 0 0 1.17810</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_3'>
+        <pose>0.01205 0.02910 0.04700 0 0 1.17810</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_4'>
+        <pose>0.00000 0.03150 0.04700 0 0 1.57080</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_4'>
+        <pose>0.00000 0.03150 0.04700 0 0 1.57080</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_5'>
+        <pose>-0.01205 0.02910 0.04700 0 0 1.96350</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_5'>
+        <pose>-0.01205 0.02910 0.04700 0 0 1.96350</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_6'>
+        <pose>-0.02227 0.02227 0.04700 0 0 2.35619</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_6'>
+        <pose>-0.02227 0.02227 0.04700 0 0 2.35619</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_7'>
+        <pose>-0.02910 0.01205 0.04700 0 0 2.74889</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_7'>
+        <pose>-0.02910 0.01205 0.04700 0 0 2.74889</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_8'>
+        <pose>-0.03150 0.00000 0.04700 0 0 3.14159</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_8'>
+        <pose>-0.03150 0.00000 0.04700 0 0 3.14159</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_9'>
+        <pose>-0.02910 -0.01205 0.04700 0 0 3.53429</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_9'>
+        <pose>-0.02910 -0.01205 0.04700 0 0 3.53429</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_10'>
+        <pose>-0.02227 -0.02227 0.04700 0 0 3.92699</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_10'>
+        <pose>-0.02227 -0.02227 0.04700 0 0 3.92699</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_11'>
+        <pose>-0.01205 -0.02910 0.04700 0 0 4.31969</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_11'>
+        <pose>-0.01205 -0.02910 0.04700 0 0 4.31969</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_12'>
+        <pose>-0.00000 -0.03150 0.04700 0 0 4.71239</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_12'>
+        <pose>-0.00000 -0.03150 0.04700 0 0 4.71239</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_13'>
+        <pose>0.01205 -0.02910 0.04700 0 0 5.10509</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_13'>
+        <pose>0.01205 -0.02910 0.04700 0 0 5.10509</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_14'>
+        <pose>0.02227 -0.02227 0.04700 0 0 5.49779</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_14'>
+        <pose>0.02227 -0.02227 0.04700 0 0 5.49779</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <collision name='wall_col_15'>
+        <pose>0.02910 -0.01205 0.04700 0 0 5.89049</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+      </collision>
+      <visual name='wall_vis_15'>
+        <pose>0.02910 -0.01205 0.04700 0 0 5.89049</pose>
+        <geometry><box><size>0.00400 0.01299 0.08600</size></box></geometry>
+        <material>
+          <ambient>0.95 0.95 0.95 1</ambient>
+          <diffuse>0.95 0.95 0.95 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_0'>
+        <pose>0.03390 0.00000 0.04300 0 0 0.00000</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_1'>
+        <pose>0.03132 0.01297 0.04300 0 0 0.39270</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_2'>
+        <pose>0.02397 0.02397 0.04300 0 0 0.78540</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_3'>
+        <pose>0.01297 0.03132 0.04300 0 0 1.17810</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_4'>
+        <pose>0.00000 0.03390 0.04300 0 0 1.57080</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_5'>
+        <pose>-0.01297 0.03132 0.04300 0 0 1.96350</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_6'>
+        <pose>-0.02397 0.02397 0.04300 0 0 2.35619</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_7'>
+        <pose>-0.03132 0.01297 0.04300 0 0 2.74889</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_8'>
+        <pose>-0.03390 0.00000 0.04300 0 0 3.14159</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_9'>
+        <pose>-0.03132 -0.01297 0.04300 0 0 3.53429</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_10'>
+        <pose>-0.02397 -0.02397 0.04300 0 0 3.92699</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_11'>
+        <pose>-0.01297 -0.03132 0.04300 0 0 4.31969</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_12'>
+        <pose>-0.00000 -0.03390 0.04300 0 0 4.71239</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_13'>
+        <pose>0.01297 -0.03132 0.04300 0 0 5.10509</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_14'>
+        <pose>0.02397 -0.02397 0.04300 0 0 5.49779</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <visual name='skin_vis_15'>
+        <pose>0.03132 -0.01297 0.04300 0 0 5.89049</pose>
+        <geometry><box><size>0.00080 0.01398 0.07800</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>
