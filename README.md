@@ -705,11 +705,12 @@ XACRO : URDF, SDF를 프로그래밍 하게 만드는 도구
 빨간 블록 gz sim에 띄우기
 ```
 ros2 run ros_gz_sim create -world empty -file $(ros2 pkg prefix arm_perception)/share/arm_perception/models/red_block.sdf -name red_block
-``
+```
 가제보 환경 모델 확인
 ```
 gz model -m red_block -p
 ```
+
 
 ### 10일차
 
@@ -789,4 +790,21 @@ u = m10 / m00 # 평균 x -> 덩어리 중심의 열
 v = m01 / m00 # 평균 y 덩어리 중심의 행
 
 무게 중심 = 좌표의 평균 이고, 모멘트는 그걸 구하려고 미리 계산해둔 합계
+
+**카메라는 어느 방향인지는 알지만 얼마나 먼지는 모른다.**
+
+픽셀 하나는 점이 아니라 레이저 포인터를 쏜 방향이다. 카메라의 물체는 멀든 가깝든 전부 같은 곳에 찍힌다. 
+
+### 11일차
+
+
+
+
+
+
+
+
+
+
+
 
