@@ -152,7 +152,7 @@ class RedBlockDetector(Node):
         
         if parts:
             self.get_logger().info(
-                f'/scene_state {len(scene.objects)}개 ' + ', '.join(parts), 
+                f'/scene_state {len(scene.objects)}개 : ' + ', '.join(parts), 
                 throttle_duration_sec=1.0)
         else:
             self.get_logger().warn('빨강 없음', throttle_duration_sec=2.0)
