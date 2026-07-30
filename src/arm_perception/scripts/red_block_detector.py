@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from arm_interfaces.msg import DetectedObject, SceneState
 import cv2
 from cv_bridge import CvBridge
 from geometry_msgs.msg import PointStamped
@@ -40,6 +41,8 @@ class RedBlockDetector(Node):
         # TF 버퍼가 world <- camera_optical_frame 변환을 계속 모아둔다. listner가 채워준다.
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listner = tf2_ros.TransformListener(self.tf_buffer, self)
+        # scene_state 발행
+        self.scene_pub = self.create_publisher(SceneState, '/scene_state', 10)
         # 튜닝용 디버그 영상 rqt_image_view로 보면서 임계값을 조정한다.
         self.debug_pub = self.create_publisher(Image, '/perception/debug_image', 10)
         self.get_logger().info('red_block_detector 시작. /camera/image_raw 구독')
@@ -120,17 +123,37 @@ class RedBlockDetector(Node):
         # 면적 큰 순 = 크고 확실한 것 순
         centers.sort(key=lambda c: c[2], reverse=True)
 
-        if centers:
-            found = ', '.join(f'({u}, {v}) area={a:.0f}' for u, v, a in centers)
-            parts = []
-            for u, v, area in centers:
-                p = self.pixel_to_world(u, v, msg.header.stamp)
-                if p is None:
-                    parts.append(f'({u}, {v}) -> 변환 불가')
-                else:
-                    parts.append(f'({u}, {v}) -> world ({p[0]:.3f}, {p[1]:.3f})')
+        # scene 생성
+        scene = SceneState()
+        scene.header.stamp = msg.header.stamp
+        scene.header.frame_id = WORLD_FRAME
+
+        parts = []
+        for i, (u, v, area) in enumerate(centers):
+            p = self.pixel_to_world(u, v, msg.header.stamp)
+            if p is None:
+                parts.append(f'({u}, {v}) -> 변환 불가')
+                continue
+            obj = DetectedObject()
+            # 색만으로는 구별이 되지 않으므로 여러 개면 면적 내림차순 번호를 부여한다.
+            obj.object_id = 'red_block' if len(centers) == 1 else f'red_block_{i+1}'
+            obj.pose.header.stamp = msg.header.stamp
+            obj.pose.header.frame_id = WORLD_FRAME
+            obj.pose.pose.position.x = p[0]
+            obj.pose.pose.position.y = p[1]
+            obj.pose.pose.position.z = PLANE_Z
+            # 무게 중심 하나만으로는 자세가 나오지 않는다. 
+            obj.pose.pose.orientation.w = 1.0
+            obj.last_seen = msg.header.stamp
+            scene.objects.append(obj)
+            parts.append(f'{obj.object_id} ({p[0]:.3f}, {p[1]:.3f})')
+            
+        self.scene_pub.publish(scene)
+        
+        if parts:
             self.get_logger().info(
-                f'검출 {len(centers)}개' + ', '.join(parts), throttle_duration_sec=1.0)
+                f'/scene_state {len(scene.objects)}개 ' + ', '.join(parts), 
+                throttle_duration_sec=1.0)
         else:
             self.get_logger().warn('빨강 없음', throttle_duration_sec=2.0)
         self.debug_pub.publish(self.bridge.cv2_to_imgmsg(frame, encoding='bgr8'))
