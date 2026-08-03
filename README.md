@@ -1014,4 +1014,79 @@ LLM이 어떤 모델이 좋은 모델인가 판단하는 기준이 있어야 한
 
 
 
+test_llm_planner
+llm을 테스트하는 시험지 생성
+
+테스트를 먼저 작성한 이유
+시험지가 곧 검증의 명세이다. 순서를 뒤집으면 모델이 뱉는 것에 맞춰 검증기를 짜게 된다.
+모델이 move_to를 끼워 넣으면 규칙은 모델의 버릇에 맞춘 규칙이지 계약이 아니다.
+
+pytest
+test_로 시작하는 파일과 함수를 자동 수집한다.
+assert 한 줄이 판정이다. 실패하면 좌욱밧을 알아서 찍어준다.
+
+
+LLM을 시험장에서 쫓아낸다.
+plan의 세번째 인자가 그자리이다. 테스트는 FakeLLM을 끼워넣는다.
+재는건 파서/검증/폴백이다. 
+
+llm_planner
+노드 != 도구
+llm_planner는 rclpy를 임포트하지 않는 순수 파이썬 모듈
+ROS 없이 pytest로 돌아가고, agent 노드는 이를 감싼다.
+
+
+LLM 모델 선정
+현재 VRAM에 맞게 6GB 이하로 설정
+llama3.1:8b : BFCL에서 3등 레이트(https://llm-stats.com/benchmarks/bfcl)
+exaone3.5:7.8b : exaone3.5중 가장 비슷한 크기의 모델
+
+두 개를 골라 내가 만든 시험지로 판단한다.
+
+ollama를 docker compose로 올려서 설치한다.
+
+plan() 함수
+프롬프트 조립
+1차 호출 -> 예외 발생 -> '' 반환
+검문소 4층 -> 1. JSON인가 -> 2. 개수 -> 스킬, 필수 인자 -> 4. 씬 대조 move_to 단속 -> 2차호출 -> 검문소 다시 -> 통과, 거부
+
+
+mock_skill_server, llm 연결
+
+계획 _build_plan() : LLM이 들어갈 장소라서 더욱 더 중요하다.
+액션 타입이 셋이라 goal, 객체만 들고 있으면 어디로 보낼 지 모른다. 누구에게, 무엇을 한 쌍으로 묶어 다닌다.
+
+on_command를 받아 llm_planner가 
+`[{skill, object_id, target_id, target_name}]` 이런 식으로 돌려준다.
+
+
+agent의 on_command의 변경
+llm_planner와 연결하여 plan을 만든다.
+
+지금 ollama와 agent를 http를 통해 연결한다.
+http + json 직렬화는 0.5~0.7ms 시간이 들어간다. 모델을 적재(153ms)하고 token을 생성하는 eval은 390ms 정도가 소요된다.
+ollama는 같은 컨테이너에 있어도 다른 프로세스로 돌아간다. 데몬이라서 파이썬에서 함수로 부를 방법이 없다. HTTP API 오직 하나 뿐이다. 
+
+지금 처럼 모델과 agent를 따로 두면 agent 만 다시 시작해도 모델은 VRAM에 남는다.
+
+```
+ros2 topic pub -1 /command std_msgs/String "{data: 'pick red_block'}"
+```
+
+```
+[INFO] [1785754775.304873269] [agent]: LLM 계획 채택 : [{'skill': 'pick', 'object_id': 'red_block'}]
+[INFO] [1785754775.306304096] [agent]: goal 수락됨
+[INFO] [1785754779.310121688] [agent]: 결과 : success=True, code=0
+[INFO] [1785754779.310352695] [agent]: 시퀀스 완료
+```
+
+/command
+agent.py : ROS 노드
+plan()
+llm_planner : 순수 모듈
+http
+ollama
+
+test_llm_planner.py : 검증 : llm planner의 검증
+eval_llm_planner.py : 모델
 

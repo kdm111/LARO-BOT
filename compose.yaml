@@ -15,9 +15,38 @@ services:
       - ./:/ws                         # bind-mount repo -> host edits are live inside
     working_dir: /ws
     environment:
-      ROS_DOMAIN_ID: "48"              
+      ROS_DOMAIN_ID: "48"
+      # llm_planner가 읽는 값. 컴포즈 네트워크의 DNS 이름이라 IP를 몰라도 된다.
+      # 이 한 줄 덕분에 파이썬 코드는 로컬/컨테이너 어디서 돌든 그대로다.
+      OLLAMA_HOST: "http://ollama:11434"
     networks:
       - singlearm
+
+  # ---- ollama: LLM 플래너가 쓰는 로컬 추론 서버 ----
+  # 호스트 네이티브 대신 컴포즈로 올린다 -> git clone + docker compose up 으로 재현된다.
+  # 호스트의 systemd ollama는 반드시 내려야 한다(포트 11434와 GPU를 두고 싸운다):
+  #   sudo systemctl disable --now ollama
+  ollama:
+    image: ollama/ollama:latest
+    container_name: singlearm-ollama
+    volumes:
+      # named volume. 호스트 경로에 의존하지 않고 소유권도 섞이지 않는다.
+      # 정리는 docker compose down -v.
+      - ollama_models:/root/.ollama
+    environment:
+      OLLAMA_HOST: "0.0.0.0"           # 컨테이너 밖(agent)에서 닿게. 기본값은 루프백뿐
+    ports:
+      - "11434:11434"                  # 호스트에서 ollama CLI(pull/list)를 계속 쓰려면 필요
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia           # docker info의 Runtimes에 nvidia가 있어야 함
+              count: all
+              capabilities: [gpu]
+    networks:
+      - singlearm
+
   sim:
     build:
       context: .
@@ -59,3 +88,7 @@ services:
 networks:
   singlearm:
     driver: bridge
+
+# 모델 가중치 저장소. 컨테이너를 지워도 남고, down -v로만 사라진다.
+volumes:
+  ollama_models:

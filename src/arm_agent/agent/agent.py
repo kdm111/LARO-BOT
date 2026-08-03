@@ -17,6 +17,8 @@ from arm_interfaces.action import MoveTo, Pick, Place
 
 from arm_interfaces.msg import ErrorCode
 
+from . import llm_planner
+
 MAX_ATTEMPTS = 3
 ABORT_CODES ={ErrorCode.UNREACHABLE, ErrorCode.INTERNAL_ERROR}
 
@@ -44,21 +46,36 @@ class Agent(Node): # Node 상속
             Place,
             'place'
         )
+        # 쓸 모델을 짧은 이름으로 준다.
+        # ros2 param set /agent model llama, exaone으로 바꿀 수 있다.
+        self.declare_parameter('model', 'llama')
 
     # 해당 액션 서버로 보내는 라우터
     # 계획을 세우고 실행 시작하는 함수
     def on_command(self, msg): 
-        parts = msg.data.split()
-        if not parts:
-            self.get_logger().warn(f'잘못된 명령 : {" ".join(parts)}')
+        command = msg.data.strip()
+        if not command:
+            self.get_logger().warn('빈 명령')
             return
-        plan = self._build_plan(parts)
+
+        # 사다리 1~2칸 LLM에게 묻는다. 검증을 통과한 계획만 돌아온다.
+        # 파라미터는 콜백 안에서 매번 읽는다.
+        model = self.get_parameter('model').value
+        steps = llm_planner.plan(command, call_llm=llm_planner.make_ollama_caller(model))
+        if steps is not None:
+            plan = self._steps_to_goals(steps)
+            self.get_logger().info(f'LLM 계획 채택 : {steps}')
+        else:
+            # 사다리 3칸 문자열 파싱
+            plan = self._build_plan(command.split())
+            self.get_logger().warn(f'LLM 계획 실패 > 문자열 파서 폴백 : {command}')
+
         if plan is None:
-            self.get_logger().warn(f'잘못된 명령 : {" ".join(parts)}')
-            return 
-        self._plan = plan # 실행할 스텝들
-        self._step = 0 # 지금 몇 번째
-        self._attempt = 1 # 현재 시도 횟수
+            self.get_logger().warn(f'잘못된 명령 : {command}')
+            return
+        self._plan = plan
+        self._step = 0
+        self._attempt = 1
         self._run_step()
 
     # 계획을 만드는 함수
@@ -88,6 +105,27 @@ class Agent(Node): # Node 상속
             place_goal.target_id = parts[2]
             return [(self._pick_client, pick_goal), (self._place_client, place_goal)]
         return None
+
+    # LLM 계획(dict 리스트)을 실행 고리가 쓰는 (client, goal) 리스트로 바꾼다.
+    # Skill 이름은 plan() 검증기가 이미 걸렀으므로 else 분기가 없다.
+    def _steps_to_goals(self, steps):
+        goals = []
+        for step in steps:
+            skill = step['skill']
+            if skill == 'move_to':
+                goal = MoveTo.Goal()
+                goal.target_name = step['target_name']
+                goals.append((self._move_to_client, goal))
+            elif skill == 'pick':
+                goal = Pick.Goal()
+                goal.object_id = step['object_id']
+                goals.append((self._pick_client, goal))
+            elif skill == 'place':
+                goal = Place.Goal()
+                goal.object_id = step['object_id']
+                goal.target_id = step['target_id']
+                goals.append((self._place_client, goal))
+        return goals
 
     # 스텝 하나 실행
     def _run_step(self):

@@ -1,0 +1,1901 @@
+﻿model,tag,category,command,scene,expected,k,ok_count,passed,sec_per_call,run_1,run_2,run_3,prompt
+exaone,base,N1,pick red_block,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,3,PASS,1.36,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick red_block"
+exaone,base,N1,pick the red_block,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,3,PASS,0.36,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick the red_block"
+exaone,base,N1,pick up red_block,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,3,PASS,0.36,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick up red_block"
+exaone,base,N1,grasp red_block,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,3,PASS,0.37,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: grasp red_block"
+exaone,base,N1,Please pick red_block.,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,3,PASS,0.37,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: Please pick red_block."
+exaone,base,N1,pick red_block,"red_block,blue_ring","[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,3,PASS,0.33,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block, blue_ring
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick red_block"
+exaone,base,N1,pick blue_ring,"red_block,blue_ring","[{""skill"": ""pick"", ""object_id"": ""blue_ring""}]",3,3,PASS,0.33,"[{""skill"": ""pick"", ""object_id"": ""blue_ring""}]","[{""skill"": ""pick"", ""object_id"": ""blue_ring""}]","[{""skill"": ""pick"", ""object_id"": ""blue_ring""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block, blue_ring
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick blue_ring"
+exaone,base,N1,pick red_block,None,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,3,PASS,0.37,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: (unknown)
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick red_block"
+exaone,base,N2,red_block 집어,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,3,PASS,0.37,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: red_block 집어"
+exaone,base,N2,red_block을 집어줘,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,3,PASS,0.37,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: red_block을 집어줘"
+exaone,base,N2,red_block 좀 들어올려줘,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,3,PASS,0.37,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: red_block 좀 들어올려줘"
+exaone,base,N2,red_block을 집어주세요,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,1,FAIL,1.05,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: red_block을 집어주세요"
+exaone,base,N2,빨간 블록을 집어줘,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,3,PASS,0.37,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: 빨간 블록을 집어줘"
+exaone,base,N2,빨간 블록 잡아,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,3,PASS,0.37,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: 빨간 블록 잡아"
+exaone,base,N2,파란 링을 집어줘,"red_block,blue_ring","[{""skill"": ""pick"", ""object_id"": ""blue_ring""}]",3,3,PASS,0.37,"[{""skill"": ""pick"", ""object_id"": ""blue_ring""}]","[{""skill"": ""pick"", ""object_id"": ""blue_ring""}]","[{""skill"": ""pick"", ""object_id"": ""blue_ring""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block, blue_ring
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: 파란 링을 집어줘"
+exaone,base,N2,red_block 집어,None,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,0,FAIL,0.25,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: (unknown)
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: red_block 집어"
+exaone,base,N3,place red_block bin,red_block,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,0,FAIL,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: place red_block bin"
+exaone,base,N3,place red_block in bin,red_block,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,0,FAIL,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: place red_block in bin"
+exaone,base,N3,put red_block into bin,red_block,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,0,FAIL,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: put red_block into bin"
+exaone,base,N3,place blue_ring bin,"red_block,blue_ring","[{""skill"": ""place"", ""object_id"": ""blue_ring"", ""target_id"": ""bin""}]",3,0,FAIL,0.69,"[{""skill"": ""pick"", ""object_id"": ""blue_ring""}, {""skill"": ""place"", ""object_id"": ""blue_ring"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""blue_ring""}, {""skill"": ""place"", ""object_id"": ""blue_ring"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""blue_ring""}, {""skill"": ""place"", ""object_id"": ""blue_ring"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block, blue_ring
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: place blue_ring bin"
+exaone,base,N3,red_block을 bin에 놓아줘,red_block,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,0,FAIL,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: red_block을 bin에 놓아줘"
+exaone,base,N3,red_block bin에 놔,red_block,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,0,FAIL,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: red_block bin에 놔"
+exaone,base,N3,red_block을 bin에 내려놔,red_block,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,0,FAIL,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: red_block을 bin에 내려놔"
+exaone,base,N3,place red_block bin,None,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,0,FAIL,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: (unknown)
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: place red_block bin"
+exaone,base,N4,move_to home,red_block,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",3,3,PASS,0.36,"[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move_to home"
+exaone,base,N4,move to home,red_block,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",3,3,PASS,0.37,"[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move to home"
+exaone,base,N4,go home,red_block,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",3,3,PASS,0.37,"[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: go home"
+exaone,base,N4,move_to init,red_block,"[{""skill"": ""move_to"", ""target_name"": ""init""}]",3,3,PASS,0.37,"[{""skill"": ""move_to"", ""target_name"": ""init""}]","[{""skill"": ""move_to"", ""target_name"": ""init""}]","[{""skill"": ""move_to"", ""target_name"": ""init""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move_to init"
+exaone,base,N4,home 자세로 가,red_block,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",3,3,PASS,0.37,"[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: home 자세로 가"
+exaone,base,N4,init 자세로 이동해줘,red_block,"[{""skill"": ""move_to"", ""target_name"": ""init""}]",3,3,PASS,0.37,"[{""skill"": ""move_to"", ""target_name"": ""init""}]","[{""skill"": ""move_to"", ""target_name"": ""init""}]","[{""skill"": ""move_to"", ""target_name"": ""init""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: init 자세로 이동해줘"
+exaone,base,N4,초기 자세로 돌아가,red_block,"[{""skill"": ""move_to"", ""target_name"": ""init""}]",3,0,FAIL,0.37,"[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: 초기 자세로 돌아가"
+exaone,base,N4,move_to home,None,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",3,3,PASS,0.33,"[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: (unknown)
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move_to home"
+exaone,base,N5,deliver red_block bin,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,3,PASS,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: deliver red_block bin"
+exaone,base,N5,deliver red_block to bin,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,3,PASS,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: deliver red_block to bin"
+exaone,base,N5,take red_block to bin,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,3,PASS,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: take red_block to bin"
+exaone,base,N5,move red_block into bin,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,3,PASS,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move red_block into bin"
+exaone,base,N5,pick red_block and place it in bin,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,3,PASS,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick red_block and place it in bin"
+exaone,base,N5,deliver blue_ring bin,"red_block,blue_ring","[{""skill"": ""pick"", ""object_id"": ""blue_ring""}, {""skill"": ""place"", ""object_id"": ""blue_ring"", ""target_id"": ""bin""}]",3,3,PASS,0.69,"[{""skill"": ""pick"", ""object_id"": ""blue_ring""}, {""skill"": ""place"", ""object_id"": ""blue_ring"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""blue_ring""}, {""skill"": ""place"", ""object_id"": ""blue_ring"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""blue_ring""}, {""skill"": ""place"", ""object_id"": ""blue_ring"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block, blue_ring
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: deliver blue_ring bin"
+exaone,base,N5,red_block을 bin으로 옮겨줘,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,3,PASS,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: red_block을 bin으로 옮겨줘"
+exaone,base,N5,red_block을 집어서 bin에 넣어줘,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,3,PASS,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: red_block을 집어서 bin에 넣어줘"
+exaone,base,N5,빨간 블록을 bin으로 옮겨,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,3,PASS,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: 빨간 블록을 bin으로 옮겨"
+exaone,base,N5,deliver red_block bin,None,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,2,FAIL,0.59,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: (unknown)
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: deliver red_block bin"
+exaone,base,N6,pick red_block now,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,3,PASS,0.37,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick red_block now"
+exaone,base,N6,pick red_block now,None,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",3,3,PASS,0.36,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: (unknown)
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick red_block now"
+exaone,base,N6,place red_block bin quickly,red_block,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,0,FAIL,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: place red_block bin quickly"
+exaone,base,N6,place red_block bin quickly,None,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,0,FAIL,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: (unknown)
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: place red_block bin quickly"
+exaone,base,N6,deliver red_block bin please,red_block,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,3,PASS,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: deliver red_block bin please"
+exaone,base,N6,deliver red_block bin please,None,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",3,3,PASS,0.69,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: (unknown)
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: deliver red_block bin please"
+exaone,base,N6,move_to home first,red_block,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",3,3,PASS,0.37,"[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move_to home first"
+exaone,base,N6,move_to home first,None,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",3,3,PASS,0.36,"[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: (unknown)
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move_to home first"
+exaone,base,R1,pick blue_ring,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick blue_ring"
+exaone,base,R1,pick green_block,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick green_block"
+exaone,base,R1,pick cup,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick cup"
+exaone,base,R1,pick yellow_block,"red_block,blue_ring",null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block, blue_ring
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick yellow_block"
+exaone,base,R1,pick the green one,"red_block,blue_ring",null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block, blue_ring
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick the green one"
+exaone,base,R1,파란 링을 집어줘,red_block,null,3,3,PASS,0.25,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: 파란 링을 집어줘"
+exaone,base,R1,컵을 집어줘,red_block,null,3,0,FAIL,0.37,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: 컵을 집어줘"
+exaone,base,R1,place blue_ring bin,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: place blue_ring bin"
+exaone,base,R1,place cup bin,red_block,null,3,3,PASS,0.78,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: place cup bin"
+exaone,base,R1,deliver blue_ring bin,red_block,null,3,0,FAIL,0.37,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: deliver blue_ring bin"
+exaone,base,R1,deliver green_block bin,"red_block,blue_ring",null,3,3,PASS,0.33,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block, blue_ring
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: deliver green_block bin"
+exaone,base,R1,pick red_block,[],null,3,3,PASS,0.45,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: (unknown)
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick red_block"
+exaone,base,R2,move_to observe,red_block,null,3,3,PASS,0.52,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move_to observe"
+exaone,base,R2,move_to observe,None,null,3,3,PASS,0.51,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: (unknown)
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move_to observe"
+exaone,base,R2,go to observe,red_block,null,3,1,FAIL,0.39,null,"[{""skill"": ""move_to"", ""target_name"": ""init""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: go to observe"
+exaone,base,R2,observe 자세로 가,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: observe 자세로 가"
+exaone,base,R2,move_to ready,red_block,null,3,3,PASS,0.50,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move_to ready"
+exaone,base,R2,move_to standby,red_block,null,3,3,PASS,0.25,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move_to standby"
+exaone,base,R2,move_to rest,red_block,null,3,3,PASS,0.50,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move_to rest"
+exaone,base,R2,move_to pick_pose,red_block,null,3,3,PASS,0.53,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move_to pick_pose"
+exaone,base,R2,move to the camera pose,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move to the camera pose"
+exaone,base,R2,대기 자세로 이동,red_block,null,3,3,PASS,0.25,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: 대기 자세로 이동"
+exaone,base,R3,push red_block,red_block,null,3,0,FAIL,0.70,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: push red_block"
+exaone,base,R3,rotate red_block,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: rotate red_block"
+exaone,base,R3,shake red_block,red_block,null,3,1,FAIL,0.36,null,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: shake red_block"
+exaone,base,R3,throw red_block,red_block,null,3,0,FAIL,0.38,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: throw red_block"
+exaone,base,R3,open the gripper,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: open the gripper"
+exaone,base,R3,close the gripper,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: close the gripper"
+exaone,base,R3,scan the table,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: scan the table"
+exaone,base,R3,wave your arm,red_block,null,3,3,PASS,0.25,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: wave your arm"
+exaone,base,R3,red_block을 밀어줘,red_block,null,3,0,FAIL,0.37,"[{""skill"": ""move_to"", ""target_name"": ""init""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""move_to"", ""target_name"": ""home""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: red_block을 밀어줘"
+exaone,base,R3,red_block을 돌려줘,red_block,null,3,0,FAIL,0.37,"[{""skill"": ""move_to"", ""target_name"": ""home""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: red_block을 돌려줘"
+exaone,base,R3,red_block을 던져,red_block,null,3,0,FAIL,0.37,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: red_block을 던져"
+exaone,base,R3,그리퍼 열어줘,red_block,null,3,3,PASS,0.25,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: 그리퍼 열어줘"
+exaone,base,R4,what is the weather today?,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: what is the weather today?"
+exaone,base,R4,tell me a joke,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: tell me a joke"
+exaone,base,R4,how many blocks do you see?,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: how many blocks do you see?"
+exaone,base,R4,explain what you can do,red_block,null,3,0,FAIL,0.70,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: explain what you can do"
+exaone,base,R4,stop,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: stop"
+exaone,base,R4,안녕하세요,red_block,null,3,0,FAIL,0.46,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: 안녕하세요"
+exaone,base,R4,너는 누구야?,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: 너는 누구야?"
+exaone,base,R4,지금 몇 시야?,red_block,null,3,3,PASS,0.24,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: 지금 몇 시야?"
+exaone,base,R5,pick red_block then move_to home,red_block,null,3,3,PASS,1.22,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick red_block then move_to home"
+exaone,base,R5,move_to home then pick red_block,red_block,null,3,3,PASS,1.22,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move_to home then pick red_block"
+exaone,base,R5,red_block 집고 home으로 가,red_block,null,3,3,PASS,1.22,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: red_block 집고 home으로 가"
+exaone,base,R5,"move_to home, pick red_block, move_to init",red_block,null,3,3,PASS,1.22,null,null,null,"You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: move_to home, pick red_block, move_to init"
+exaone,base,R5,pick red_block and place it in bin and move_to home,red_block,null,3,0,FAIL,0.70,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick red_block and place it in bin and move_to home"
+exaone,base,R5,place red_block,red_block,null,3,0,FAIL,0.70,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: place red_block"
+exaone,base,R5,place bin,red_block,null,3,0,FAIL,0.70,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: place bin"
+exaone,base,R5,pick,"red_block,blue_ring",null,3,0,FAIL,0.35,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","[{""skill"": ""pick"", ""object_id"": ""red_block""}]","You output ONLY a JSON array of steps. No prose, no explanation.
+
+Available skills (use EXACTLY these names and fields):
+  {""skill"": ""pick"",    ""object_id"": ""<object>""}
+  {""skill"": ""place"",   ""object_id"": ""<object>"", ""target_id"": ""<target>""}
+  {""skill"": ""move_to"", ""target_name"": ""<name>""}
+
+Valid target_name values: init, home
+Valid target_id values: bin
+Objects present in the scene: red_block, blue_ring
+
+Rules:
+- Output at most 2 steps.
+- Do NOT add steps that were not requested.
+  In particular, never insert move_to before pick or place.
+- move_to may only appear as a single step on its own.
+- Use only object_id values from the scene list above.
+
+Command: pick"
