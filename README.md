@@ -1241,3 +1241,15 @@ exaone3.5:7.8b를 기본 모델로 한다.
 정확도 1위(129/182)이면서 속도도 1위(0.36초)다. 두 축에서 동시에 이긴 유일한 모델이다.
 qwen과 gemma는 정상 카테고리에서 exaone보다 낫지만 거부가 무너지고, 무엇보다 8~13배 느리다.
 5장에서 로컬을 고른 이유가 지연이었는데 그 이유가 이 둘에서는 성립하지 않는다.
+
+
+**llm 명령이 해석되는 경로**
+agent : plan(command, scene_ids)
+llm planner : scene : 씬(현재 디텍션되는 물체들)을 문자열
+_call_ollama : http - > exaone으로 전달
+exaone(혹은 모델) : 빨간 블록 -> 'red_block', 파란 링 -> 'blue_ring'
+_validate_step : object_id가 씬 목록에 없으면 거부하고 문자열 파서로 폴백 하게 된다.
+
+모델이 실수하더라도 검증기사 씬과 대조해 거부하므로 OpenCV가 검출하지 않은 물체가 팔까지 내려가지 않는다.
+
+또한 target_id : 목표하는 물체를 놓는 곳. target_name(사전에 정의된 자세)은 별도의 화이트 리스트(validate_step, llm_planner)로 체크하여 모델의 실수를 방지한다.
