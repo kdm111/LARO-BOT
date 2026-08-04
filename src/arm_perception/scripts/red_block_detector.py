@@ -19,7 +19,7 @@ RED_LOWER_2 = np.array([170, 120, 70])
 RED_UPPER_2 = np.array([180, 255, 255])
 
 MIN_AREA = 100  # 이보다 작은 덩어리는 잡음으로 버린다.
-PLANE_Z = 0.0125 # 블록 중신의 높이. 블록 높이 0.025의 절반. 이 평면과 광선을 만나게 해서 거리를 정한다.
+PLANE_Z = 0.02 # 블록 중심의 높이. 블록 높이 0.04의 절반. 이 평면과 광선을 만나게 해서 거리를 정한다.
 WORLD_FRAME = 'world' # MoveIt 플래닝 프레임. skill_server가 알아듣는 좌표계
 OPTICAL_FRAME = 'camera_optical_frame' 
 
