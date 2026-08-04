@@ -6,7 +6,7 @@
 """
 
 from arm_interfaces.action import MoveTo, Pick, Place
-from arm_interfaces.msg import ErrorCode
+from arm_interfaces.msg import ErrorCode, SceneState
 
 import rclpy
 from rclpy.action import ActionClient
@@ -47,9 +47,22 @@ class Agent(Node):
             Place,
             'place'
         )
+        # 현재 agent가 보고 있을 씬
+        self._scene_ids = None
+        self.create_subscription(
+            SceneState,
+            '/scene_state',
+            self.on_scene_state,
+            10
+        )
         # 쓸 모델을 짧은 이름으로 준다.
         # ros2 param set /agent model llama, exaone으로 바꿀 수 있다.
         self.declare_parameter('model', 'exaone')
+
+    # 인지 노드가 보내고 있는 스냅샷
+    def on_scene_state(self, msg):
+        '''씬에 있는 물체 id 목록을 갱신한다'''
+        self._scene_ids = [obj.object_id for obj in msg.objects]
 
     # 해당 액션 서버로 보내는 라우터
     # 계획을 세우고 실행 시작하는 함수
@@ -63,7 +76,7 @@ class Agent(Node):
         # 사다리 1~2칸 LLM에게 묻는다. 검증을 통과한 계획만 돌아온다.
         # 파라미터는 콜백 안에서 매번 읽는다.
         model = self.get_parameter('model').value
-        steps = llm_planner.plan(command, call_llm=llm_planner.make_ollama_caller(model))
+        steps = llm_planner.plan(command, self._scene_ids, llm_planner.make_ollama_caller(model))
         if steps is not None:
             plan = self._steps_to_goals(steps)
             self.get_logger().info(f'LLM 계획 채택 : {steps}')
