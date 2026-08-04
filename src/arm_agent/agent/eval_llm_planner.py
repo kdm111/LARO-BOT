@@ -32,217 +32,8 @@ import os
 import sys
 import time
 
+from .eval_cases import CASES, CASE_SET
 from .llm_planner import _build_prompt, make_ollama_caller, plan
-
-# ---------------------------------------------------------------------------
-# 씬 상수 - scene_ids 인자로 들어간다
-# ---------------------------------------------------------------------------
-
-# M4·M5 기본 운용(§8.8-1 색-identity 보류 → one_block)
-SCENE_ONE = ['red_block']
-
-# 2물체. M5 데모 확장·M6 실물 2색 대비. 지금은 "지정한 것만 집는가"를 잰다.
-SCENE_TWO = ['red_block', 'blue_ring']
-
-# 검출 0개. 인지 노드는 빈 스냅샷도 발행한다(§7.5 4단계) - 그때 무엇을 해야 하나.
-SCENE_EMPTY = []
-
-# scene_ids=None 은 "씬 정보가 아직 없다"는 뜻이고 물체 대조를 건너뛴다.
-# 상수를 따로 두지 않고 None을 그대로 쓴다 - 빈 리스트와 헷갈리면 안 되는 값이라서.
-
-
-# ---------------------------------------------------------------------------
-# 기대 계획 헬퍼 - 100줄에 dict를 펼쳐 쓰면 오타를 눈으로 못 잡는다
-# ---------------------------------------------------------------------------
-
-def _pick(object_id):
-    """한 스텝짜리 pick 계획."""
-    return [{'skill': 'pick', 'object_id': object_id}]
-
-
-def _place(object_id, target_id):
-    """한 스텝짜리 place 계획."""
-    return [{'skill': 'place', 'object_id': object_id, 'target_id': target_id}]
-
-
-def _move(target_name):
-    """move_to 한 스텝."""
-    return [{'skill': 'move_to', 'target_name': target_name}]
-
-
-def _deliver(object_id, target_id):
-    """deliver는 계약에 없다. pick+place 2스텝으로 펼쳐져야 정답."""
-    return _pick(object_id) + _place(object_id, target_id)
-
-
-Case = collections.namedtuple('Case', 'category command scene expected')
-
-# ---------------------------------------------------------------------------
-# 케이스 100개
-#
-# 정상 50 / 거부 50. 거부가 절반인 이유는 BFCL의 '관련성 판별'과 같다 -
-# 할 수 있는 일을 하는 것만큼 할 수 없는 일을 참는 것이 능력이다.
-#
-# 카테고리:
-#   N1 pick 영어        N2 pick 한국어      N3 place        N4 move_to
-#   N5 deliver 펼치기   N6 scene 통제쌍
-#   R1 씬에 없는 물체   R2 SRDF에 없는 자세  R3 계약 밖 동작  R4 무관한 요청
-#   R5 과잉·부족
-# ---------------------------------------------------------------------------
-
-CASES = [
-    # ---- N1. pick 단일, 영어 (8) ----
-    # 기준선. 이게 흔들리면 나머지를 볼 의미가 없다.
-    Case('N1', 'pick red_block', SCENE_ONE, _pick('red_block')),
-    Case('N1', 'pick the red_block', SCENE_ONE, _pick('red_block')),
-    Case('N1', 'pick up red_block', SCENE_ONE, _pick('red_block')),
-    # grasp는 계약에 없는 단어다. 의도를 pick으로 옮길 수 있는가.
-    Case('N1', 'grasp red_block', SCENE_ONE, _pick('red_block')),
-    Case('N1', 'Please pick red_block.', SCENE_ONE, _pick('red_block')),
-    # 2물체 중 지정한 것만. 엉뚱한 것을 집으면 오답.
-    Case('N1', 'pick red_block', SCENE_TWO, _pick('red_block')),
-    Case('N1', 'pick blue_ring', SCENE_TWO, _pick('blue_ring')),
-    Case('N1', 'pick red_block', None, _pick('red_block')),
-
-    # ---- N2. pick 단일, 한국어 (8) ----
-    # §8.8-6에서 축으로 추가된 항목. qwen 계열이 한국어를 못 알아들었다는 실측이 출발점.
-    Case('N2', 'red_block 집어', SCENE_ONE, _pick('red_block')),
-    Case('N2', 'red_block을 집어줘', SCENE_ONE, _pick('red_block')),
-    Case('N2', 'red_block 좀 들어올려줘', SCENE_ONE, _pick('red_block')),
-    Case('N2', 'red_block을 집어주세요', SCENE_ONE, _pick('red_block')),
-    # 색 이름 -> id 매핑. 씬 목록에 red_block이 있으니 이어붙일 수 있어야 한다.
-    Case('N2', '빨간 블록을 집어줘', SCENE_ONE, _pick('red_block')),
-    Case('N2', '빨간 블록 잡아', SCENE_ONE, _pick('red_block')),
-    Case('N2', '파란 링을 집어줘', SCENE_TWO, _pick('blue_ring')),
-    Case('N2', 'red_block 집어', None, _pick('red_block')),
-
-    # ---- N3. place (8) ----
-    # place만 인자가 둘이다. 하나를 흘리면 필수 인자 검사에 걸린다.
-    Case('N3', 'place red_block bin', SCENE_ONE, _place('red_block', 'bin')),
-    Case('N3', 'place red_block in bin', SCENE_ONE, _place('red_block', 'bin')),
-    Case('N3', 'put red_block into bin', SCENE_ONE, _place('red_block', 'bin')),
-    Case('N3', 'place blue_ring bin', SCENE_TWO, _place('blue_ring', 'bin')),
-    Case('N3', 'red_block을 bin에 놓아줘', SCENE_ONE, _place('red_block', 'bin')),
-    Case('N3', 'red_block bin에 놔', SCENE_ONE, _place('red_block', 'bin')),
-    Case('N3', 'red_block을 bin에 내려놔', SCENE_ONE, _place('red_block', 'bin')),
-    Case('N3', 'place red_block bin', None, _place('red_block', 'bin')),
-
-    # ---- N4. move_to (8) ----
-    # 유일하게 object_id가 아니라 target_name을 쓰는 스킬.
-    Case('N4', 'move_to home', SCENE_ONE, _move('home')),
-    Case('N4', 'move to home', SCENE_ONE, _move('home')),
-    Case('N4', 'go home', SCENE_ONE, _move('home')),
-    Case('N4', 'move_to init', SCENE_ONE, _move('init')),
-    Case('N4', 'home 자세로 가', SCENE_ONE, _move('home')),
-    Case('N4', 'init 자세로 이동해줘', SCENE_ONE, _move('init')),
-    # "초기" -> init. 한국어 낱말을 SRDF 이름에 잇는 어려운 축.
-    Case('N4', '초기 자세로 돌아가', SCENE_ONE, _move('init')),
-    Case('N4', 'move_to home', None, _move('home')),
-
-    # ---- N5. deliver 펼치기 (10) ----
-    # deliver는 계약에 없고 LLM에게 가르치지도 않는다. 2스텝으로 펼쳐야 정답.
-    Case('N5', 'deliver red_block bin', SCENE_ONE, _deliver('red_block', 'bin')),
-    Case('N5', 'deliver red_block to bin', SCENE_ONE, _deliver('red_block', 'bin')),
-    Case('N5', 'take red_block to bin', SCENE_ONE, _deliver('red_block', 'bin')),
-    Case('N5', 'move red_block into bin', SCENE_ONE, _deliver('red_block', 'bin')),
-    Case('N5', 'pick red_block and place it in bin', SCENE_ONE,
-         _deliver('red_block', 'bin')),
-    Case('N5', 'deliver blue_ring bin', SCENE_TWO, _deliver('blue_ring', 'bin')),
-    Case('N5', 'red_block을 bin으로 옮겨줘', SCENE_ONE, _deliver('red_block', 'bin')),
-    Case('N5', 'red_block을 집어서 bin에 넣어줘', SCENE_ONE,
-         _deliver('red_block', 'bin')),
-    Case('N5', '빨간 블록을 bin으로 옮겨', SCENE_ONE, _deliver('red_block', 'bin')),
-    Case('N5', 'deliver red_block bin', None, _deliver('red_block', 'bin')),
-
-    # ---- N6. scene 통제쌍 (8) ----
-    # ★ 오늘의 발견 전용 칸. 명령을 글자 하나 안 바꾸고 scene_ids만 뒤집는다.
-    # llama가 scene_ids=['red_block']에서 move_to를 삽입하고 None에서는 안 했다(3/3).
-    # 다른 카테고리는 명령 자체가 달라 통제가 안 되므로 여기서만 순수 비교가 된다.
-    Case('N6', 'pick red_block now', SCENE_ONE, _pick('red_block')),
-    Case('N6', 'pick red_block now', None, _pick('red_block')),
-    Case('N6', 'place red_block bin quickly', SCENE_ONE, _place('red_block', 'bin')),
-    Case('N6', 'place red_block bin quickly', None, _place('red_block', 'bin')),
-    Case('N6', 'deliver red_block bin please', SCENE_ONE, _deliver('red_block', 'bin')),
-    Case('N6', 'deliver red_block bin please', None, _deliver('red_block', 'bin')),
-    Case('N6', 'move_to home first', SCENE_ONE, _move('home')),
-    Case('N6', 'move_to home first', None, _move('home')),
-
-    # ---- R1. 씬에 없는 물체 (12) ----
-    # 3강 "유효한 JSON != 올바른 JSON". 형식은 완벽한데 없는 걸 집으라는 계획.
-    # 잡는 것: 모델이 없는 물체를 있는 물체로 조용히 바꿔치기하는가.
-    # blue_ring은 SCENE_TWO에 실재하는 물체다. 이 씬에는 없다 -
-    # 시스템에 존재하는 이름이라 치환 유혹이 가장 강한 케이스.
-    Case('R1', 'pick blue_ring', SCENE_ONE, None),
-    Case('R1', 'pick green_block', SCENE_ONE, None),
-    Case('R1', 'pick cup', SCENE_ONE, None),
-    Case('R1', 'pick yellow_block', SCENE_TWO, None),
-    Case('R1', 'pick the green one', SCENE_TWO, None),
-    Case('R1', '파란 링을 집어줘', SCENE_ONE, None),
-    Case('R1', '컵을 집어줘', SCENE_ONE, None),
-    Case('R1', 'place blue_ring bin', SCENE_ONE, None),
-    Case('R1', 'place cup bin', SCENE_ONE, None),
-    Case('R1', 'deliver blue_ring bin', SCENE_ONE, None),
-    Case('R1', 'deliver green_block bin', SCENE_TWO, None),
-    # 빈 씬. 아무것도 못 집는다.
-    Case('R1', 'pick red_block', SCENE_EMPTY, None),
-
-    # ---- R2. SRDF에 없는 자세 (10) ----
-    # observe는 M5로 이관되어 아직 없다. §8.8-6 실측: 7B가 observe를 home으로 1회 치환.
-    # 치환이 바로 이 카테고리가 잡으려는 실패다.
-    Case('R2', 'move_to observe', SCENE_ONE, None),
-    Case('R2', 'move_to observe', None, None),
-    Case('R2', 'go to observe', SCENE_ONE, None),
-    Case('R2', 'observe 자세로 가', SCENE_ONE, None),
-    Case('R2', 'move_to ready', SCENE_ONE, None),
-    Case('R2', 'move_to standby', SCENE_ONE, None),
-    Case('R2', 'move_to rest', SCENE_ONE, None),
-    Case('R2', 'move_to pick_pose', SCENE_ONE, None),
-    Case('R2', 'move to the camera pose', SCENE_ONE, None),
-    Case('R2', '대기 자세로 이동', SCENE_ONE, None),
-
-    # ---- R3. 계약 밖 동작 (12) ----
-    # 1강 성질 ②(환각). 문맥상 자연스럽지만 스킬 3종에 없는 동작이다.
-    Case('R3', 'push red_block', SCENE_ONE, None),
-    Case('R3', 'rotate red_block', SCENE_ONE, None),
-    Case('R3', 'shake red_block', SCENE_ONE, None),
-    Case('R3', 'throw red_block', SCENE_ONE, None),
-    Case('R3', 'open the gripper', SCENE_ONE, None),
-    Case('R3', 'close the gripper', SCENE_ONE, None),
-    Case('R3', 'scan the table', SCENE_ONE, None),
-    Case('R3', 'wave your arm', SCENE_ONE, None),
-    Case('R3', 'red_block을 밀어줘', SCENE_ONE, None),
-    Case('R3', 'red_block을 돌려줘', SCENE_ONE, None),
-    Case('R3', 'red_block을 던져', SCENE_ONE, None),
-    Case('R3', '그리퍼 열어줘', SCENE_ONE, None),
-
-    # ---- R4. 무관한 요청 (8) ----
-    # 명령이 아니거나 로봇 일이 아닌 것. 아무 스킬이나 부르지 않고 참는가.
-    Case('R4', 'what is the weather today?', SCENE_ONE, None),
-    Case('R4', 'tell me a joke', SCENE_ONE, None),
-    Case('R4', 'how many blocks do you see?', SCENE_ONE, None),
-    Case('R4', 'explain what you can do', SCENE_ONE, None),
-    # stop은 로봇 명령처럼 들리지만 계약에 없다. 제일 헷갈릴 만한 케이스.
-    Case('R4', 'stop', SCENE_ONE, None),
-    Case('R4', '안녕하세요', SCENE_ONE, None),
-    Case('R4', '너는 누구야?', SCENE_ONE, None),
-    Case('R4', '지금 몇 시야?', SCENE_ONE, None),
-
-    # ---- R5. 과잉·부족 (8) ----
-    # ★ 4강에서 5번 중 3번 관측된 실제 실패(요청하지 않은 move_to 삽입)가 여기 있다.
-    # 앞의 넷은 사용자가 명시적으로 요구해도 거부해야 한다 -
-    # move_to는 어떤 유효한 계획에서도 단독으로만 오기 때문이다.
-    Case('R5', 'pick red_block then move_to home', SCENE_ONE, None),
-    Case('R5', 'move_to home then pick red_block', SCENE_ONE, None),
-    Case('R5', 'red_block 집고 home으로 가', SCENE_ONE, None),
-    # 3스텝. 스텝 상한(2)을 넘는다.
-    Case('R5', 'move_to home, pick red_block, move_to init', SCENE_ONE, None),
-    Case('R5', 'pick red_block and place it in bin and move_to home', SCENE_ONE, None),
-    # 필수 인자 부족. 모델이 빠진 인자를 지어내면 오답.
-    Case('R5', 'place red_block', SCENE_ONE, None),
-    Case('R5', 'place bin', SCENE_ONE, None),
-    # 2물체 씬이라 대상 특정 불가. 1물체였다면 추론이 정당해져 모호해진다.
-    Case('R5', 'pick', SCENE_TWO, None),
-]
 
 
 def _scene_label(scene):
@@ -298,7 +89,8 @@ def write_csv(path, model, tag, k, rows):
     utf-8-sig(BOM)로 쓴다 - 안 그러면 Excel이 한국어를 깨뜨린다.
     prompt 열은 길어서 맨 뒤에 둔다(앞에 두면 표를 눈으로 못 읽는다).
     """
-    header = (['model', 'tag', 'category', 'command', 'scene', 'expected',
+    header = (['model', 'tag', 'case_set', 'category', 'pair', 'lang',
+               'command', 'scene', 'expected',
                'k', 'ok_count', 'passed', 'sec_per_call']
               + [f'run_{i}' for i in range(1, k + 1)]
               + ['prompt'])
@@ -310,8 +102,8 @@ def write_csv(path, model, tag, k, rows):
             runs = [_cell(o) for o in outputs]
             runs += [''] * (k - len(runs))          # --fast로 중단된 칸은 빈칸
             writer.writerow(
-                [model, tag, case.category, case.command,
-                 _scene_label(case.scene), _cell(case.expected),
+                [model, tag, CASE_SET, case.category, case.pair, case.lang,
+                 case.command, _scene_label(case.scene), _cell(case.expected),
                  k, ok, 'PASS' if passed else 'FAIL', f'{elapsed:.2f}']
                 + runs
                 + [_build_prompt(case.command, case.scene)])

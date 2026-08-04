@@ -44,7 +44,9 @@ MODELS = {
 
 # 컨테이너 안에서는 호스트의 Ollama를 봐야 한다. 환경변수로 갈아끼운다.
 OLLAMA_HOST = os.environ.get('OLLAMA_HOST', 'http://localhost:11434')
-OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'llama3.1:8b')
+# 기본 모델 = exaone3.5:7.8b (2026-08-04 확정, 근거 eval_results/eval_*_v2.csv).
+# 자체 시험지 182케이스에서 정확도 1위(128/182)이면서 지연도 1위(0.47초)였다.
+OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'exaone3.5:7.8b')
 HTTP_TIMEOUT_SEC = 30.0
 
 # format 인자로 주면 Ollama가 이 스키마를 문법(GBNF)으로 컴파일해

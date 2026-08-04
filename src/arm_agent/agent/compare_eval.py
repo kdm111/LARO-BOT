@@ -103,6 +103,48 @@ def summary(data):
         print(f'  탈락선({FLOOR * 100:.0f}%) : {_pad(model, label)} {verdict}')
 
 
+def language_compare(data):
+    """언어 짝 비교. 같은 pair 안에서 en/ko만 다르므로 언어 효과만 남는다.
+
+    총점의 en/ko 차이는 케이스가 달라서 생긴 것일 수 있지만, 짝 안에서는
+    씬도 기댓값도 같다 -> 갈린 짝(en만 통과 / ko만 통과)이 곧 언어 효과다.
+    """
+    print(f'\n{"=" * 70}\n언어 짝 비교 (같은 짝 안에서 en vs ko)\n{"=" * 70}')
+    for model, cases in data.items():
+        rows = list(cases.values())
+        if 'lang' not in rows[0] or 'pair' not in rows[0]:
+            print(f'  {model}: lang/pair 열이 없다(구 케이스집합) - 건너뜀')
+            continue
+        by_pair = collections.defaultdict(dict)
+        for row in rows:
+            by_pair[row['pair']][row['lang']] = row['passed'] == 'PASS'
+
+        both = neither = en_only = ko_only = 0
+        for langs in by_pair.values():
+            if 'en' not in langs or 'ko' not in langs:
+                continue
+            if langs['en'] and langs['ko']:
+                both += 1
+            elif not langs['en'] and not langs['ko']:
+                neither += 1
+            elif langs['en']:
+                en_only += 1
+            else:
+                ko_only += 1
+
+        total = en_only + ko_only
+        if total < _MIN_DISCORDANT:
+            verdict = f'불일치 {total}쌍뿐 - 언어 효과 없음(또는 표본 부족)'
+        else:
+            chi2 = (abs(en_only - ko_only) - 1) ** 2 / total
+            level = next((s for t, s in _CHI2 if chi2 > t), None)
+            side = '영어 우세' if en_only > ko_only else '한국어 우세'
+            verdict = (f'{side} (chi2={chi2:.1f}, {level})' if level
+                       else f'차이 없음 (chi2={chi2:.1f}, 유의하지 않음)')
+        print(f'  {_pad(model, 14)} 둘 다 {both:3d}  둘 다 실패 {neither:3d}  '
+              f'en만 {en_only:3d}  ko만 {ko_only:3d}   -> {verdict}')
+
+
 def pair_compare(data, model_a, model_b, show_cases):
     """짝 비교. 갈린 케이스만 세고 McNemar로 판정한다."""
     cases_a, cases_b = data[model_a], data[model_b]
@@ -163,17 +205,22 @@ def main():
                         help='불일치 케이스를 하나씩 나열')
     args = parser.parse_args()
 
-    data, tags = {}, set()
+    data, tags, case_sets = {}, set(), set()
     for path in args.csv:
         model, tag, cases = load(path)
         data[model] = cases
         tags.add(tag)
+        case_sets.add(next(iter(cases.values())).get('case_set', '(구버전)'))
 
     if len(tags) > 1:
         print(f'⚠️  태그가 섞여 있다: {sorted(tags)} - '
               f'다른 프롬프트끼리 비교하는 중일 수 있다\n')
+    if len(case_sets) > 1:
+        print(f'⚠️  케이스집합이 섞여 있다: {sorted(case_sets)} - '
+              f'케이스가 달라 짝 비교가 성립하지 않는다\n')
 
     summary(data)
+    language_compare(data)
     for model_a, model_b in itertools.combinations(data, 2):
         pair_compare(data, model_a, model_b, args.show_cases)
     return 0

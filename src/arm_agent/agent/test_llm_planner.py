@@ -5,7 +5,7 @@ LLM은 가짜 함수로 주입해 차단한다 -> 모델도 네트워크도 없�
 그건 실호출 시험지의 몫이고, 채점 방식도 pass^k로 다르다.
 """
 
-from arm_agent.agent.llm_planner import plan
+from agent.llm_planner import plan
 
 # 이 씬에 실재하는 물체. plan()이 object_id를 대조할 목록이다.
 SCENE = ['red_block']
