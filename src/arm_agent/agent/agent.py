@@ -61,7 +61,7 @@ class Agent(Node):
 
     # 인지 노드가 보내고 있는 스냅샷
     def on_scene_state(self, msg):
-        '''씬에 있는 물체 id 목록을 갱신한다'''
+        """씬에 있는 물체 id 목록을 갱신한다."""
         self._scene_ids = [obj.object_id for obj in msg.objects]
 
     # 해당 액션 서버로 보내는 라우터
