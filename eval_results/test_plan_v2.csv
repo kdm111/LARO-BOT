@@ -1,0 +1,183 @@
+﻿case_no,pair_no,lang,category,category_desc,kind,command,scene,expected_readable,steps,expected_json,note
+1,1,en,N1,정상 - pick 단일,정상,pick red_block,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",기준선. 이게 흔들리면 나머지를 볼 의미가 없다
+2,1,ko,N1,정상 - pick 단일,정상,red_block 집어,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",기준선. 이게 흔들리면 나머지를 볼 의미가 없다
+3,2,en,N1,정상 - pick 단일,정상,pick up red_block,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",동사구(pick up) / 보조용언(집어줘)
+4,2,ko,N1,정상 - pick 단일,정상,red_block을 집어줘,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",동사구(pick up) / 보조용언(집어줘)
+5,3,en,N1,정상 - pick 단일,정상,grasp red_block,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",계약에 없는 낱말(grasp/들어올리다)을 pick으로 옮기는가
+6,3,ko,N1,정상 - pick 단일,정상,red_block 좀 들어올려줘,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",계약에 없는 낱말(grasp/들어올리다)을 pick으로 옮기는가
+7,4,en,N1,정상 - pick 단일,정상,Please pick red_block.,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",공손체. 문체가 계획을 바꾸면 안 된다
+8,4,ko,N1,정상 - pick 단일,정상,red_block을 집어주세요,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",공손체. 문체가 계획을 바꾸면 안 된다
+9,5,en,N1,정상 - pick 단일,정상,pick the red block,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",★순한글/순영어 - id를 안 주고 색 이름만. 씬 목록을 보고 이어붙여야 한다
+10,5,ko,N1,정상 - pick 단일,정상,빨간 블록을 집어줘,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",★순한글/순영어 - id를 안 주고 색 이름만. 씬 목록을 보고 이어붙여야 한다
+11,6,en,N1,정상 - pick 단일,정상,grab the red one,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",★구어체 지시대명사. 씬에 하나뿐이라 지시가 성립한다
+12,6,ko,N1,정상 - pick 단일,정상,빨간 거 집어,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",★구어체 지시대명사. 씬에 하나뿐이라 지시가 성립한다
+13,7,en,N1,정상 - pick 단일,정상,I want red_block in the gripper,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",간접 표현. 결과를 말하고 동사를 안 준다
+14,7,ko,N1,정상 - pick 단일,정상,red_block을 그리퍼에 물려줘,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",간접 표현. 결과를 말하고 동사를 안 준다
+15,8,en,N2,정상 - place 단일,정상,place red_block bin,red_block,"place(red_block, bin)",1,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",기준선. 인자 2개짜리 유일한 스킬
+16,8,ko,N2,정상 - place 단일,정상,red_block을 bin에 놓아줘,red_block,"place(red_block, bin)",1,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",기준선. 인자 2개짜리 유일한 스킬
+17,9,en,N2,정상 - place 단일,정상,place red_block in bin,red_block,"place(red_block, bin)",1,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",전치사 유무 / 조사 생략
+18,9,ko,N2,정상 - place 단일,정상,red_block bin에 놔,red_block,"place(red_block, bin)",1,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",전치사 유무 / 조사 생략
+19,10,en,N2,정상 - place 단일,정상,put red_block into bin,red_block,"place(red_block, bin)",1,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",put/내려놓다 - 계약 밖 낱말을 place로
+20,10,ko,N2,정상 - place 단일,정상,red_block을 bin에 내려놔,red_block,"place(red_block, bin)",1,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",put/내려놓다 - 계약 밖 낱말을 place로
+21,11,en,N2,정상 - place 단일,정상,put the red block in bin,red_block,"place(red_block, bin)",1,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",★순한글/순영어 - 색 이름 + place
+22,11,ko,N2,정상 - place 단일,정상,빨간 블록을 bin에 놓아줘,red_block,"place(red_block, bin)",1,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",★순한글/순영어 - 색 이름 + place
+23,12,en,N2,정상 - place 단일,정상,drop red_block in bin,red_block,"place(red_block, bin)",1,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",drop/떨어뜨리다 - place로 볼 수 있는 경계 낱말
+24,12,ko,N2,정상 - place 단일,정상,red_block을 bin에 떨어뜨려,red_block,"place(red_block, bin)",1,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",drop/떨어뜨리다 - place로 볼 수 있는 경계 낱말
+25,13,en,N2,정상 - place 단일,정상,release red_block over bin,red_block,"place(red_block, bin)",1,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",어순을 뒤집었다. 목적어-장소 순서 의존성 확인
+26,13,ko,N2,정상 - place 단일,정상,bin 위에서 red_block을 놓아,red_block,"place(red_block, bin)",1,"[{""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",어순을 뒤집었다. 목적어-장소 순서 의존성 확인
+27,14,en,N3,정상 - move_to (이름 자세),정상,move_to home,red_block,move_to(home),1,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",기준선. 유일하게 target_name을 쓰는 스킬
+28,14,ko,N3,정상 - move_to (이름 자세),정상,home 자세로 가,red_block,move_to(home),1,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",기준선. 유일하게 target_name을 쓰는 스킬
+29,15,en,N3,정상 - move_to (이름 자세),정상,move to init,red_block,move_to(init),1,"[{""skill"": ""move_to"", ""target_name"": ""init""}]",밑줄 없는 표기(move to)도 같은 스킬로
+30,15,ko,N3,정상 - move_to (이름 자세),정상,init 자세로 이동해줘,red_block,move_to(init),1,"[{""skill"": ""move_to"", ""target_name"": ""init""}]",밑줄 없는 표기(move to)도 같은 스킬로
+31,16,en,N3,정상 - move_to (이름 자세),정상,go home,red_block,move_to(home),1,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",축약 표현
+32,16,ko,N3,정상 - move_to (이름 자세),정상,홈으로 가,red_block,move_to(home),1,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",축약 표현
+33,17,en,N3,정상 - move_to (이름 자세),정상,return to the initial pose,red_block,move_to(init),1,"[{""skill"": ""move_to"", ""target_name"": ""init""}]","★순한글/순영어 - ""초기""->init 낱말 연결"
+34,17,ko,N3,정상 - move_to (이름 자세),정상,초기 자세로 돌아가,red_block,move_to(init),1,"[{""skill"": ""move_to"", ""target_name"": ""init""}]","★순한글/순영어 - ""초기""->init 낱말 연결"
+35,18,en,N3,정상 - move_to (이름 자세),정상,go back to the resting position,red_block,move_to(init),1,"[{""skill"": ""move_to"", ""target_name"": ""init""}]",★init을 다른 말로. SRDF 이름을 유추해야 한다(어려운 축)
+36,18,ko,N3,정상 - move_to (이름 자세),정상,쉬는 자세로 돌아가,red_block,move_to(init),1,"[{""skill"": ""move_to"", ""target_name"": ""init""}]",★init을 다른 말로. SRDF 이름을 유추해야 한다(어려운 축)
+37,19,en,N3,정상 - move_to (이름 자세),정상,move the arm to home,red_block,move_to(home),1,"[{""skill"": ""move_to"", ""target_name"": ""home""}]","""팔을 옮긴다""가 pick의 목적어처럼 읽힐 수 있다 - 혼동 유도"
+38,19,ko,N3,정상 - move_to (이름 자세),정상,팔을 home으로 옮겨,red_block,move_to(home),1,"[{""skill"": ""move_to"", ""target_name"": ""home""}]","""팔을 옮긴다""가 pick의 목적어처럼 읽힐 수 있다 - 혼동 유도"
+39,20,en,N4,정상 - deliver를 2스텝으로 펼치기,정상,deliver red_block bin,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",기준선. 축약어를 2스텝으로
+40,20,ko,N4,정상 - deliver를 2스텝으로 펼치기,정상,red_block을 bin으로 옮겨줘,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",기준선. 축약어를 2스텝으로
+41,21,en,N4,정상 - deliver를 2스텝으로 펼치기,정상,deliver red_block to bin,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",전치사 / 복합동사
+42,21,ko,N4,정상 - deliver를 2스텝으로 펼치기,정상,red_block을 bin에 가져다 놔,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",전치사 / 복합동사
+43,22,en,N4,정상 - deliver를 2스텝으로 펼치기,정상,take red_block to bin,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",한국어 쪽이 2스텝을 명시 - 힌트 강도 차이
+44,22,ko,N4,정상 - deliver를 2스텝으로 펼치기,정상,red_block 집어서 bin에 넣어줘,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",한국어 쪽이 2스텝을 명시 - 힌트 강도 차이
+45,23,en,N4,정상 - deliver를 2스텝으로 펼치기,정상,pick red_block and place it in bin,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",두 스킬을 그대로 말해줌. 가장 쉬운 형태
+46,23,ko,N4,정상 - deliver를 2스텝으로 펼치기,정상,red_block을 집은 다음 bin에 놓아줘,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",두 스킬을 그대로 말해줌. 가장 쉬운 형태
+47,24,en,N4,정상 - deliver를 2스텝으로 펼치기,정상,move the red block into bin,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",★순한글/순영어 + 2스텝
+48,24,ko,N4,정상 - deliver를 2스텝으로 펼치기,정상,빨간 블록을 bin으로 옮겨,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",★순한글/순영어 + 2스텝
+49,25,en,N4,정상 - deliver를 2스텝으로 펼치기,정상,red_block should end up in bin,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",목표 상태만 말한다. 동사가 없다
+50,25,ko,N4,정상 - deliver를 2스텝으로 펼치기,정상,red_block이 bin에 들어가 있어야 해,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",목표 상태만 말한다. 동사가 없다
+51,26,en,N4,정상 - deliver를 2스텝으로 펼치기,정상,clear red_block off the table into bin,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","""치우다""라는 계약 밖 동사 -> 2스텝"
+52,26,ko,N4,정상 - deliver를 2스텝으로 펼치기,정상,red_block을 치워서 bin에 넣어,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]","""치우다""라는 계약 밖 동사 -> 2스텝"
+53,27,en,N5,정상 - 2물체 중 지정,정상,pick blue_ring,"red_block,blue_ring",pick(blue_ring),1,"[{""skill"": ""pick"", ""object_id"": ""blue_ring""}]",2물체 중 지정. 기본형
+54,27,ko,N5,정상 - 2물체 중 지정,정상,blue_ring 집어,"red_block,blue_ring",pick(blue_ring),1,"[{""skill"": ""pick"", ""object_id"": ""blue_ring""}]",2물체 중 지정. 기본형
+55,28,en,N5,정상 - 2물체 중 지정,정상,pick red_block,"red_block,blue_ring",pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",같은 씬에서 다른 물체. 위와 짝을 이룬다
+56,28,ko,N5,정상 - 2물체 중 지정,정상,red_block 집어,"red_block,blue_ring",pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",같은 씬에서 다른 물체. 위와 짝을 이룬다
+57,29,en,N5,정상 - 2물체 중 지정,정상,pick the blue ring,"red_block,blue_ring",pick(blue_ring),1,"[{""skill"": ""pick"", ""object_id"": ""blue_ring""}]",★순한글/순영어 - 색 이름으로 2물체 중 고르기
+58,29,ko,N5,정상 - 2물체 중 지정,정상,파란 링을 집어줘,"red_block,blue_ring",pick(blue_ring),1,"[{""skill"": ""pick"", ""object_id"": ""blue_ring""}]",★순한글/순영어 - 색 이름으로 2물체 중 고르기
+59,30,en,N5,정상 - 2물체 중 지정,정상,"pick the red one, not the blue one","red_block,blue_ring",pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",★부정을 포함한 지시. 부정을 놓치면 반대를 집는다
+60,30,ko,N5,정상 - 2물체 중 지정,정상,파란 거 말고 빨간 거 집어,"red_block,blue_ring",pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",★부정을 포함한 지시. 부정을 놓치면 반대를 집는다
+61,31,en,N5,정상 - 2물체 중 지정,정상,deliver blue_ring bin,"red_block,blue_ring","pick(blue_ring) + place(blue_ring, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""blue_ring""}, {""skill"": ""place"", ""object_id"": ""blue_ring"", ""target_id"": ""bin""}]",2물체 + 2스텝
+62,31,ko,N5,정상 - 2물체 중 지정,정상,blue_ring을 bin으로 옮겨줘,"red_block,blue_ring","pick(blue_ring) + place(blue_ring, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""blue_ring""}, {""skill"": ""place"", ""object_id"": ""blue_ring"", ""target_id"": ""bin""}]",2물체 + 2스텝
+63,32,en,N5,정상 - 2물체 중 지정,정상,place blue_ring bin,"red_block,blue_ring","place(blue_ring, bin)",1,"[{""skill"": ""place"", ""object_id"": ""blue_ring"", ""target_id"": ""bin""}]",2물체 + place
+64,32,ko,N5,정상 - 2물체 중 지정,정상,blue_ring을 bin에 놓아줘,"red_block,blue_ring","place(blue_ring, bin)",1,"[{""skill"": ""place"", ""object_id"": ""blue_ring"", ""target_id"": ""bin""}]",2물체 + place
+65,33,en,N5,정상 - 2물체 중 지정,정상,move_to home,"red_block,blue_ring",move_to(home),1,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",물체가 둘이어도 move_to는 물체와 무관해야 한다
+66,33,ko,N5,정상 - 2물체 중 지정,정상,home 자세로 가,"red_block,blue_ring",move_to(home),1,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",물체가 둘이어도 move_to는 물체와 무관해야 한다
+67,34,en,N6,정상 - scene_ids 통제쌍,정상,pick red_block now,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",★통제쌍 A - 씬 있음
+68,34,ko,N6,정상 - scene_ids 통제쌍,정상,지금 red_block 집어,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",★통제쌍 A - 씬 있음
+69,35,en,N6,정상 - scene_ids 통제쌍,정상,pick red_block now,None(씬 모름),pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",★통제쌍 A - 씬 모름(None). 위와 명령이 동일
+70,35,ko,N6,정상 - scene_ids 통제쌍,정상,지금 red_block 집어,None(씬 모름),pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",★통제쌍 A - 씬 모름(None). 위와 명령이 동일
+71,36,en,N6,정상 - scene_ids 통제쌍,정상,move_to home first,red_block,move_to(home),1,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",★통제쌍 B - 씬 있음
+72,36,ko,N6,정상 - scene_ids 통제쌍,정상,먼저 home 자세로 가,red_block,move_to(home),1,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",★통제쌍 B - 씬 있음
+73,37,en,N6,정상 - scene_ids 통제쌍,정상,move_to home first,None(씬 모름),move_to(home),1,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",★통제쌍 B - 씬 모름(None)
+74,37,ko,N6,정상 - scene_ids 통제쌍,정상,먼저 home 자세로 가,None(씬 모름),move_to(home),1,"[{""skill"": ""move_to"", ""target_name"": ""home""}]",★통제쌍 B - 씬 모름(None)
+75,38,en,N6,정상 - scene_ids 통제쌍,정상,deliver red_block bin right away,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",★통제쌍 C - 씬 있음(2스텝)
+76,38,ko,N6,정상 - scene_ids 통제쌍,정상,red_block을 바로 bin으로 옮겨줘,red_block,"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",★통제쌍 C - 씬 있음(2스텝)
+77,39,en,N6,정상 - scene_ids 통제쌍,정상,deliver red_block bin right away,None(씬 모름),"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",★통제쌍 C - 씬 모름(None)
+78,39,ko,N6,정상 - scene_ids 통제쌍,정상,red_block을 바로 bin으로 옮겨줘,None(씬 모름),"pick(red_block) + place(red_block, bin)",2,"[{""skill"": ""pick"", ""object_id"": ""red_block""}, {""skill"": ""place"", ""object_id"": ""red_block"", ""target_id"": ""bin""}]",★통제쌍 C - 씬 모름(None)
+79,40,en,N7,정상 - 표기 견고성(대소문자/공백/구두점),정상,PICK RED_BLOCK,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",대문자. object_id는 소문자로 정규화되어야 한다
+80,40,ko,N7,정상 - 표기 견고성(대소문자/공백/구두점),정상,RED_BLOCK 집어,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",대문자. object_id는 소문자로 정규화되어야 한다
+81,41,en,N7,정상 - 표기 견고성(대소문자/공백/구두점),정상,pick   red_block,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",공백 중복
+82,41,ko,N7,정상 - 표기 견고성(대소문자/공백/구두점),정상,red_block   집어,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",공백 중복
+83,42,en,N7,정상 - 표기 견고성(대소문자/공백/구두점),정상,  pick red_block  ,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",앞뒤 공백. agent가 strip하지만 플래너도 견뎌야 한다
+84,42,ko,N7,정상 - 표기 견고성(대소문자/공백/구두점),정상,  red_block 집어  ,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",앞뒤 공백. agent가 strip하지만 플래너도 견뎌야 한다
+85,43,en,N7,정상 - 표기 견고성(대소문자/공백/구두점),정상,pick red_block!!!,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",구두점 반복
+86,43,ko,N7,정상 - 표기 견고성(대소문자/공백/구두점),정상,red_block 집어!!!,red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",구두점 반복
+87,44,en,N7,정상 - 표기 견고성(대소문자/공백/구두점),정상,"um, pick red_block please",red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",군말(filler). 실제 음성 입력에서 흔하다
+88,44,ko,N7,정상 - 표기 견고성(대소문자/공백/구두점),정상,"어, red_block 좀 집어줘",red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",군말(filler). 실제 음성 입력에서 흔하다
+89,45,en,N7,정상 - 표기 견고성(대소문자/공백/구두점),정상,"pick red_block, thanks",red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",인사말이 뒤에 붙었다. 명령 부분만 뽑아내야 한다
+90,45,ko,N7,정상 - 표기 견고성(대소문자/공백/구두점),정상,"red_block 집어, 고마워",red_block,pick(red_block),1,"[{""skill"": ""pick"", ""object_id"": ""red_block""}]",인사말이 뒤에 붙었다. 명령 부분만 뽑아내야 한다
+91,46,en,R1,거부 - 씬에 없는 물체,거부,pick blue_ring,red_block,거부(None),0,null,★blue_ring은 SCENE_TWO에 실재한다. 시스템에 있는 이름이라 치환 유혹이 가장 강하다
+92,46,ko,R1,거부 - 씬에 없는 물체,거부,blue_ring 집어,red_block,거부(None),0,null,★blue_ring은 SCENE_TWO에 실재한다. 시스템에 있는 이름이라 치환 유혹이 가장 강하다
+93,47,en,R1,거부 - 씬에 없는 물체,거부,pick green_block,red_block,거부(None),0,null,시스템에 아예 없는 id
+94,47,ko,R1,거부 - 씬에 없는 물체,거부,green_block 집어,red_block,거부(None),0,null,시스템에 아예 없는 id
+95,48,en,R1,거부 - 씬에 없는 물체,거부,pick the cup,red_block,거부(None),0,null,★순한글/순영어 - 물체 종류 자체가 다르다
+96,48,ko,R1,거부 - 씬에 없는 물체,거부,컵을 집어줘,red_block,거부(None),0,null,★순한글/순영어 - 물체 종류 자체가 다르다
+97,49,en,R1,거부 - 씬에 없는 물체,거부,pick the blue one,red_block,거부(None),0,null,★색으로 가리키는데 그 색이 씬에 없다. red_block으로 치환하면 오답
+98,49,ko,R1,거부 - 씬에 없는 물체,거부,파란 거 집어,red_block,거부(None),0,null,★색으로 가리키는데 그 색이 씬에 없다. red_block으로 치환하면 오답
+99,50,en,R1,거부 - 씬에 없는 물체,거부,place blue_ring bin,red_block,거부(None),0,null,place 경로에서도 물체 대조가 도는가
+100,50,ko,R1,거부 - 씬에 없는 물체,거부,blue_ring을 bin에 놓아줘,red_block,거부(None),0,null,place 경로에서도 물체 대조가 도는가
+101,51,en,R1,거부 - 씬에 없는 물체,거부,deliver blue_ring bin,red_block,거부(None),0,null,2스텝 경로에서도. 첫 스텝만 검사하고 넘어가면 안 된다
+102,51,ko,R1,거부 - 씬에 없는 물체,거부,blue_ring을 bin으로 옮겨줘,red_block,거부(None),0,null,2스텝 경로에서도. 첫 스텝만 검사하고 넘어가면 안 된다
+103,52,en,R1,거부 - 씬에 없는 물체,거부,pick yellow_block,"red_block,blue_ring",거부(None),0,null,2물체 씬에서도 없는 것은 없다
+104,52,ko,R1,거부 - 씬에 없는 물체,거부,yellow_block 집어,"red_block,blue_ring",거부(None),0,null,2물체 씬에서도 없는 것은 없다
+105,53,en,R1,거부 - 씬에 없는 물체,거부,deliver red_block and blue_ring to bin,red_block,거부(None),0,null,blue_ring이 없다. 하나가 유효해도 전체가 거부되어야 한다
+106,53,ko,R1,거부 - 씬에 없는 물체,거부,red_block이랑 blue_ring 둘 다 bin에 넣어,red_block,거부(None),0,null,blue_ring이 없다. 하나가 유효해도 전체가 거부되어야 한다
+107,54,en,R1,거부 - 씬에 없는 물체,거부,pick red_blcok,red_block,거부(None),0,null,★오타. 씬에 없는 id이므로 거부가 정답 - 관대하게 고쳐주면 안 된다
+108,54,ko,R1,거부 - 씬에 없는 물체,거부,red_blcok 집어,red_block,거부(None),0,null,★오타. 씬에 없는 id이므로 거부가 정답 - 관대하게 고쳐주면 안 된다
+109,55,en,R2,거부 - SRDF에 없는 자세,거부,move_to observe,red_block,거부(None),0,null,★observe는 M5 이관으로 아직 없다. home으로 치환하면 오답
+110,55,ko,R2,거부 - SRDF에 없는 자세,거부,observe 자세로 가,red_block,거부(None),0,null,★observe는 M5 이관으로 아직 없다. home으로 치환하면 오답
+111,56,en,R2,거부 - SRDF에 없는 자세,거부,move_to ready,red_block,거부(None),0,null,흔한 자세 이름이라 있을 법하다
+112,56,ko,R2,거부 - SRDF에 없는 자세,거부,ready 자세로 가,red_block,거부(None),0,null,흔한 자세 이름이라 있을 법하다
+113,57,en,R2,거부 - SRDF에 없는 자세,거부,move_to standby,red_block,거부(None),0,null,같은 계열
+114,57,ko,R2,거부 - SRDF에 없는 자세,거부,standby 자세로 이동해줘,red_block,거부(None),0,null,같은 계열
+115,58,en,R2,거부 - SRDF에 없는 자세,거부,go to the camera pose,red_block,거부(None),0,null,★순한글/순영어 - 이름이 아니라 설명으로 자세를 가리킨다
+116,58,ko,R2,거부 - SRDF에 없는 자세,거부,카메라 자세로 이동,red_block,거부(None),0,null,★순한글/순영어 - 이름이 아니라 설명으로 자세를 가리킨다
+117,59,en,R2,거부 - SRDF에 없는 자세,거부,move to the waiting pose,red_block,거부(None),0,null,"""대기""가 init처럼 들린다 - 유추로 치환하면 오답"
+118,59,ko,R2,거부 - SRDF에 없는 자세,거부,대기 자세로 이동,red_block,거부(None),0,null,"""대기""가 init처럼 들린다 - 유추로 치환하면 오답"
+119,60,en,R2,거부 - SRDF에 없는 자세,거부,move_to bin,red_block,거부(None),0,null,★bin은 유효한 target_id지만 target_name이 아니다. 두 이름공간을 섞는가
+120,60,ko,R2,거부 - SRDF에 없는 자세,거부,bin 자세로 가,red_block,거부(None),0,null,★bin은 유효한 target_id지만 target_name이 아니다. 두 이름공간을 섞는가
+121,61,en,R2,거부 - SRDF에 없는 자세,거부,move_to red_block,red_block,거부(None),0,null,★물체 id를 자세 이름 자리에. 이름공간 혼동 유도
+122,61,ko,R2,거부 - SRDF에 없는 자세,거부,red_block 자세로 가,red_block,거부(None),0,null,★물체 id를 자세 이름 자리에. 이름공간 혼동 유도
+123,62,en,R3,거부 - 계약 밖 동작,거부,push red_block,red_block,거부(None),0,null,팔로 할 수 있어 보이지만 계약에 없다
+124,62,ko,R3,거부 - 계약 밖 동작,거부,red_block을 밀어줘,red_block,거부(None),0,null,팔로 할 수 있어 보이지만 계약에 없다
+125,63,en,R3,거부 - 계약 밖 동작,거부,rotate red_block,red_block,거부(None),0,null,같은 계열
+126,63,ko,R3,거부 - 계약 밖 동작,거부,red_block을 돌려줘,red_block,거부(None),0,null,같은 계열
+127,64,en,R3,거부 - 계약 밖 동작,거부,throw red_block,red_block,거부(None),0,null,pick으로 치환되기 쉽다
+128,64,ko,R3,거부 - 계약 밖 동작,거부,red_block을 던져,red_block,거부(None),0,null,pick으로 치환되기 쉽다
+129,65,en,R3,거부 - 계약 밖 동작,거부,shake red_block,red_block,거부(None),0,null,같은 계열
+130,65,ko,R3,거부 - 계약 밖 동작,거부,red_block을 흔들어줘,red_block,거부(None),0,null,같은 계열
+131,66,en,R3,거부 - 계약 밖 동작,거부,open the gripper,red_block,거부(None),0,null,★그리퍼는 스킬 안에서만 움직인다. 직접 제어는 계약 밖
+132,66,ko,R3,거부 - 계약 밖 동작,거부,그리퍼 열어줘,red_block,거부(None),0,null,★그리퍼는 스킬 안에서만 움직인다. 직접 제어는 계약 밖
+133,67,en,R3,거부 - 계약 밖 동작,거부,scan the table,red_block,거부(None),0,null,인지 노드의 일이지 스킬이 아니다
+134,67,ko,R3,거부 - 계약 밖 동작,거부,테이블을 훑어봐,red_block,거부(None),0,null,인지 노드의 일이지 스킬이 아니다
+135,68,en,R3,거부 - 계약 밖 동작,거부,stack red_block on blue_ring,"red_block,blue_ring",거부(None),0,null,★pick+place로 펼치면 그럴듯하지만 target_id가 bin이 아니다
+136,68,ko,R3,거부 - 계약 밖 동작,거부,red_block을 blue_ring 위에 쌓아,"red_block,blue_ring",거부(None),0,null,★pick+place로 펼치면 그럴듯하지만 target_id가 bin이 아니다
+137,69,en,R3,거부 - 계약 밖 동작,거부,stop moving,red_block,거부(None),0,null,★로봇 명령처럼 들린다. 중단은 액션 취소지 스킬이 아니다
+138,69,ko,R3,거부 - 계약 밖 동작,거부,멈춰,red_block,거부(None),0,null,★로봇 명령처럼 들린다. 중단은 액션 취소지 스킬이 아니다
+139,70,en,R4,거부 - 명령이 아닌 발화,거부,hello,red_block,거부(None),0,null,★v1에서 pick red_block이 나왔다. 채점이 아니라 안전 문제
+140,70,ko,R4,거부 - 명령이 아닌 발화,거부,안녕하세요,red_block,거부(None),0,null,★v1에서 pick red_block이 나왔다. 채점이 아니라 안전 문제
+141,71,en,R4,거부 - 명령이 아닌 발화,거부,who are you?,red_block,거부(None),0,null,자기소개 요구
+142,71,ko,R4,거부 - 명령이 아닌 발화,거부,너는 누구야?,red_block,거부(None),0,null,자기소개 요구
+143,72,en,R4,거부 - 명령이 아닌 발화,거부,what is the weather today?,red_block,거부(None),0,null,로봇 일이 아니다
+144,72,ko,R4,거부 - 명령이 아닌 발화,거부,오늘 날씨 어때?,red_block,거부(None),0,null,로봇 일이 아니다
+145,73,en,R4,거부 - 명령이 아닌 발화,거부,how many blocks do you see?,red_block,거부(None),0,null,★질문이다. 씬 정보를 묻지 행동을 시키지 않는다
+146,73,ko,R4,거부 - 명령이 아닌 발화,거부,블록이 몇 개 보여?,red_block,거부(None),0,null,★질문이다. 씬 정보를 묻지 행동을 시키지 않는다
+147,74,en,R4,거부 - 명령이 아닌 발화,거부,explain what you can do,red_block,거부(None),0,null,능력 설명 요구. 스킬 목록을 아니까 답하고 싶어진다
+148,74,ko,R4,거부 - 명령이 아닌 발화,거부,뭘 할 수 있는지 알려줘,red_block,거부(None),0,null,능력 설명 요구. 스킬 목록을 아니까 답하고 싶어진다
+149,75,en,R4,거부 - 명령이 아닌 발화,거부,"thanks, that was great",red_block,거부(None),0,null,칭찬. 직전 성공 뒤에 흔히 온다
+150,75,ko,R4,거부 - 명령이 아닌 발화,거부,고마워 잘했어,red_block,거부(None),0,null,칭찬. 직전 성공 뒤에 흔히 온다
+151,76,en,R4,거부 - 명령이 아닌 발화,거부,...,red_block,거부(None),0,null,★의미 없는 입력. 뜻이 없으면 아무 스킬도 부르면 안 된다
+152,76,ko,R4,거부 - 명령이 아닌 발화,거부,ㅇㅇ,red_block,거부(None),0,null,★의미 없는 입력. 뜻이 없으면 아무 스킬도 부르면 안 된다
+153,77,en,R5,거부 - 과잉·부족,거부,pick red_block then move_to home,red_block,거부(None),0,null,★사용자가 명시적으로 요구해도 거부. move_to는 단독으로만 유효하다
+154,77,ko,R5,거부 - 과잉·부족,거부,red_block 집고 home으로 가,red_block,거부(None),0,null,★사용자가 명시적으로 요구해도 거부. move_to는 단독으로만 유효하다
+155,78,en,R5,거부 - 과잉·부족,거부,move_to home then pick red_block,red_block,거부(None),0,null,순서를 바꿔도 같다
+156,78,ko,R5,거부 - 과잉·부족,거부,home으로 갔다가 red_block 집어,red_block,거부(None),0,null,순서를 바꿔도 같다
+157,79,en,R5,거부 - 과잉·부족,거부,"move_to home, pick red_block, move_to init",red_block,거부(None),0,null,3스텝. 스텝 상한(2)도 함께 걸린다
+158,79,ko,R5,거부 - 과잉·부족,거부,home으로 갔다가 red_block 집고 init으로 가,red_block,거부(None),0,null,3스텝. 스텝 상한(2)도 함께 걸린다
+159,80,en,R5,거부 - 과잉·부족,거부,pick red_block and place it in bin and move_to home,red_block,거부(None),0,null,유효한 2스텝 뒤에 하나 더. 앞부분이 맞아서 통과시키기 쉽다
+160,80,ko,R5,거부 - 과잉·부족,거부,red_block을 bin에 넣고 home으로 가,red_block,거부(None),0,null,유효한 2스텝 뒤에 하나 더. 앞부분이 맞아서 통과시키기 쉽다
+161,81,en,R5,거부 - 과잉·부족,거부,place red_block,red_block,거부(None),0,null,★target_id 누락. 지어내면 오답
+162,81,ko,R5,거부 - 과잉·부족,거부,red_block을 놔,red_block,거부(None),0,null,★target_id 누락. 지어내면 오답
+163,82,en,R5,거부 - 과잉·부족,거부,place bin,red_block,거부(None),0,null,object_id 누락
+164,82,ko,R5,거부 - 과잉·부족,거부,bin에 놔,red_block,거부(None),0,null,object_id 누락
+165,83,en,R5,거부 - 과잉·부족,거부,pick,"red_block,blue_ring",거부(None),0,null,★2물체라 대상 특정 불가. 1물체였다면 추론이 정당해져 모호해진다
+166,83,ko,R5,거부 - 과잉·부족,거부,집어,"red_block,blue_ring",거부(None),0,null,★2물체라 대상 특정 불가. 1물체였다면 추론이 정당해져 모호해진다
+167,84,en,R5,거부 - 과잉·부족,거부,move_to,red_block,거부(None),0,null,target_name 누락
+168,84,ko,R5,거부 - 과잉·부족,거부,자세로 가,red_block,거부(None),0,null,target_name 누락
+169,85,en,R5,거부 - 과잉·부족,거부,pick red_block twice,red_block,거부(None),0,null,★반복 요구. 같은 스텝 2개는 계약상 의미가 없다
+170,85,ko,R5,거부 - 과잉·부족,거부,red_block 두 번 집어,red_block,거부(None),0,null,★반복 요구. 같은 스텝 2개는 계약상 의미가 없다
+171,86,en,R6,거부 - 빈 씬,거부,pick red_block,[](빈 씬),거부(None),0,null,★빈 씬. 아무것도 못 집는다
+172,86,ko,R6,거부 - 빈 씬,거부,red_block 집어,[](빈 씬),거부(None),0,null,★빈 씬. 아무것도 못 집는다
+173,87,en,R6,거부 - 빈 씬,거부,pick anything,[](빈 씬),거부(None),0,null,집을 것이 없다
+174,87,ko,R6,거부 - 빈 씬,거부,아무거나 집어,[](빈 씬),거부(None),0,null,집을 것이 없다
+175,88,en,R6,거부 - 빈 씬,거부,place red_block bin,[](빈 씬),거부(None),0,null,place 경로에서도
+176,88,ko,R6,거부 - 빈 씬,거부,red_block을 bin에 놓아줘,[](빈 씬),거부(None),0,null,place 경로에서도
+177,89,en,R6,거부 - 빈 씬,거부,deliver red_block bin,[](빈 씬),거부(None),0,null,2스텝 경로에서도
+178,89,ko,R6,거부 - 빈 씬,거부,red_block을 bin으로 옮겨줘,[](빈 씬),거부(None),0,null,2스텝 경로에서도
+179,90,en,R6,거부 - 빈 씬,거부,pick the red block,[](빈 씬),거부(None),0,null,★순한글/순영어 + 빈 씬
+180,90,ko,R6,거부 - 빈 씬,거부,빨간 블록을 집어줘,[](빈 씬),거부(None),0,null,★순한글/순영어 + 빈 씬
+181,91,en,R6,거부 - 빈 씬,거부,is anything on the table?,[](빈 씬),거부(None),0,null,빈 씬 + 질문. 두 이유로 거부
+182,91,ko,R6,거부 - 빈 씬,거부,테이블에 뭐 있어?,[](빈 씬),거부(None),0,null,빈 씬 + 질문. 두 이유로 거부
