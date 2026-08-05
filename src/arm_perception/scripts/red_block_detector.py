@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import math
+
 from arm_interfaces.msg import DetectedObject, SceneState
 import cv2
 from cv_bridge import CvBridge
@@ -87,6 +89,25 @@ class RedBlockDetector(Node):
         y = near_w.y + t * (far_w.y - near_w.y)
         return (x, y)
 
+    def long_axis_yaw(self, box, stamp):
+        """회전 사각형의 긴 축을 world 평면 위의 yaw(rad)로 되돌린다"""
+        # 코너 4개는 이웃끼리 붙어 있다. 이웃한 두 변 중 긴 쪽이 긴 축이다.
+        if np.linalg.norm(box[1] - box[0]) >= np.linalg.norm(box[2] - box[1]):
+            # box[0]보다 box[1]이 길다. 짧은 변 두 개의 중점을 이으면 긴 축이 된다.
+            a = (box[1] + box[2]) / 2.0
+            b = (box[3] + box[0]) / 2.0
+        else:
+            a = (box[0] + box[1]) / 2.0
+            b = (box[2] + box[3]) / 2.0
+        # 픽셀 각도를 변환하지 않는다. 점 두 개를 world로 되돌린 뒤 거기서 각도를 만든다.
+        wa = self.pixel_to_world(a[0], a[1], stamp)
+        wb = self.pixel_to_world(b[0], b[1], stamp)
+        if wa is None or wb is None:
+            return None
+        yaw = math.atan2(wa[1] - wb[1], wa[0] - wb[0])
+        # 사각형의 긴축은 180도 대칭이다. 프레임마다 부호가 뒤집히지 않게 한 구간으로 접는다.
+        return (yaw + math.pi / 2.0) % math.pi - math.pi / 2.0
+
     def on_image(self, msg):
         # ROS Image -> OpenCV 배열, bgr8을 명시해야 한다.
         frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
@@ -117,8 +138,11 @@ class RedBlockDetector(Node):
                 continue
             u = int(m['m10'] / m['m00'])
             v = int(m['m01'] / m['m00'])
-            centers.append((u, v, area))
+            # 최소 외접 회전 사각형. 블록이 어느 쪽을 향하는 지는 여기서만 나온다.
+            box = cv2.boxPoints(cv2.minAreaRect(c))
+            centers.append((u, v, area, box))
             cv2.circle(frame, (u, v), 5, (0, 255, 0), -1)  # 디버그 영상에 초록색 점 표시
+            cv2.drawContours(frame, [box.astype(np.int32)], 0, (255, 0, 0), 2)
 
         # 면적 큰 순 = 크고 확실한 것 순
         centers.sort(key=lambda c: c[2], reverse=True)
@@ -129,11 +153,15 @@ class RedBlockDetector(Node):
         scene.header.frame_id = WORLD_FRAME
 
         parts = []
-        for i, (u, v, area) in enumerate(centers):
+        for i, (u, v, area, box) in enumerate(centers):
             p = self.pixel_to_world(u, v, msg.header.stamp)
             if p is None:
                 parts.append(f'({u}, {v}) -> 변환 불가')
                 continue
+            yaw = self.long_axis_yaw(box, msg.header.stamp)
+            if yaw is None:
+                self.get_logger().warn('yaw 복원 실패 회전 없음으로 발행', throttle_duration_sec=2.0)
+                yaw = 0.0
             obj = DetectedObject()
             # 색만으로는 구별이 되지 않으므로 여러 개면 면적 내림차순 번호를 부여한다.
             obj.object_id = 'red_block' if len(centers) == 1 else f'red_block_{i+1}'
@@ -142,11 +170,12 @@ class RedBlockDetector(Node):
             obj.pose.pose.position.x = p[0]
             obj.pose.pose.position.y = p[1]
             obj.pose.pose.position.z = PLANE_Z
-            # 무게 중심 하나만으로는 자세가 나오지 않는다. 
-            obj.pose.pose.orientation.w = 1.0
+            # 테이블 평면 위의 회전이라 z축 회전 쿼터니언 하나로 계산한다.
+            obj.pose.pose.orientation.z = math.sin(yaw / 2.0)
+            obj.pose.pose.orientation.w = math.cos(yaw / 2.0)
             obj.last_seen = msg.header.stamp
             scene.objects.append(obj)
-            parts.append(f'{obj.object_id} ({p[0]:.3f}, {p[1]:.3f})')
+            parts.append(f'{obj.object_id} ({p[0]:.3f}, {p[1]:.3f}) yaw {math.degrees(yaw):.1f}도')
             
         self.scene_pub.publish(scene)
         
