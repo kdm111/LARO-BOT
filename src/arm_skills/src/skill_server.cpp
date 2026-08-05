@@ -55,7 +55,7 @@ public:
       std::bind(&SkillServer::handle_cancel_place, this, std::placeholders::_1),
       std::bind(&SkillServer::handle_accepted_place, this, std::placeholders::_1));
       // 인지 노드가 발행하는 스냅샷 구독
-      scene_sub_ = create_subscription<arm_interfaces::msg::SceneState>(
+    scene_sub_ = create_subscription<arm_interfaces::msg::SceneState>(
         "/scene_state", 10, std::bind(&SkillServer::on_scene_state, this, std::placeholders::_1));
   }
   void init_move_group()
@@ -138,7 +138,8 @@ private:
     latest_scene_ = *msg;
   }
   // object_id를 통해 최신 스냅샷을 뒤져 위치를 꺼냄
-  bool lookup_object(const std::string & object_id, double & x, double & y, double & z)
+  bool lookup_object(
+    const std::string & object_id, double & x, double & y, double & z, double & yaw)
   {
     std::lock_guard<std::mutex> lock(scene_mutex_);
     for (const auto & obj : latest_scene_.objects) {
@@ -146,6 +147,9 @@ private:
         x = obj.pose.pose.position.x;
         y = obj.pose.pose.position.y;
         z = obj.pose.pose.position.z;
+        // 인지는 테이블 평면 위 z축 회전만
+        const auto & q = obj.pose.pose.orientation;
+        yaw = 2.0 * std::atan2(q.z, q.w);
         return true;
       }
     }
@@ -166,12 +170,14 @@ private:
   }
   // 목표(base 좌표, phi)로 이동. elbow up/down 둘 다 plan()으로 시도해 되는 가지를 execute
   // 성공하면 true, (approach, grasp가 이 함수를 높이만 바꿔서 두 번 부를 예정)
-  bool move_to_pose(double x, double y, double z, double phi, const char *label)
+  bool move_to_pose(
+    double x, double y, double z, double phi, const char *label,
+    std::optional<double> grasp_yaw = std::nullopt)
   {
     bool approached = false;
 
-    for (bool elbow_up : {true, false}) {
-      const auto geometry = arm_kinematics::solve_ik(x, y, z, phi, elbow_up);
+    for (bool elbow_up : {false, true}) {
+      const auto geometry = arm_kinematics::solve_ik(x, y, z, phi, elbow_up, grasp_yaw);
       if (!geometry.reachable) {
         continue;   // 이 가지는 기하학적으로 도달 불가
       }
@@ -241,8 +247,8 @@ private:
     const auto goal = goal_handle->get_goal();
     RCLCPP_INFO(get_logger(), "pick 실행 : object=%s", goal->object_id.c_str());
 
-    double obj_x, obj_y, obj_z;
-    if (!lookup_object(goal->object_id, obj_x, obj_y, obj_z)) {
+    double obj_x, obj_y, obj_z, obj_yaw;
+    if (!lookup_object(goal->object_id, obj_x, obj_y, obj_z, obj_yaw)) {
       RCLCPP_WARN(get_logger(), "/scene_state에 %s 없음", goal->object_id.c_str());
       auto result = std::make_shared<Pick::Result>();
       result->success = false;
@@ -251,22 +257,28 @@ private:
         arm_interfaces::msg::Stage::PLAN,
         "/scene_state에서 " + goal->object_id + " 못 찾음", goal->attempt);
       goal_handle->abort(result);
-      return ;
+      return;
     }
     const double approach_phi = -M_PI / 2;   // 그리퍼가 아래를 향하는 접근각
     const double approach_dz = 0.06;    // 물체 위 6cm 에서 접근
 
+    // 인지가 준 물체의 긴 축을 기준으로 짧은 축의 각을 찾아야 하므로 90도 회전한다.
+    // 어떻게 잡을 것인가의 주체는 skill에 있다.
+    // remainder(x, PI)는 [-PI/2, PI/2]로 접는다. 그리퍼는 180도 대칭이라 같은 파지가 된다.
+    // TCP는 손가락의 끝이고 손가락은 거기서 위로 뻗는다.. 물체 중심에 TCP를 두면 윗절반만 물려서 미끄러진다.
+    const double grasp_depth = 0.01;
+    const double grasp_yaw = std::remainder(obj_yaw + M_PI_2, M_PI);
     move_gripper("open");
-    if (!move_to_pose(obj_x, obj_y, obj_z + approach_dz, approach_phi, "approach")) {
+    if (!move_to_pose(obj_x, obj_y, obj_z + approach_dz, approach_phi, "approach", grasp_yaw)) {
       goal_handle->abort(make_pick_result(false, goal->attempt));
       return;
     }
-    if (!move_to_pose(obj_x, obj_y, obj_z, approach_phi, "grasp")) {
+    if (!move_to_pose(obj_x, obj_y, obj_z - grasp_depth, approach_phi, "grasp", grasp_yaw)) {
       goal_handle->abort(make_pick_result(false, goal->attempt));
       return;
     }
     move_gripper("close");
-    if (!move_to_pose(obj_x, obj_y, obj_z + approach_dz, approach_phi, "lift")) {
+    if (!move_to_pose(obj_x, obj_y, obj_z + approach_dz, approach_phi, "lift", grasp_yaw)) {
       goal_handle->abort(make_pick_result(false, goal->attempt));
       return;
     }

@@ -98,7 +98,9 @@ IkSolution solve_ik(
   // 이제 그리퍼 닫힘 축은 wolrd의 grasp_yaw에 맞춘다.
   // theta5는 world 기준이 아니라 theta1만큼 돌아간 팔 기준이라 그만큼 빼준다.
   // 이 뺄셈이 빠진 것이 파지 실패 원인이다.
-  sol.theta5 = grasp_yaw.has_value() ? (grasp_yaw.value() - sol.theta1) : 0.0;
+  sol.theta5 = grasp_yaw.has_value() ?
+    std::remainder(grasp_yaw.value() - sol.theta1 - M_PI_2, M_PI) :
+    0.0;
   sol.reachable = true;
   return sol;
 }

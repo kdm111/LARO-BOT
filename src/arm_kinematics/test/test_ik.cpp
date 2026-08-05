@@ -181,13 +181,17 @@ TEST(SolveIk, GraspYawOmittedKeepsTheta5Zero)
 }
 TEST(SolveIk, GraspYawSubtractsBaseRotation)
 {
-  // grasp_yaw를 넘기면 theta5가 (grasp_yaw - theta1)이 되는지
+  // grasp_yaw를 넘기면 그리퍼 닫힘 축이 실제로 그 방향을 향하는지
   // theta5를 world 각도로 착각해 theta1을 안 뺀 것이 파지 실패의 원인
   const double grasp_yaw = 0.5;
   auto sol = arm_kinematics::solve_ik(0.20, 0.06, 0.02, -M_PI / 2, true, grasp_yaw);
   ASSERT_TRUE(sol.reachable);
   EXPECT_GT(std::abs(sol.theta1), 1e-3);  // theta1이 0이면 이 테스트는 무의미
-  EXPECT_NEAR(sol.theta5, grasp_yaw - sol.theta1, 1e-9);
+
+  // 닫힌 축 방위각 = theta1 + 90deg + sol.theta5
+  const double closing = sol.theta1 + M_PI_2 + sol.theta5;
+  // 그리퍼는 180도 대칭이라 closing과 grasp_yaw가 pi의 배수만큼 달라도 같은 파지이다.
+  EXPECT_NEAR(std::remainder(closing - grasp_yaw, M_PI), 0.0, 1e-9);
 }
 TEST(ToMotorAngles, StraightToMotor)
 {
