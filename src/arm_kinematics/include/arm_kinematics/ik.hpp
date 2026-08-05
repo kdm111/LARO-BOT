@@ -34,8 +34,10 @@ struct IkSolution
   double theta5;
   bool reachable;
 };
-// IK의 해를 다 알고있음.
-IkSolution solve_ik(double x, double y, double z, double phi, bool elbow_up = true);
+// grasp_yaw = 그리퍼 닫힘 축을 맞출 world 기준 방향(rad), 넘기지 않으면 theta5는 0으로 초기값을으로 유지
+IkSolution solve_ik(
+  double x, double y, double z, double phi, bool elbow_up = true,
+  std::optional<double> grasp_yaw = std::nullopt);
 // gazebo로 해당 위치로 팔 이동
 IkSolution to_motor_angles(const IkSolution & geometry);
 // 손목점이 실제도 도달 해야 하는 점. 접근 방향에서 그리퍼 크기만큼 물러난 곳

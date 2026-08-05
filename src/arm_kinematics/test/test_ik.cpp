@@ -172,6 +172,23 @@ TEST(SolveIK, ElbowBranchesDiffer)
   EXPECT_GT(up.theta3, 0.0);   // 위 해
   EXPECT_LT(down.theta3, 0.0);   // 아래 해
 }
+TEST(SolveIk, GraspYawOmittedKeepsTheta5Zero)
+{
+  // grasp_yaw를 안 넘기면 theta5가 예전처럼 0으로 남는지
+  auto sol = arm_kinematics::solve_ik(0.20, 0.06, 0.02, -M_PI / 2);
+  ASSERT_TRUE(sol.reachable);
+  EXPECT_NEAR(sol.theta5, 0.0, 1e-9);
+}
+TEST(SolveIk, GraspYawSubtractsBaseRotation)
+{
+  // grasp_yaw를 넘기면 theta5가 (grasp_yaw - theta1)이 되는지
+  // theta5를 world 각도로 착각해 theta1을 안 뺀 것이 파지 실패의 원인
+  const double grasp_yaw = 0.5;
+  auto sol = arm_kinematics::solve_ik(0.20, 0.06, 0.02, -M_PI / 2, true, grasp_yaw);
+  ASSERT_TRUE(sol.reachable);
+  EXPECT_GT(std::abs(sol.theta1), 1e-3);  // theta1이 0이면 이 테스트는 무의미
+  EXPECT_NEAR(sol.theta5, grasp_yaw - sol.theta1, 1e-9);
+}
 TEST(ToMotorAngles, StraightToMotor)
 {
   arm_kinematics::IkSolution geometry{};

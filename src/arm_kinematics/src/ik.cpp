@@ -63,7 +63,9 @@ Point2D get_forward_kinematics(
   double tip_z = l1 * std::sin(a2) + l2 * std::sin(a3) + l3 * std::sin(a4);
   return {tip_r, tip_z};
 }
-IkSolution solve_ik(double x, double y, double z, double phi, bool elbow_up)
+IkSolution solve_ik(
+  double x, double y, double z, double phi, bool elbow_up,
+  std::optional<double> grasp_yaw)
 {
   IkSolution sol{};   // 전부 0/false로 초기화
 
@@ -93,7 +95,10 @@ IkSolution solve_ik(double x, double y, double z, double phi, bool elbow_up)
   sol.theta2 = t2.value();
   sol.theta3 = t3.value();
   sol.theta4 = get_wrist_angle(phi, sol.theta2, sol.theta3);
-  sol.theta5 = 0.0;
+  // 이제 그리퍼 닫힘 축은 wolrd의 grasp_yaw에 맞춘다.
+  // theta5는 world 기준이 아니라 theta1만큼 돌아간 팔 기준이라 그만큼 빼준다.
+  // 이 뺄셈이 빠진 것이 파지 실패 원인이다.
+  sol.theta5 = grasp_yaw.has_value() ? (grasp_yaw.value() - sol.theta1) : 0.0;
   sol.reachable = true;
   return sol;
 }
