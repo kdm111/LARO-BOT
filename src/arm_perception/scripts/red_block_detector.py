@@ -147,13 +147,24 @@ class RedBlockDetector(Node):
         # 면적 큰 순 = 크고 확실한 것 순
         centers.sort(key=lambda c: c[2], reverse=True)
 
+        # 한 씬에 한 물체에 한 색으로 씬 가정 같은 색 blob이 여러개여도 가장 크고 정확한 것 하나만 발행한다.
+        # 팔에 가려져서 여러 개의 물체가 나타나는 등의 이슈가 있었다.
+        # 이름이 바뀌면 복구할 대상을 잃어버린다.
+        # 복구 후 재시도할 물건은 항상 같아야 한다.
+         
+        if len(centers) > 1:
+            self.get_logger().warn(
+                f'같은 색 물체 {len(centers)}개 - 가장 큰 것만 발행'
+                throttle_duration_sec=2.0
+            )
+        del centers[1:]  # 가장 큰 걸 제외하고 나머지 제거
         # scene 생성
         scene = SceneState()
         scene.header.stamp = msg.header.stamp
         scene.header.frame_id = WORLD_FRAME
 
         parts = []
-        for i, (u, v, area, box) in enumerate(centers):
+        for i, (u, v, area, box) in centers:
             p = self.pixel_to_world(u, v, msg.header.stamp)
             if p is None:
                 parts.append(f'({u}, {v}) -> 변환 불가')
@@ -163,8 +174,8 @@ class RedBlockDetector(Node):
                 self.get_logger().warn('yaw 복원 실패 회전 없음으로 발행', throttle_duration_sec=2.0)
                 yaw = 0.0
             obj = DetectedObject()
-            # 색만으로는 구별이 되지 않으므로 여러 개면 면적 내림차순 번호를 부여한다.
-            obj.object_id = 'red_block' if len(centers) == 1 else f'red_block_{i+1}'
+            # 색을 곧 identity로 하겠다.
+            obj.object_id = 'red_block'
             obj.pose.header.stamp = msg.header.stamp
             obj.pose.header.frame_id = WORLD_FRAME
             obj.pose.pose.position.x = p[0]
