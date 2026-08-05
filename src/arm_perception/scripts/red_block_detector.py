@@ -154,7 +154,7 @@ class RedBlockDetector(Node):
          
         if len(centers) > 1:
             self.get_logger().warn(
-                f'같은 색 물체 {len(centers)}개 - 가장 큰 것만 발행'
+                f'같은 색 물체 {len(centers)}개 - 가장 큰 것만 발행',
                 throttle_duration_sec=2.0
             )
         del centers[1:]  # 가장 큰 걸 제외하고 나머지 제거
@@ -164,7 +164,7 @@ class RedBlockDetector(Node):
         scene.header.frame_id = WORLD_FRAME
 
         parts = []
-        for i, (u, v, area, box) in centers:
+        for (u, v, area, box) in centers:
             p = self.pixel_to_world(u, v, msg.header.stamp)
             if p is None:
                 parts.append(f'({u}, {v}) -> 변환 불가')
