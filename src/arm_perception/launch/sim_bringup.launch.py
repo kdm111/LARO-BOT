@@ -17,7 +17,8 @@ def generate_launch_description():
     declare_scene = DeclareLaunchArgument(
         'scene',
         default_value='one_block',
-        description='worlds/scene_<scene>.sdf 를 world로 로드 (one_block/two_blocks/unreachable)'
+        description='worlds/scene_<scene>.sdf 를 world로 로드 '
+                    '(one_block/two_blocks/two_colors/unreachable/grasp_test)'
     )
     declare_use_rviz = DeclareLaunchArgument(
         'use_rviz',
