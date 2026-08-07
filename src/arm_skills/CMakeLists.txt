@@ -12,6 +12,7 @@ find_package(rclcpp_action REQUIRED)
 find_package(arm_interfaces REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(arm_kinematics REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 add_executable(skill_server src/skill_server.cpp)
 target_include_directories(skill_server PUBLIC
@@ -24,6 +25,7 @@ ament_target_dependencies(
   "rclcpp_action"
   "arm_interfaces"
   "moveit_ros_planning_interface"
+  "sensor_msgs"
   "arm_kinematics"
 )
 

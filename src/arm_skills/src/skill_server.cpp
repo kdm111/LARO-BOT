@@ -6,10 +6,12 @@
 #include <mutex>
 #include <optional>
 #include <algorithm>
+#include <chrono>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <arm_interfaces/msg/scene_state.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
 #include <moveit/move_group_interface/move_group_interface.hpp>
 
 #include <arm_interfaces/action/move_to.hpp>
@@ -59,6 +61,10 @@ public:
       // 인지 노드가 발행하는 스냅샷 구독
     scene_sub_ = create_subscription<arm_interfaces::msg::SceneState>(
         "/scene_state", 10, std::bind(&SkillServer::on_scene_state, this, std::placeholders::_1));
+    // 그리퍼 관절 실측값 (멤버 선언은 private: 영역에 있다)
+    joint_sub_ = create_subscription<sensor_msgs::msg::JointState>(
+      "/joint_states", 10,
+      std::bind(&SkillServer::on_joint_states, this, std::placeholders::_1));
   }
   void init_move_group()
   {
@@ -73,6 +79,21 @@ public:
     RCLCPP_INFO(
       get_logger(), "gripper 연결됨 : %zu개",
       gripper_group_->getJointNames().size());
+  }
+  // joint_states에서 그리퍼 구동 관절만 뽑아 보관. gripper_joint_2는 mimic이라 쓰지 않는다.
+  // 부하가 걸리면구속이 어긋난다.
+  void on_joint_states(const sensor_msgs::msg::JointState::SharedPtr msg)
+  {
+    for (size_t i = 0; i < msg->name.size(); ++i) {
+      if (msg->name[i] != "gripper_joint_1") {
+        continue;
+      }
+      std::lock_guard<std::mutex> lock(joint_mutex_);
+      gripper_pos_ = msg->position[i];
+      gripper_vel_ = (i < msg->velocity.size()) ? msg->velocity[i] : 0.0;
+      gripper_seen_ = true;
+      return;
+    }
   }
 
 private:
@@ -90,6 +111,14 @@ private:
   rclcpp::Subscription<arm_interfaces::msg::SceneState>::SharedPtr scene_sub_;
   arm_interfaces::msg::SceneState latest_scene_;  // 최신 스냅샷 scene_mutex_로만 접근
   std::mutex scene_mutex_;
+
+  // 그리퍼 관절 실측값. MoveIt의 상태 캐시는 move() 직후 정착 전 값을 준다
+  // (2026-08-07 실측: 캐시 0.4887 vs /joint_states 0.00004) -> 원천을 직접 본다.
+  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_sub_;
+  double gripper_pos_ = 0.0;
+  double gripper_vel_ = 0.0;
+  bool gripper_seen_ = false;
+  std::mutex joint_mutex_;
 
   std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
   // 팔과는 별개로 그리퍼는 움직일 수 있다.
@@ -271,6 +300,8 @@ private:
   {
     gripper_group_->setNamedTarget(named);
     const auto code = gripper_group_->move();
+    // 관절값은 여기서 읽지 않는다 - move() 직후 MoveIt 캐시는 정착 전 값을 준다
+    // (실측: 캐시 0.4887 vs /joint_states 0.00004). 판정용 값은 is_holding()이 찍는다.
     RCLCPP_INFO(
       get_logger(), "그리퍼 %s : %s", named,
       moveit::core::errorCodeToString(code).c_str());
@@ -285,9 +316,24 @@ private:
   // stalled=true, reached_goal=false로 setAborted(allow_stalling 기본 false)
   // 2. MoveIt GripperCommandControllerHandle : allow_failure 기본 false라 ABORTED를 그대로 전파
   // 3. 따라 MGI move()가 CONTROL_FAILED를 돌려준다.
-  bool is_holding(const moveit::core::MoveItErrorCode & code) const
+
+  // 파지 판정 : 닫힘 목표에 도달했는가 물체 두께가 0이면 도달한다.
+  // 에러 코드가 아니라 관절 위치를 본다. - stall은 sim 접촉 해석에 따라 안 날 수 있다.
+  static constexpr double HOLD_EPS = 0.05;
+  // ⚠️ 정의역 : pinch(두께로 개구부를 막는) 물체에 한정.
+  // hook(링)은 손가락이 구멍을 통과해 끝까지 닫히므로 이 신호로 판정 불가 - 씬 재대조 몫.
+  bool is_holding()
   {
-    return code == moveit::core::MoveItErrorCode::CONTROL_FAILED;
+    const auto q = wait_gripper_settled();
+    if (!q.has_value()) {
+      RCLCPP_WARN(get_logger(), "그리퍼 정착 실패 - 쥐었다고 판정하지 않는다");
+      return false;
+    }
+    const bool held = std::abs(*q) > HOLD_EPS;
+    RCLCPP_INFO(
+      get_logger(), "파지 판정 : 관절=%.4f (임계 %.4f) -> %s",
+      *q, HOLD_EPS, held ? "쥠" : "빈 손");
+    return held;
   }
   // 실제 일 - 지금은 자리표시자: 로그만 찍고 성공 반환 (MoveGroupInterface는 다음 스텝)
   void execute_move_to(const std::shared_ptr<GoalHandleMoveTo> goal_handle)
@@ -366,9 +412,11 @@ private:
     }
     // close의 결과가 곧 파지 판정 lift전에 분기해야함.
     // 빈 손으로 들어올리면 성공한 pick이 되어 GRASP_FAILED가 영원히 잡히지 않는다.
-    if (!is_holding(move_gripper("close"))) {
+    move_gripper("close");
+    if (!is_holding()) {
       RCLCPP_WARN(get_logger(), "파지 실패 : %s (그리퍼가 끝까지 닫힘)", goal->object_id.c_str());
-      move_gripper("open");   // 다음 시도를 위해 열어둠 REGRASP
+      // 여기서 열지 않는다. 판정이 틀렸을 때 (실제로 쥐고 있을 때 물건이 떨어진다.)
+      // move_gripper("open");   // 다음 시도를 위해 열어둠 REGRASP
       goal_handle->abort(
         make_pick_result(
           false, goal->attempt,
@@ -465,6 +513,34 @@ private:
       ok ? "" : stage,
       ok ? "" : detail, attempt);
     return result;
+  }
+  // 그리퍼가 멈출때ㅔ까지 기다렸다가 그때의 위치를 돌려준다. 몸 멈추면 nullopt.
+  // 속도 임계는 컨트롤러의 stall_velocity_threshold(0.001)에서 가져온다. - 임의값이 아니다.
+  std::optional<double> wait_gripper_settled(
+    double vel_eps = 0.001, int stable_ms = 200, int timeout_ms = 2000)
+  {
+    const auto deadline = std::chrono::steady_clock::now() +
+      std::chrono::milliseconds(timeout_ms);
+    int stable = 0;
+    while (std::chrono::steady_clock::now() < deadline) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(20));
+      double pos = 0.0, vel = 0.0;
+      bool seen = false;
+      {
+        std::lock_guard<std::mutex> lock(joint_mutex_);
+        pos = gripper_pos_;
+        vel = gripper_vel_;
+        seen = gripper_seen_;
+      }
+      if (!seen) {
+        continue;
+      }
+      stable = (std::abs(vel) < vel_eps) ? stable + 20 : 0;
+      if (stable >= stable_ms) {
+        return pos;
+      }
+    }
+    return std::nullopt;
   }
 };
 
