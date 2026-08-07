@@ -107,6 +107,9 @@ def generate_launch_description():
             '/camera/image_raw@sensor_msgs/msg/Image[gz.msgs.Image',
             '/camera/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
         ],
+        # ★ sim 시계. 없으면 이 노드만 벽시계 스탬프를 찍어 move_group의 tf2 버퍼가
+        # 'Detected jump back in time'으로 버퍼를 통째로 비운다(2026-08-07 실측).
+        parameters=[{'use_sim_time': True}],
     )
 
     # ---------- (7) 카메라 TF ----------
@@ -126,6 +129,9 @@ def generate_launch_description():
             '--frame-id', 'world',
             '--child-frame-id', 'camera_link',
         ],
+        # ★ sim 시계. 없으면 이 노드만 벽시계 스탬프를 찍어 move_group의 tf2 버퍼가
+        # 'Detected jump back in time'으로 버퍼를 통째로 비운다(2026-08-07 실측).
+        parameters=[{'use_sim_time': True}],
     )
 
     # 광축 규약 변환. URDF는 x축이 정면이지만,
@@ -143,6 +149,9 @@ def generate_launch_description():
             '--frame-id', 'camera_link',
             '--child-frame-id', 'camera_optical_frame',
         ],
+        # ★ sim 시계. 없으면 이 노드만 벽시계 스탬프를 찍어 move_group의 tf2 버퍼가
+        # 'Detected jump back in time'으로 버퍼를 통째로 비운다(2026-08-07 실측).
+        parameters=[{'use_sim_time': True}],
     )
 
     return LaunchDescription([

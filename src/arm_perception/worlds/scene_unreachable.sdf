@@ -6,9 +6,13 @@
 <sdf version="1.10">
   <world name="empty">
     <physics name="1ms" type="ignored">
-      <max_step_size>0.005</max_step_size>
+      <!-- 파지는 접촉이 지배한다. 5ms에서는 한 스텝에 손가락이
+           블록 안으로 파고들어 관절값이 오염됐다(2026-08-07 실측:
+           블록을 쥔 채 gripper_joint_1 = -5e-05, 즉 완전 닫힘).
+           1ms로 낮춰 관통 깊이를 줄인다. 대가는 물리 계산량 5배. -->
+      <max_step_size>0.001</max_step_size>
       <real_time_factor>1</real_time_factor>
-      <real_time_update_rate>500</real_time_update_rate>
+      <real_time_update_rate>1000</real_time_update_rate>
     </physics>
     <plugin name="gz::sim::systems::Physics" filename="gz-sim-physics-system"/>
     <plugin name="gz::sim::systems::UserCommands" filename="gz-sim-user-commands-system"/>
