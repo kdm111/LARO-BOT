@@ -1292,3 +1292,15 @@ TCP는 손가락의 끝이다. TCP를 물체의 중심에 두면 손가락이 �
 
 
 
+### 15일차
+
+지금까지 pick의 success 판정은 모션이 끝났다는 판정이지 쥐고 있다는 판정이 아니었다. 
+move() 반환 SUCCESS : 손가락이 끝까지 닫혔다. 빈 손이다.
+CONTROL_FAILED : 목표까지 못 닫혔다. 쥐고 있다.
+
+근거
+GripperActionController : 오차가 goal_tolerance 밖인 채로 stall_timeout 동안 속도가 stall_velocity_threshold 아래면 stalled=true, reached_goal=false, -> setAborted
+GripperCommandControllerHandle : allow_failure_가 false면 ABORTED를 그대로 전파
+따라서 MGI move()가 CONTROL_FAILED
+
+lift 전에 분기했다. 빈손으로 들어올리기 전에 잡혔는지 확인 후 성공했는지 확인한다. 그랩을 실패하면 다시 open으로 되돌리고 잡혔으면 lift 동작으로 분기한다.
