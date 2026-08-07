@@ -208,12 +208,29 @@ private:
     }
     return approached;
   }
-  // 그리퍼를 이름 자세로 (open/close). MGI로 여닫기만 하고 파지 판정은 추후 예정
-  void move_gripper(const char *named)
+  // 그리퍼를 이름 자세로 (open/close). 반환값 = MoveIt 실행 결과 코드
+  // 이 코드를 파지 판정 재료로 사용
+  moveit::core::MoveItErrorCode move_gripper(const char *named)
   {
     gripper_group_->setNamedTarget(named);
-    gripper_group_->move();
-    RCLCPP_INFO(get_logger(), "그리퍼 %s", named);
+    const auto code = gripper_group_->move();
+    RCLCPP_INFO(
+      get_logger(), "그리퍼 %s : %s", named,
+      moveit::core::errorCodeToString(code).c_str());
+    return code;
+  }
+  // close 결과 코드 -> 쥐고 있는가  -> 상식과 반대로 읽힌다.
+  // CONTROL_FAILED(-4) = 손가락이 물체에 막혀 목표까지 못닫힌다. 쥐고 있다.
+  // SUCCESS(1) -> 끝까지 닫힘 = 사이에 아무것도 없다. = 빈 그리퍼 판정
+  // 근거 체인
+  // 1. GripperActionController - 오차가 goal_tolerance(0.01) 밖인 채로
+  // stall_timeout(1.0) 동안 속도가 stall_velocity_threshold(0.001) 아래면
+  // stalled=true, reached_goal=false로 setAborted(allow_stalling 기본 false)
+  // 2. MoveIt GripperCommandControllerHandle : allow_failure 기본 false라 ABORTED를 그대로 전파
+  // 3. 따라 MGI move()가 CONTROL_FAILED를 돌려준다.
+  bool is_holding(const moveit::core::MoveItErrorCode &code) const
+  {
+    return code == moveit::core::MoveItErrorCode::CONTROL_FAILED;
   }
   // 실제 일 - 지금은 자리표시자: 로그만 찍고 성공 반환 (MoveGroupInterface는 다음 스텝)
   void execute_move_to(const std::shared_ptr<GoalHandleMoveTo> goal_handle)
@@ -277,7 +294,19 @@ private:
       goal_handle->abort(make_pick_result(false, goal->attempt));
       return;
     }
-    move_gripper("close");
+    // close의 결과가 곧 파지 판정 lift전에 분기해야함.
+    // 빈 손으로 들어올리면 성공한 pick이 되어 GRASP_FAILED가 영원히 잡히지 않는다.
+    if (!is_holding(move_gripper("close"))) {
+      RCLCPP_WARN(get_logger(), "파지 실패 : %s (그리퍼가 끝까지 닫힘)", goal->object_id.c_str());
+      move_gripper("open");   // 다음 시도를 위해 열어둠 REGRASP
+      goal_handle->abort(
+        make_pick_result(
+          false, goal->attempt,
+          arm_interfaces::msg::ErrorCode::GRASP_FAILED,
+          arm_interfaces::msg::Stage::GRASP,
+          "그리퍼가 끝까지 닫힘 - 물체를 못잡음"));
+      return;
+    }
     if (!move_to_pose(obj_x, obj_y, obj_z + approach_dz, approach_phi, "lift", grasp_yaw)) {
       goal_handle->abort(make_pick_result(false, goal->attempt));
       return;
@@ -285,15 +314,18 @@ private:
     RCLCPP_INFO(get_logger(), "pick 완료 : %s", goal->object_id.c_str());
     goal_handle->succeed(make_pick_result(true, goal->attempt));
   }
-  std::shared_ptr<Pick::Result> make_pick_result(bool ok, uint8_t attempt)
+  std::shared_ptr<Pick::Result> make_pick_result(
+    bool ok, uint8_t attempt,
+    int32_t code = arm_interfaces::msg::ErrorCode::PLANNING_FAILED,
+    const std::string &stage = arm_interfaces::msg::Stage::APPROACH,
+    const std::string &detail = "pick 이동 실패")
   {
     auto result = std::make_shared<Pick::Result>();
     result->success = ok;
     result->failure = make_failure(
-      ok ? arm_interfaces::msg::ErrorCode::SUCCESS :
-           arm_interfaces::msg::ErrorCode::PLANNING_FAILED,
-      ok ? "" : arm_interfaces::msg::Stage::APPROACH,
-      ok ? "" : "pick 이동 실패", attempt);
+      ok ? arm_interfaces::msg::ErrorCode::SUCCESS : code,
+      ok ? "" : stage,
+      ok ? "" : detail, attempt);
     return result;
   }
   void execute_place(const std::shared_ptr<GoalHandlePlace> goal_handle)
