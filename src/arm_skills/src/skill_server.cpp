@@ -252,9 +252,12 @@ private:
       if (move_group_->plan(plan) == moveit::core::MoveItErrorCode::SUCCESS) {
         move_group_->execute(plan);
         last_elbow_ = c.elbow_up;
+        // 관절각(모터)까지 찍는다. 마지막 값 theta5가 그리퍼 롤 = 파지 회전 확인용.
         RCLCPP_INFO(
-          get_logger(), "%s 자세 도달(가지 %s, 관절거리 %.3f)",
-          label, c.elbow_up ? "up" : "down", c.dist);
+          get_logger(),
+          "%s 자세 도달(가지 %s, 관절거리 %.3f) 관절각[%.3f %.3f %.3f %.3f %.3f]",
+          label, c.elbow_up ? "up" : "down", c.dist,
+          c.target[0], c.target[1], c.target[2], c.target[3], c.target[4]);
         return MoveResult::OK;   // 성공한 가지에서 즉시 끝낸다
       }
       RCLCPP_WARN(get_logger(), "%s 가지 %s 계획 실패", label, c.elbow_up ? "up" : "down");
