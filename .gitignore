@@ -18,4 +18,4 @@ __pycache__/
 src/third_party/
 
 # HANDOFF
-HANDOFF.md
+HANDOFF*.md
