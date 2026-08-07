@@ -193,19 +193,40 @@ def _build_prompt(command, scene_ids):
         '  In particular, never insert move_to before pick or place.\n'
         '- move_to may only appear as a single step on its own.\n'
         '- Use only object_id values from the scene list above.\n'
+        # 실측 실패(2026-08-07): "빨간 블록 집어" -> object_id를 명령의 한국어 단어
+        # 그대로 복사해 검증에서 거부됐다. 같은 명령이 red_block으로 나온 적도 있어
+        # 비결정적이다. 번역이 필요하다는 것을 규칙과 예시로 명시한다.
+        '- The command may name objects in Korean. Translate them to the EXACT\n'
+        '  English id from the scene list. Example: "빨간 블록" -> "red_block".\n'
+        '- NEVER copy a word from the command into object_id. Always pick an id\n'
+        '  that appears verbatim in the scene list above.\n'
+        # ⚠️ 거부 경로("불가능하면 [] 출력") 한 줄은 여기 넣지 않았다.
+        # _parse_and_validate가 빈 배열을 '계획은 비어 있지 않은 배열이어야 한다'로
+        # 거부하므로, 프롬프트만 고치면 모델이 []를 내도 재프롬프트로 밀려나
+        # 결국 아무 pick이나 낸다 - 안 넣느니만 못하다.
+        # 검증기가 []를 '정당한 거부'로 구분해서 받도록 고치는 게 선결이다(§1 부채).
         '\n'
         f'Command: {command}'
     )
 
 
 def _retry_prompt(prompt, raw, error):
-    """1차 실패를 이유와 함께 되돌려주는 재프롬프트."""
+    """1차 실패를 이유와 함께 되돌려주는 재프롬프트.
+
+    실측 실패(2026-08-07): 1차가 '씬에 없는 물체'로 거부되자 2차가 []를 냈다.
+    거부당했다는 사실만 보고 "할 수 있는 게 없다"로 후퇴한 것이다.
+    그래서 의도는 유지하고 틀린 필드만 고치라고 못박는다.
+    """
     return (
         f'{prompt}\n'
         '\n'
         'Your previous answer was REJECTED.\n'
         f'Previous answer: {raw}\n'
         f'Reason: {error}\n'
+        'Fix ONLY the field that was wrong and keep the original intent.\n'
+        'Do NOT return an empty array here - the command was already judged\n'
+        'to be achievable. If an object_id was rejected, replace it with the\n'
+        'closest matching id from the scene list.\n'
         'Return only a corrected JSON array.'
     )
 
