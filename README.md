@@ -1304,3 +1304,10 @@ GripperCommandControllerHandle : allow_failure_가 false면 ABORTED를 그대로
 따라서 MGI move()가 CONTROL_FAILED
 
 lift 전에 분기했다. 빈손으로 들어올리기 전에 잡혔는지 확인 후 성공했는지 확인한다. 그랩을 실패하면 다시 open으로 되돌리고 잡혔으면 lift 동작으로 분기한다.
+
+**정리**
+물체를 쥔 채 놓치는 문제는 접근/후퇴가 직선이 아니라서로 의심했다. move_to_pose가 호출될 때마다 {false, true} 두가지를 처음부터 순회한다. 직전에 사용했던 해를 모른다. 원인은 경로의 모양이 아니라 가지 선택의 무기억성이다.
+
+그에 따라 관절 상태와 가장 가까운 해를 고른다.
+실패 보고가 IK가 풀리지 않음과 plan 실패가 둘다 PLANNING_FAILED가 된다.
+Planning Scene에 물체가 하나도 들어가고 있지 않다. 검출한 좌표는 어디로 갈까에만 쓰이고 충돌 검사에는 쓰이지 않는다. 지금 로봇의 충돌 회피 대상은 자기 몸뿐이다.
