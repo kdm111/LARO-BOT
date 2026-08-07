@@ -78,7 +78,7 @@ BenchTarget make_target(std::mt19937 & rng, KDL::ChainFkSolverPos_recursive & fk
   BenchTarget t;  // 결과 담을 구조체를 만들고
   t.phi = phi;  // phi 저장
 
-  // 프레임 목표 : 기하 FK 손끝(r,z) -> wolder(x,y,z)
+  // 프레임 목표 : 기하 FK 손끝(r,z) -> world(x,y,z)
   auto tip = arm_kinematics::get_forward_kinematics(th2, th3, th4, L1, L2, L3); // 정역학으로 어디 위치에 가는 지 계산
   // 어깨 기준 (r,z) -> base_link 기준(x,y,z)
   t.x = tip.r * std::cos(th1) + arm_kinematics::BASE_TO_SHOULDER_X;
