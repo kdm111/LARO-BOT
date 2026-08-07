@@ -26,7 +26,7 @@ using arm_kinematics::L3;
 // 벤치 목표 하나 : 같은 물리 자세를 두 solver의 프레임으로 각각 표현.
 struct BenchTarget
 {
-  double x;   // 우리 solver 입력 (어깨 원점 world)
+  double x;   // 우리 solver 입력 (base_link 기준 - solve_ik의 공개 형식)
   double y;
   double z;
   double phi;   // 접근각
@@ -60,7 +60,11 @@ double kdl_reach_error(
 BenchTarget make_target(std::mt19937 & rng, KDL::ChainFkSolverPos_recursive & fk)
 {
   // 각 관절이 어느 범위에서 랜덤일지 정의한다. uniform_real_distribution(a,b) = a와 b사이 실수를 하나 균등하게 뽑는 주사위
-  std::uniform_real_distribution<double> yaw(-M_PI, M_PI);  // 한 바퀴 전체
+  // ★ 정의역 = 로봇 앞쪽 반공간. 뒤쪽은 애초에 카메라 시야 밖이라 물체를 못 찾는다.
+  // 이 제한이 solve_ik의 뒤접힘 가드(ik.cpp px<0)와 정확히 맞물린다:
+  // cos(th1)>0이면 px = tip.r*cos(th1) 의 부호 = tip.r의 부호 -> 가드가 뒤접힘만 정확히 잡는다.
+  // (전 범위로 뽑으면 가드가 정상 목표까지 죽여 성공률이 45%로 무너진다. 2026-08-07 실측)
+  std::uniform_real_distribution<double> yaw(-M_PI / 2, M_PI / 2);   // 앞쪽 반
   std::uniform_real_distribution<double> shoulder(-1.0, 1.0);  // +-1 rad
   std::uniform_real_distribution<double> elbow(0.3, 2.0);   // 0.3~2.0 양수이고 쫙 편 특이 자세(0)와 완전 접힘(n)을 피함
   std::uniform_real_distribution<double> approach(-M_PI / 2 - 0.4, -M_PI / 2 + 0.4);  // phi(접근각), -n/2 아래 근처 +-0.4 위에서 아래로 집는 각도들
@@ -76,9 +80,10 @@ BenchTarget make_target(std::mt19937 & rng, KDL::ChainFkSolverPos_recursive & fk
 
   // 프레임 목표 : 기하 FK 손끝(r,z) -> wolder(x,y,z)
   auto tip = arm_kinematics::get_forward_kinematics(th2, th3, th4, L1, L2, L3); // 정역학으로 어디 위치에 가는 지 계산
-  t.x = tip.r * std::cos(th1);
-  t.y = tip.r * std::sin(th1);
-  t.z = tip.z;
+  // 어깨 기준 (r,z) -> base_link 기준(x,y,z)
+  t.x = tip.r * std::cos(th1) + arm_kinematics::BASE_TO_SHOULDER_X;
+  t.y = tip.r * std::sin(th1);  // y축은 오프셋 없음
+  t.z = tip.z + arm_kinematics::BASE_TO_SHOULDER_Z;
   t.tip_r = tip.r;
 
   arm_kinematics::IkSolution g{th1, th2, th3, th4, 0.0, true};
@@ -86,17 +91,8 @@ BenchTarget make_target(std::mt19937 & rng, KDL::ChainFkSolverPos_recursive & fk
 
   return t;
 }
-// 해를 FK로 되돌려 목표에 실제로 닿는지 그 오차를 반환
-// solve_ik는 theta1=atan2(y,x)로 방향을 항상 맞추므로 (r,z) 평면 오차가 곧 전체 위치 오차
-double get_position_error(const arm_kinematics::IkSolution & sol, const BenchTarget & t)
-{
-  auto tip = arm_kinematics::get_forward_kinematics(
-    sol.theta2, sol.theta3, sol.theta4, L1, L2, L3);
-  const double target_r = std::sqrt(t.x * t.x + t.y * t.y);
-  const double dr = tip.r - target_r;
-  const double dz = tip.z - t.z;
-  return std::sqrt(dr * dr + dz * dz);
-}
+// (삭제 2026-08-07) get_position_error — 채점은 전부 독립 오라클 kdl_reach_error가 한다.
+// 한 번도 호출되지 않았고, base_link 전환 후에는 t.x에 어깨 오프셋이 섞여 값도 틀렸다.
 int main()
 {
   KDL::Chain chain = arm_kinematics::build_omx_chain();
@@ -112,9 +108,11 @@ int main()
   const double eps = 1e-3;   // 1mm 이내면 도달 처리
 
   int solve_ik_ok = 0, kdl_ok = 0;
-  int solve_ik_unreachable = 0;   // sol.rechable == falce  공식 밖
-  int solve_ik_missed = 0;   // rechable인데 실제론 닿지 않는 곳
+  int solve_ik_unreachable = 0;   // sol.reachable == false  공식 밖
+  int solve_ik_missed = 0;   // reachable인데 실제론 닿지 않는 곳
   int missed_neg_r = 0;
+  // 가드(px<0)에 잘렸는데 tip.r는 양수 = 뒤접힘이 아닌 정상 목표를 죽인 것 = 오폭
+  int killed_valid = 0;
   double solve_ik_total = 0.0, solve_ik_us_max = 0.0;
   double kdl_total = 0.0, kdl_us_max = 0.0;
 
@@ -131,6 +129,7 @@ int main()
     const KDL::JntArray solve_ik_q = to_jntarray(arm_kinematics::to_motor_angles(sol));
     if (!sol.reachable) {
       ++solve_ik_unreachable;
+      if (t.tip_r > 0.0) {++killed_valid;}   // 뒤접힘이 아닌데 잘렸다
     } else if (kdl_reach_error(fk, solve_ik_q, t.kdl_goal) < eps) {
       ++solve_ik_ok;
     } else {
@@ -149,7 +148,7 @@ int main()
     const double kdl_us = std::chrono::duration<double, std::micro>(t3 - t2).count();
     kdl_total += kdl_us;
     if (kdl_us > kdl_us_max) {kdl_us_max = kdl_us;}
-    if(kdl_reach_error(fk, q_out, t.kdl_goal) < eps) {++kdl_ok;}
+    if (kdl_reach_error(fk, q_out, t.kdl_goal) < eps) {++kdl_ok;}
   }
   std::printf("목표 %d개 채점 KDL FK로 1mm이내 도달\n\n", N);
   std::printf("       성공률    평균시간    최악시간\n");
@@ -159,5 +158,8 @@ int main()
               100.0 * kdl_ok / N, kdl_total / N, kdl_us_max);
   std::printf("solve_ik  공식 밖 %d, 오류 %d 중 tip.r <0: %d\n",
               solve_ik_unreachable, solve_ik_missed, missed_neg_r);
+  // 가드 조준 진단 : 잘린 것 중 몇 개가 뒤접힘이 아닌 정상 목표였나
+  std::printf("가드 오폭   공식 밖 %d 중 tip.r>0(정상인데 잘림): %d\n",
+              solve_ik_unreachable, killed_valid);
   return 0;
 }
