@@ -68,6 +68,12 @@ def generate_launch_description():
         package='arm_skills',
         executable='skill_server',
         output='screen',
+        # ★ 가제보가 /clock을 발행하고 /joint_states도 sim 시간으로 찍는다.
+        # 이게 없으면 MGI의 CurrentStateMonitor가 벽시계(1786090380)와
+        # sim 시간(41.18)을 비교해 상태를 "낡았다"고 버린다 ->
+        # "Failed to fetch current robot state" -> getCurrentJointValues()가 빈 벡터 ->
+        # joint_distance가 0을 돌려 최근접 가지 선택이 통째로 무력화된다(2026-08-07 실측).
+        parameters=[{'use_sim_time': True}],
     )
 
     # ---------- (6) 카메라 (씬 world에는 없다 -> launch가 얹는다) ----------
