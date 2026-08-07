@@ -16,8 +16,28 @@ from std_msgs.msg import String
 
 from . import llm_planner
 
+# 복구 전략
+# 전략은 goal 파라미터가 아니라 시퀀스 조작이다.
+# REGRASP/RESCAN : 복구 자세로 물러나 재인지한 뒤 실패한 스텝을 다시 밟는다.
+RETRY = 'RETRY'
+REGRASP = 'REGRASP'
+RESCAN = 'RESCAN'
+REPLAN = 'REPLAN'
+ABORT = 'ABORT'
+# 에러 코드 -> 전략. 등록 안된 코드는 기본 abort(멈추는게 가장 안전)
+STRATEGY = {
+    ErrorCode.PLANNING_FAILED: RETRY,
+    ErrorCode.EXECUTION_TIMEOUT: RETRY,
+    ErrorCode.GRASP_FAILED: REGRASP,
+    ErrorCode.OBJECT_MOVED: RESCAN,
+    ErrorCode.OBJECT_NOT_FOUND: RESCAN,
+    ErrorCode.GRIPPER_EMPTY: REPLAN,
+    ErrorCode.UNREACHABLE: ABORT,
+    ErrorCode.INTERNAL_ERROR: ABORT,
+}
+
 MAX_ATTEMPTS = 3
-ABORT_CODES = {ErrorCode.UNREACHABLE, ErrorCode.INTERNAL_ERROR}
+MAX_RECOVERY = 2
 
 
 class Agent(Node):
@@ -58,6 +78,10 @@ class Agent(Node):
         # 쓸 모델을 짧은 이름으로 준다.
         # ros2 param set /agent model llama, exaone으로 바꿀 수 있다.
         self.declare_parameter('model', 'exaone')
+        # 복구 자세 정의 : 팔이 시야를 가리지 않도록 비워놓는다.
+        # ros2 param set /agent recovery_pose init으로 실행 중 교체 가능
+        self.declare_parameter('recovery_pose', 'home')
+        self._recovery = 0  # 복구 예산 사용량. 명령 단위로만 리셋
 
     # 인지 노드가 보내고 있는 스냅샷
     def on_scene_state(self, msg):
@@ -91,6 +115,7 @@ class Agent(Node):
         self._plan = plan
         self._step = 0
         self._attempt = 1
+        self._recovery = 0  # 새 명령 = 복구 초기화
         self._run_step()
 
     # 계획을 만드는 함수
@@ -177,18 +202,52 @@ class Agent(Node):
                 f'결과 : success={result.success}, code={result.failure.code}'
             )
             self._run_step()
-        elif code in ABORT_CODES:
-            self.get_logger().error(f'복구 불가 코드(code={code}) > 즉시 중단')
-        elif self._attempt < MAX_ATTEMPTS:
-            self._attempt += 1
-            self.get_logger().warn(
-                f'실패(code={result.failure.code}) > 재시도 attempt={self._attempt}'
-            )
-            self._run_step()
+            return
+        strategy = STRATEGY.get(code, ABORT)
+        self.get_logger().warn(
+            f'실패 code={code} stage={result.failure.stage} > 전략 {strategy}'
+        )
+        if strategy == RETRY:
+            self._do_retry(code)
+        elif strategy in (REGRASP, RESCAN):
+            self._do_recover(strategy)
+        elif strategy == REPLAN:
+            self._do_replan()
         else:
-            self.get_logger().error(
-                f'복구 실패 > 시퀀스 중단(ABORT), code={result.failure.code}'
-            )
+            self.get_logger().error(f'ABORT(code={code}) > 시퀀스 중단')
+
+    def _do_retry(self, code):
+        """같은 goal을 다시 보낸다. OMPL은 확률적이라 시드가 바뀌면 풀린다."""
+        if self._attempt >= MAX_ATTEMPTS:
+            self.get_logger().error(f'RETRY {MAX_ATTEMPTS}회에서 소진(code={code}) > 중단')
+            return
+        self._attempt += 1
+        self.get_logger().warn(f'RETRY attempt={self._attempt}')
+        self._run_step()
+
+    def _do_recover(self, strategy):
+        """복구 자세로 물러 났다가 실패한 스텝을 다시 밟는다.
+
+        복구 스텝을 self._step 자리에 끼워넣는다. 성공하면 _step이 1 늘어
+        원래 실패한 스텝으로 정확히 돌아온다. skill_server가 실행 시점에 latest_scene_을 읽으므로 같은 goal이여도 갱신된 좌표를 쓴다.
+        """
+        if self._recovery >= MAX_RECOVERY:
+            self.get_logger().error(f'{strategy} {MAX_RECOVERY}회 소진 > 중단')
+            return
+        self._recovery += 1
+        self._attempt = 1
+        pose = self.get_parameter('recovery_pose').value
+        goal = MoveTo.Goal()
+        goal.target_name = pose
+        self._plan.insert(self._step, (self._move_to_client, goal))
+        self.get_logger().warn(
+            f'{strategy} {self._recovery} / {MAX_RECOVERY} > {pose}로 물러나 재인지'
+        )
+        self._run_step()
+
+    def _do_replan(self):
+        """운반 중 낙하로 대응 시나리오가 없어 현재는 중단."""
+        self.get_logger().error('REPLAN 미구현 > 중단')
 
 
 def main(args=None):
