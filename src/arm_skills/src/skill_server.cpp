@@ -524,28 +524,37 @@ private:
       ok ? "" : detail, attempt);
     return result;
   }
-  // 그리퍼가 멈출때ㅔ까지 기다렸다가 그때의 위치를 돌려준다. 몸 멈추면 nullopt.
-  // 속도 임계는 컨트롤러의 stall_velocity_threshold(0.001)에서 가져온다. - 임의값이 아니다.
+  // 그리퍼가 멈출 때까지 기다렸다가 그때의 위치를 돌려준다. 못 멈추면 nullopt.
+  // ★ 속도가 아니라 위치 변화를 본다 (2026-08-08 실측으로 교체).
+  // /joint_states의 gripper_joint_1 velocity가 항상 0으로 온다 - 실제로 초당 0.44로
+  // 움직이는 순간에도 그렇다(900행 표본에서 |v|>0.001이 0건, 최댓값 2e-5).
+  // 속도 기준이면 첫 샘플부터 조건이 성립해 「기다림」이 사라진다. 그 결과
+  // 닫히는 도중의 통과값 0.4296을 「쥠」으로 오판했다 - 실제로는 빈 손이었다.
+  // 위치는 엔코더가 직접 주는 1차 신호고 속도는 누가 미분해 채워주는 파생 신호다.
+  // 채워주지 않으면 판정이 불가능하다. 그래서 이미 믿고 있는 신호(위치)로 통일한다
+  // - is_holding()의 임계 비교도 같은 값을 쓴다.
   std::optional<double> wait_gripper_settled(
-    double vel_eps = 0.001, int stable_ms = 200, int timeout_ms = 2000)
+    double pos_eps = 0.001, int stable_ms = 200, int timeout_ms = 5000)
   {
     const auto deadline = std::chrono::steady_clock::now() +
       std::chrono::milliseconds(timeout_ms);
     int stable = 0;
+    std::optional<double> last;
     while (std::chrono::steady_clock::now() < deadline) {
       std::this_thread::sleep_for(std::chrono::milliseconds(20));
-      double pos = 0.0, vel = 0.0;
+      double pos = 0.0;
       bool seen = false;
       {
         std::lock_guard<std::mutex> lock(joint_mutex_);
         pos = gripper_pos_;
-        vel = gripper_vel_;
         seen = gripper_seen_;
       }
       if (!seen) {
         continue;
       }
-      stable = (std::abs(vel) < vel_eps) ? stable + 20 : 0;
+      // 직전 표본과 견준다. 안 변하는 상태가 stable_ms 이어지면 멈춘 것으로 본다.
+      stable = (last.has_value() && std::abs(pos - *last) < pos_eps) ? stable + 20 : 0;
+      last = pos;
       if (stable >= stable_ms) {
         return pos;
       }
