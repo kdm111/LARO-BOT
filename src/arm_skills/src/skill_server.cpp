@@ -322,17 +322,17 @@ private:
   static constexpr double HOLD_EPS = 0.05;
   // ⚠️ 정의역 : pinch(두께로 개구부를 막는) 물체에 한정.
   // hook(링)은 손가락이 구멍을 통과해 끝까지 닫히므로 이 신호로 판정 불가 - 씬 재대조 몫.
-  bool is_holding()
+  bool is_holding(const char *tag = "파지 판정")
   {
     const auto q = wait_gripper_settled();
     if (!q.has_value()) {
-      RCLCPP_WARN(get_logger(), "그리퍼 정착 실패 - 쥐었다고 판정하지 않는다");
+      RCLCPP_WARN(get_logger(), "%s 그리퍼 정착 실패 - 쥐었다고 판정하지 않는다", tag);
       return false;
     }
     const bool held = std::abs(*q) > HOLD_EPS;
     RCLCPP_INFO(
-      get_logger(), "파지 판정 : 관절=%.4f (임계 %.4f) -> %s",
-      *q, HOLD_EPS, held ? "쥠" : "빈 손");
+      get_logger(), "%s 판정 : 관절=%.4f (임계 %.4f) -> %s",
+      tag, *q, HOLD_EPS, held ? "쥠" : "빈 손");
     return held;
   }
   // 실제 일 - 지금은 자리표시자: 로그만 찍고 성공 반환 (MoveGroupInterface는 다음 스텝)
@@ -474,6 +474,16 @@ private:
         make_place_result(
           false, goal->attempt, code_of(r),
           arm_interfaces::msg::Stage::TRANSFER, detail_of(r)));
+      return;
+    }
+    // transfer 파지 확인 : 운반 중 낙하면 손가락이 끝까지 닫혀 q가 0으로 떨어진다.
+    // 실측 근거 - 낙하 순간 q 0.32 -> 0.0001
+    if (!is_holding("운반 중 파지 확인")) {
+      locked_elbow_.reset();
+      goal_handle->abort(
+        make_place_result(
+          false, goal->attempt, arm_interfaces::msg::ErrorCode::GRIPPER_EMPTY,
+          arm_interfaces::msg::Stage::TRANSFER, "운반 중 물체를 놓쳤다."));
       return;
     }
     if (const auto r = move_to_pose(tgt_x, tgt_y, tgt_z, approach_phi, "place-lower");
