@@ -22,6 +22,11 @@ RED_UPPER_2 = np.array([180, 255, 255])
 
 MIN_AREA = 100  # 이보다 작은 덩어리는 잡음으로 버린다.
 PLANE_Z = 0.02 # 블록 중심의 높이. 블록 높이 0.04의 절반. 이 평면과 광선을 만나게 해서 거리를 정한다.
+# ★ 실치수(0.06)가 아니라 "이 카메라에서 관측되는" 하한이다.
+# minAreaRect는 윗면+옆면의 합집합을 감싸므로 관측 길이가 실치수보다 크고,
+# 블록의 위치·자세에 따라 6.3~8.4cm로 흔들린다(2026-08-07 실측, 5개 지점).
+# 상한은 두지 않는다 - 정상 블록을 오폭한다(8.4cm 실측). 조각난 blob만 거른다.
+MIN_SEEN_LONG = 0.055  # 가림으로 조각난 blob 상한 4.9cm과 정상 하한 6.3cm 사이
 WORLD_FRAME = 'world' # MoveIt 플래닝 프레임. skill_server가 알아듣는 좌표계
 OPTICAL_FRAME = 'camera_optical_frame' 
 
@@ -89,8 +94,8 @@ class RedBlockDetector(Node):
         y = near_w.y + t * (far_w.y - near_w.y)
         return (x, y)
 
-    def long_axis_yaw(self, box, stamp):
-        """회전 사각형의 긴 축을 world 평면 위의 yaw(rad)로 되돌린다"""
+    def long_axis(self, box, stamp):
+        """회전 사각형의 긴 축을 world 평면 위의 yaw(rad), 길이(m)로 되돌린다"""
         # 코너 4개는 이웃끼리 붙어 있다. 이웃한 두 변 중 긴 쪽이 긴 축이다.
         if np.linalg.norm(box[1] - box[0]) >= np.linalg.norm(box[2] - box[1]):
             # box[0]보다 box[1]이 길다. 짧은 변 두 개의 중점을 이으면 긴 축이 된다.
@@ -105,8 +110,9 @@ class RedBlockDetector(Node):
         if wa is None or wb is None:
             return None
         yaw = math.atan2(wa[1] - wb[1], wa[0] - wb[0])
+        length = math.hypot(wa[0] - wb[0], wa[1] - wb[1])
         # 사각형의 긴축은 180도 대칭이다. 프레임마다 부호가 뒤집히지 않게 한 구간으로 접는다.
-        return (yaw + math.pi / 2.0) % math.pi - math.pi / 2.0
+        return ((yaw + math.pi / 2.0) % math.pi - math.pi / 2.0, length)
 
     def on_image(self, msg):
         # ROS Image -> OpenCV 배열, bgr8을 명시해야 한다.
@@ -169,10 +175,24 @@ class RedBlockDetector(Node):
             if p is None:
                 parts.append(f'({u}, {v}) -> 변환 불가')
                 continue
-            yaw = self.long_axis_yaw(box, msg.header.stamp)
-            if yaw is None:
-                self.get_logger().warn('yaw 복원 실패 회전 없음으로 발행', throttle_duration_sec=2.0)
-                yaw = 0.0
+            # 긴 축을 world에서 되돌린다. yaw와 길이를 한 번에 받는다.
+            got = self.long_axis(box, msg.header.stamp)
+            if got is None:
+                # 예전엔 yaw=0.0으로 발행했다. 모르는 각도를 0도라고 말하는 건 거짓말이다.
+                self.get_logger().warn('축 복원 실패 - 발행 안 함', throttle_duration_sec=2.0)
+                continue
+            yaw, length = got
+            # ★ 임계 실측용 로그. LEN_TOL을 확정하면 지워도 된다.
+            self.get_logger().info(f'긴 변 {length * 100:.1f}cm', throttle_duration_sec=1.0)
+            # 가림 게이트. 블록이 팔에 가려지면 보이는 빨강이 조각난다.
+            # 조각의 minAreaRect 중심은 실제 블록 중심이 아니다(실측 y 오차 26.8mm).
+            # 틀린 좌표를 발행하느니 아무것도 발행하지 않는다.
+            # ⚠️ 약한 가림(6.6cm)은 정상 범위와 겹쳐 여기서 못 막는다 - 팔을 치우고 재야 한다.
+            if length < MIN_SEEN_LONG:
+                self.get_logger().warn(
+                    f'긴 변 {length * 100:.1f}cm - 블록 아님(가림 의심) 발행 안 함',
+                    throttle_duration_sec=2.0)
+                continue
             obj = DetectedObject()
             # 색을 곧 identity로 하겠다.
             obj.object_id = 'red_block'
