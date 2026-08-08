@@ -1364,5 +1364,19 @@ is_holding()은 쥐었다와 못 읽었다를 구분하지 못한다. 정착 대
 
 파지 유지가 시뮬레이션에서 51초로 나오는데 잰 것은 손가락이 물체를 파고드는 데 걸린 시간이다.
 
+파지 실패 : GRASP_FAILED -> REGRASP
+도달 불가 : UNRECHABLE -> ABORT
+운반 중 낙하 : GRIPPER_EMPTY -> REPLAN -> 비어 있음
 
+
+regrasp : 물러나서 재인지 후에 손이 비어 있으면 다시 집는다.
+pick : grasp_failed : 비어 있음 moveto(home)
+place : gripper_empty : 비어 버림 move_to(home), pick
+
+
+전략 수정 ErrorCode.gripper_empty : regrasp으로 수정
+운반 중 낙하는 replan으로 하고 있었는데 물러나 재인지한 뒤 실패한 스텝으로 돌아간다. 그 때 손이 비어있으면 하나 더 끼운다.
+복구를 계획에 끼워 넣는 스텝으로 만들면 기존 성공 경로가 알아서 실패한 스텝으로 돌아온다.
+
+_do_recover 함수는 실패한 스텝을 다시 밟는 구조이다. place가 실패한 상황에서 place를 한번 더하면 빈손으로 놓는 시늉을 한다.
 

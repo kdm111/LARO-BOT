@@ -31,7 +31,7 @@ STRATEGY = {
     ErrorCode.GRASP_FAILED: REGRASP,
     ErrorCode.OBJECT_MOVED: RESCAN,
     ErrorCode.OBJECT_NOT_FOUND: RESCAN,
-    ErrorCode.GRIPPER_EMPTY: REPLAN,
+    ErrorCode.GRIPPER_EMPTY: REGRASP,
     ErrorCode.UNREACHABLE: ABORT,
     ErrorCode.INTERNAL_ERROR: ABORT,
 }
@@ -230,6 +230,8 @@ class Agent(Node):
 
         복구 스텝을 self._step 자리에 끼워넣는다. 성공하면 _step이 1 늘어
         원래 실패한 스텝으로 정확히 돌아온다. skill_server가 실행 시점에 latest_scene_을 읽으므로 같은 goal이여도 갱신된 좌표를 쓴다.
+
+        실패한 스텝이 place면 손이 비어있다. 물러나는 것만으로는 place를 다시 할 수 없으므로 pick을 하나 더 둔다.
         """
         if self._recovery >= MAX_RECOVERY:
             self.get_logger().error(f'{strategy} {MAX_RECOVERY}회 소진 > 중단')
@@ -237,16 +239,31 @@ class Agent(Node):
         self._recovery += 1
         self._attempt = 1
         pose = self.get_parameter('recovery_pose').value
-        goal = MoveTo.Goal()
-        goal.target_name = pose
-        self._plan.insert(self._step, (self._move_to_client, goal))
+        move_goal = MoveTo.Goal()
+        move_goal.target_name = pose
+        steps = [(self._move_to_client, move_goal)]
+
+        # 실패한 스텝이 place면 들고 있어야 할 물체가 없다. 다시 집는 스텝을 붙인다.
+        _, failed_goal = self._plan[self._step]
+        if isinstance(failed_goal, Place.Goal):
+            pick_goal = Pick.Goal()
+            pick_goal.object_id = failed_goal.object_id
+            steps.append((self._pick_client, pick_goal))
+
+        # 실패한 스텝 앞에 순서대로 끼운다.
+        for offset, step in enumerate(steps):
+            self._plan.insert(self._step + offset, step)
         self.get_logger().warn(
-            f'{strategy} {self._recovery} / {MAX_RECOVERY} > {pose}로 물러나 재인지'
+            f'{strategy} {self._recovery} / {MAX_RECOVERY} >'
+            f'{pose}로 물러나 재인지, 복구 {len(steps)} 스텝 삽입'
         )
         self._run_step()
 
     def _do_replan(self):
-        """운반 중 낙하로 대응 시나리오가 없어 현재는 중단."""
+        """운반 중 낙하로 대응 시나리오가 없어 현재는 중단.
+
+        예약된 자리. LLM 복구 판단 테스트
+        """
         self.get_logger().error('REPLAN 미구현 > 중단')
 
 
