@@ -1568,3 +1568,64 @@ LLM은 라벨만 고른다.
 LLM은 무엇을 할 지 결정하고 코드가 어떻게를 실행한다.
 
 
+
+---
+
+## 부록 — 컴퓨터 이사 후 Ubuntu에서 할 일
+> 2026-08-09, AI 작성(터미널 복사 불가로 인한 예외). **학습 일지가 아니라 운영 체크리스트다 — 이사 끝나면 지워도 된다.**
+> 원본 절차는 `handoff/archive/HANDOFF_TECH.md` §5. 여기는 이사에 필요한 것만 추렸다.
+
+### 0. 복원
+```bash
+mkdir -p ~/Desktop && tar -xJf personal_project_backup_20260809.tar.xz -C ~/Desktop
+cd ~/Desktop/personal_project
+git log --oneline -1           # a0b53e8 나오면 코드 정상
+git -C handoff log --oneline   # 커밋 3건 나오면 handoff 정상 (★ 이게 유일하게 원격 없는 자산)
+```
+
+### 1. 호스트 준비 (Ubuntu 24.04 기준)
+- NVIDIA 드라이버 + **`nvidia-container-toolkit`** — GPU를 컨테이너에 넘기는 다리. 없으면 ollama가 조용히 CPU로 떨어진다.
+- docker + docker compose 플러그인, 내 계정을 `docker` 그룹에.
+- **`sudo systemctl disable --now ollama`** ← 호스트 ollama가 살아 있으면 포트 11434와 GPU를 두고 싸운다.
+- `xhost +local:docker` — **재부팅할 때마다** 다시.
+
+### 2. 소스 의존성
+백업에 `src/third_party/`가 들어 있으면 건너뛴다. 다시 받아야 하면:
+```bash
+vcs import src < singlearm.repos    # 호스트에서. src 기준(src/third_party 아님)
+```
+⚠️ 다시 받으면 `COLCON_IGNORE` 6개가 사라진다 → TECH §5.2 보고 재생성.
+
+### 3. 컨테이너 + 모델
+```bash
+docker compose build
+docker compose up -d
+docker compose exec ollama ollama pull exaone3.5:7.8b   # 지금 쓰는 모델
+docker compose exec ollama ollama pull llama3.1:8b      # 시험지 비교용(선택)
+```
+모델 볼륨은 폴더 밖(도커)에 있어서 백업에 안 따라온다 — 반드시 다시 받아야 한다.
+
+### 4. 빌드 (sim 컨테이너에서, 인자 없는 colcon build 금지)
+```bash
+docker compose exec sim bash
+colcon build --packages-up-to open_manipulator_bringup open_manipulator_moveit_config
+colcon build --packages-select arm_interfaces
+colcon build --packages-select arm_agent arm_skills_mock --symlink-install
+colcon build --packages-select arm_kinematics arm_skills arm_perception
+```
+검증은 `ls`가 아니라 import로 (`--symlink-install`은 egg-link만 만든다):
+```bash
+source /ws/install/setup.bash && python3 -c "import agent.llm_planner as m; print(m.__file__)"
+```
+
+### 5. 이사 성공 판정
+- [ ] `pytest` 30 통과 (계획 15 + 복구 15)
+- [ ] `colcon test` gtest 53 통과
+- [ ] 터미널 A(`sim_bringup.launch.py scene:=one_block`) / B(`red_block_detector.py`) / C(`ros2 run arm_agent agent`) 띄우고 `pick red_block` 한 번 완주
+
+### 6. 백업에서 뺀 것 (일부러 뺐다 — 전부 재생성물)
+`build/` `install/` `log/` → 위 4번으로 다시 짓는다 · `.vscode/browse.vc.db`(1.4GB IntelliSense 캐시) → VSCode가 알아서 다시 만든다 · `__pycache__` `.pytest_cache`
+
+### 7. M6(실기) 시작 전에
+- 내 계정을 `dialout` 그룹에 — U2D2 시리얼 포트 권한.
+- **U2D2 `latency_timer` 확인** — FTDI 기본값이 16ms인데 제어 루프는 100Hz(=10ms)다. 그대로면 주기를 못 맞춘다. `/sys/bus/usb-serial/devices/ttyUSB0/latency_timer`를 1로. *[미검증 — 브링업 때 실측할 것]*
