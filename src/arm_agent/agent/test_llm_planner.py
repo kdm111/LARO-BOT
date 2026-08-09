@@ -5,7 +5,7 @@ LLM은 가짜 함수로 주입해 차단한다 -> 모델도 네트워크도 없�
 그건 실호출 시험지의 몫이고, 채점 방식도 pass^k로 다르다.
 """
 
-from agent.llm_planner import plan
+from agent.llm_planner import choose_recovery, plan
 
 # 이 씬에 실재하는 물체. plan()이 object_id를 대조할 목록이다.
 SCENE = ['red_block']
@@ -154,4 +154,114 @@ def test_retry_limited_to_one():
     # 실패한 명령 하나가 모델을 무한히 호출하게 된다.
     llm = FakeLLM('[{"skill": "grab"}]')
     assert plan('pick red_block', SCENE, llm) is None
+    assert llm.calls == 2
+
+
+# ---------- choose_recovery : 복구 전략 선택 ----------
+# 계획 하네스와 요소 6개는 같고 계약만 다르다.
+# 입력 = FailureReport(code/stage/detail/attempt) + 복구 예산, 출력 = 전략 라벨 하나.
+# None이면 호출자가 지금 쓰던 STRATEGY 표로 폴백한다.
+
+GRASP_FAILED = 4        # arm_interfaces ErrorCode 실값. 테스트가 ROS에 의존하지 않게 숫자로 둔다.
+UNREACHABLE = 2
+OBJECT_NOT_FOUND = 1
+PLANNING_FAILED = 3
+
+
+def test_strategy_retry():
+    # 정상 경로의 기준선. 경로 생성 실패는 OMPL이 확률적이라 재시도가 유효하다.
+    llm = FakeLLM('{"strategy": "RETRY"}')
+    assert choose_recovery(PLANNING_FAILED, 'PLAN', call_llm=llm) == 'RETRY'
+
+
+def test_strategy_regrasp():
+    # 못 집었으면 물러나 재인지 후 다시 집는다. M5의 주력 복구다.
+    llm = FakeLLM('{"strategy": "REGRASP"}')
+    assert choose_recovery(GRASP_FAILED, 'GRASP', call_llm=llm) == 'REGRASP'
+
+
+def test_strategy_rescan():
+    # 물체를 못 찾았으면 시야를 비우고 다시 본다.
+    llm = FakeLLM('{"strategy": "RESCAN"}')
+    assert choose_recovery(OBJECT_NOT_FOUND, 'PLAN', call_llm=llm) == 'RESCAN'
+
+
+def test_strategy_abort():
+    # 도달 불가에 ABORT는 계약이 정한 답이다. 모델이 맞게 골랐으면 그대로 쓴다.
+    llm = FakeLLM('{"strategy": "ABORT"}')
+    assert choose_recovery(UNREACHABLE, 'APPROACH', call_llm=llm) == 'ABORT'
+
+
+def test_strategy_normalized():
+    # 대소문자와 공백은 형식 문제지 의미 문제가 아니다. 정규화해서 통과시킨다.
+    # 이걸 거부하면 멀쩡한 판단이 표 폴백으로 떨어져 LLM을 쓰는 의미가 준다.
+    llm = FakeLLM('{"strategy": " regrasp "}')
+    assert choose_recovery(GRASP_FAILED, 'GRASP', call_llm=llm) == 'REGRASP'
+
+
+def test_strategy_unknown_label_rejected():
+    # 화이트리스트 밖. 계약에 없는 라벨은 실행 고리가 해석할 수 없다.
+    llm = FakeLLM('{"strategy": "RESTART"}')
+    assert choose_recovery(GRASP_FAILED, 'GRASP', call_llm=llm) is None
+
+
+def test_strategy_replan_rejected():
+    # REPLAN은 전략 이름으로는 존재하지만 몸통이 없어 스키마에서 뺐다.
+    # 구현되지 않은 도구를 계약에 올리면 모델이 그걸 고르고 시퀀스가 그냥 멈춘다.
+    llm = FakeLLM('{"strategy": "REPLAN"}')
+    assert choose_recovery(GRASP_FAILED, 'GRASP', call_llm=llm) is None
+
+
+def test_strategy_prose_leak_rejected():
+    # 산문이 섞이면 JSON 파싱이 깨진다. 문법 강제를 못 쓰는 경로(폴백 모델)를 대비한다.
+    llm = FakeLLM('추천드립니다: {"strategy": "REGRASP"}')
+    assert choose_recovery(GRASP_FAILED, 'GRASP', call_llm=llm) is None
+
+
+def test_strategy_empty_response_rejected():
+    # Ollama가 죽으면 _safe_call이 예외를 먹고 빈 문자열을 준다.
+    # 여기서 None으로 떨어져야 에이전트가 표 폴백으로 계속 산다.
+    llm = FakeLLM('')
+    assert choose_recovery(GRASP_FAILED, 'GRASP', call_llm=llm) is None
+
+
+def test_strategy_wrong_field_rejected():
+    # 필드 이름이 다르면 값이 맞아도 계약 위반이다. 키를 관대하게 받으면 계약이 흐려진다.
+    llm = FakeLLM('{"action": "REGRASP"}')
+    assert choose_recovery(GRASP_FAILED, 'GRASP', call_llm=llm) is None
+
+
+def test_strategy_array_rejected():
+    # 전략은 하나만 고른다. 배열은 plan()의 형식이지 이쪽 계약이 아니다.
+    llm = FakeLLM('["REGRASP"]')
+    assert choose_recovery(GRASP_FAILED, 'GRASP', call_llm=llm) is None
+
+
+def test_strategy_unreachable_cannot_retry():
+    # 문법도 화이트리스트도 통과하지만 올바르지 않은 답. 계획 하네스의 4층에 해당한다.
+    # 도달 불가는 몇 번을 해도 도달 불가다. 재시도하면 못 닿는 목표에 세 번 매달린다.
+    llm = FakeLLM('{"strategy": "RETRY"}')
+    assert choose_recovery(UNREACHABLE, 'APPROACH', call_llm=llm) is None
+
+
+def test_strategy_budget_exhausted_forces_abort():
+    # 복구 예산이 끝났으면 답은 정해져 있다. 무한루프 방지를 모델 판단에 맡기지 않는다.
+    # 거부(None)가 아니라 ABORT 강제인 이유는, 표로 떨어져도 같은 답이 나와야 하기 때문이다.
+    llm = FakeLLM('{"strategy": "REGRASP"}')
+    assert choose_recovery(GRASP_FAILED, 'GRASP', recovery_used=2, max_recovery=2,
+                           call_llm=llm) == 'ABORT'
+
+
+def test_strategy_retry_prompt_recovers():
+    # 폴백 사다리 2칸. 거부 사유를 붙여 다시 물으면 고쳐 오는 경우가 실제로 있다.
+    # 어제 RESCAN 실행에서 모델이 재프롬프트에 빈 배열로 답한 것이 같은 자리다.
+    llm = FakeLLM('{"strategy": "RESTART"}', '{"strategy": "REGRASP"}')
+    assert choose_recovery(GRASP_FAILED, 'GRASP', call_llm=llm) == 'REGRASP'
+    assert llm.calls == 2
+
+
+def test_strategy_retry_limited_to_one():
+    # 재프롬프트는 정확히 1회. 실패 하나가 모델을 무한히 부르면 복구가 더 비싸진다.
+    llm = FakeLLM('깨짐')
+    assert choose_recovery(GRASP_FAILED, 'GRASP', call_llm=llm) is None
     assert llm.calls == 2

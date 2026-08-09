@@ -1539,5 +1539,32 @@ media/M5_5_팔이_못_닿는_곳은_포기하는가.webm
 스크립트가 시나리오 경계를 월클락으로 남기고, 영상 시작 시각은 파일 수정시각에서 길이를 빼서 구했다.
 그 둘로 로그 시각을 영상 시각으로 옮겼다.
 
+### 17일차
+
+**하네스 구조**
+모델 주변의 모든 비모델 코드. 모델을 믿을수 없는 외부 입력으로 두고 감싸는 껍데기
+1. 도구 스키마 = 계약 : TOOLS(pick, place, move_to 등 필수 인자) + TARGET_NAMEs, MAX_STEP = 2 같은 계약을 정의
+2. 형식 강제 : ollama format 토큰 마스킹이라 JSON 형식이 보장됨
+3. 검증 계층 : _parse_and_validate -> _validate_step. 4cmd
+4. 폴백 사다리 : LLM -> _retry_prompt 1회 -> 문자열 파서. _safe_call이 예외를 먹어 ollama가 죽어도 에이전트는 죽지 않음
+5. 결정론 테스트 : call_llm 의존성 주입 -> FFKLLM으로 pytest 실행. ROS가 없어도 ollama도 없이 돈다.
+6. 관측성 : 계획거부(1차)
+
+**계획 하네스**
+입력 : 자연어 명령 + scend_id - 복구 : FailureReport
+출력 : 스텝 배열 - 복구 : 전략 라벨 1개 
+1. 스키마 : 스킬(move_to, pick, place) - 복구 : RETRY, REGRASP, RESCAN, REPLAN, ABORT
+3. 검증 : 씬 대조 등 - 복구 : 라벨 화이트 리스트 + 미등록시 거부
+4. 폴백 : 문자열 파서 - 복구 : 지금 쓰는 STRATEGY dict
+5 테스트 : 15 케이스 - 복구 실패 주입(동영상) 6종
+
+
+**규칙**
+REPLAN은 스키마에서 뺐다. _do_replan 현재 로그만 찍고 멈추고 있다..
+REGRASP로 풀릴 상황이 있고 REPLAN이 나오면 그냥 멈춘다.
+
+LLM은 라벨만 고른다.
+리커버는 오직 코드로 한다. 실패한 스텝이 pick이면 move_to, place면 move_to, pick
+LLM은 무엇을 할 지 결정하고 코드가 어떻게를 실행한다.
 
 

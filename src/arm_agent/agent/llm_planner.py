@@ -13,6 +13,7 @@ import logging
 import os
 import urllib.request
 
+
 _LOG = logging.getLogger(__name__)
 
 # ---- 계약: arm_interfaces의 액션 3종을 LLM이 읽을 수 있는 형태로 옮긴 것 ----
@@ -23,6 +24,26 @@ SKILLS = {
     'place': ('object_id', 'target_id'),
     'move_to': ('target_name',),
 }
+
+STRATEGIES = ('RETRY', 'REGRASP', 'RESCAN', 'ABORT')
+# Ollama format에 넘길 복구 전략 응답 스키마.
+# 문법 강제라 이 모양을 벗어난 JSON은 구조적으로 못 나온다.
+RECOVERY_SCHEMA = {
+    'type': 'object',
+    'properties': {'strategy': {'type': 'string', 'enum': list(STRATEGIES)}},
+    'required': ['strategy'],
+}
+
+# ErrorCode.msg의 실값. 숫자를 프롬프트에 넣으면 모델이 못 읽으므로 이름으로 바꾼다.
+# arm_interfaces를 import하면 ROS 없이 테스트가 못 돈다 -> 계약의 LLM 사본이다.
+ERROR_NAMES = {
+    1: 'OBJECT_NOT_FOUND', 2: 'UNREACHABLE', 3: 'PLANNING_FAILED',
+    4: 'GRASP_FAILED', 5: 'OBJECT_MOVED', 6: 'GRIPPER_EMPTY',
+    7: 'EXECUTION_TIMEOUT', 99: 'INTERNAL_ERROR',
+}
+
+# 같은 조건으로 다시 해도 결과가 같다. 모델이 RETRY를 고르면 못 닿는 목표에 세번 매달린다.
+NO_RETRY_CODES = (2, 99)
 
 # SRDF omx_f.srdf의 arm 그룹 group_state 실제 값. observe는 아직 없다(M5 이관).
 TARGET_NAMES = ('init', 'home')
@@ -139,6 +160,34 @@ def _parse_and_validate(raw, scene_ids):
     return steps, None
 
 
+def _parse_and_validate_recovery(raw, code):
+    """복구 전략 응답을 검증한다. (라벨, None) 또는 (None, 실패이유).
+
+    plan()의 _parse_and_validate와 같은 자리 - 모델 출력이 지나는 유일한 문이다.
+    """
+    try:                                             # 1층 형식
+        data = json.loads(raw)
+    except (TypeError, ValueError) as exc:
+        return None, f'JSON 파싱 실패: {exc}'
+
+    if not isinstance(data, dict):                   # 2층 모양
+        return None, '전략은 객체 하나여야 한다'
+    if 'strategy' not in data:
+        return None, "'strategy' 필드가 없다"
+
+    # 대소문자와 앞뒤 공백은 형식 문제지 의미 문제가 아니다. 정규화해서 통과시킨다.
+    label = str(data['strategy']).strip().upper()
+    if label not in STRATEGIES:                      # 3층 화이트리스트
+        return None, f'계약에 없는 전략: {label!r}'
+
+    # 4층. 문법도 화이트리스트도 통과하지만 올바르지 않은 답을 여기서 막는다.
+    # 도달 불가는 같은 조건으로 다시 해도 도달 불가다(HANDOFF §3.4 실측).
+    if code in NO_RETRY_CODES and label == 'RETRY':
+        return None, f'{ERROR_NAMES.get(code, code)}는 재시도해도 결과가 같다'
+
+    return label, None
+
+
 def _validate_step(step, scene_ids):
     """스텝 하나를 검사한다. 통과면 None, 아니면 실패 이유 문자열."""
     if not isinstance(step, dict):
@@ -231,7 +280,7 @@ def _retry_prompt(prompt, raw, error):
     )
 
 
-def _call_ollama(prompt, model=None):
+def _call_ollama(prompt, model=None, schema=PLAN_SCHEMA):
     """호스트에서 도는 Ollama에 한 번 물어보고 응답 문자열을 돌려준다.
 
     temperature 0 = 확률표에서 항상 1등만 고른다(greedy) -> 같은 입력에 같은 출력.
@@ -243,7 +292,7 @@ def _call_ollama(prompt, model=None):
     body = json.dumps({
         'model': model or OLLAMA_MODEL,
         'stream': False,
-        'format': PLAN_SCHEMA,
+        'format': schema,
         'options': {'temperature': 0.3},
         'messages': [{'role': 'user', 'content': prompt}],
     }).encode('utf-8')
@@ -270,3 +319,81 @@ def make_ollama_caller(model):
         return _call_ollama(prompt, tag)
 
     return call
+
+
+def make_recovery_caller(model):
+    """복구 스키마를 물린 호출 함수. choose_recovery의 call_llm 자리에 꽂는다.
+
+    make_ollama_caller와 같은 모양(prompt 하나만 받는다)이라
+    테스트의 FakeLLM을 두 하네스가 그대로 공유한다.
+    """
+    tag = MODELS.get(model, model)
+
+    def call(prompt):
+        return _call_ollama(prompt, tag, RECOVERY_SCHEMA)
+
+    return call
+
+
+def _build_recovery_prompt(code, stage, detail, attempt, recovery_used, max_recovery):
+    """실패 보고를 모델이 읽을 수 있는 형태로 옮긴다.
+
+    스키마를 문법으로 강제해도 모델은 문법의 존재를 모른다.
+    그래서 출력 형식을 프롬프트에도 문자열로 적는다(Ollama 공식 권고).
+    """
+    name = ERROR_NAMES.get(code, f'UNKNOWN({code})')
+    return (
+        'You choose ONE recovery strategy for a robot arm that failed a skill.\n'
+        '\n'
+        'Strategies:\n'
+        '- RETRY   : send the same goal again. Useful only when the failure is random.\n'
+        '            Motion planning is sampling based, so a new seed may solve it.\n'
+        '- REGRASP : back off to a safe pose, look again, then redo the failed step.\n'
+        '            Use when the gripper missed the object or dropped it.\n'
+        '- RESCAN  : same motion as REGRASP. Use when the object was not found.\n'
+        '- ABORT   : stop the whole command. Use when retrying cannot help.\n'
+        '\n'
+        'Failure report:\n'
+        f'- error          : {name}\n'
+        f'- stage          : {stage}\n'
+        f'- detail         : {detail}\n'
+        f'- attempt        : {attempt}\n'
+        f'- recovery used  : {recovery_used} of {max_recovery}\n'
+        '\n'
+        'Rules:\n'
+        '- Answer with one JSON object only: {"strategy": "<ONE OF THE ABOVE>"}\n'
+        '- If the arm physically cannot reach the target, retrying changes nothing.\n'
+        '- If you are unsure, choose ABORT. Stopping is always safe.\n'
+    )
+
+
+def choose_recovery(code, stage, detail='', attempt=1,
+                    recovery_used=0, max_recovery=2, call_llm=None):
+    """실패 보고를 보고 복구 전략을 하나 고른다. 못 고르면 None.
+
+    None이면 호출자가 STRATEGY 표로 폴백한다
+    - plan()이 문자열 파서로 떨어지는 자리와 같다.
+    """
+    # 예산이 끝났으면 묻지 않는다. 무한루프 방지를 모델 판단에 맡기지 않는다.
+    if recovery_used >= max_recovery:
+        return 'ABORT'
+    if call_llm is None:
+        call_llm = _call_ollama
+
+    prompt = _build_recovery_prompt(code, stage, detail, attempt,
+                                    recovery_used, max_recovery)
+    raw = _safe_call(call_llm, prompt)
+    label, error = _parse_and_validate_recovery(raw, code)
+    if label is not None:
+        return label
+
+    # 사다리 2칸. 거부 사유를 붙여 정확히 한 번만 다시 묻는다.
+    # 더 물으면 실패 하나가 모델을 무한히 호출하고 복구가 실패보다 비싸진다.
+    _LOG.warning('전략 거부(1차): %s | 원문: %r', error, raw)
+    raw = _safe_call(call_llm, _retry_prompt(prompt, raw, error))
+    label, error = _parse_and_validate_recovery(raw, code)
+    if label is not None:
+        return label
+
+    _LOG.warning('전략 거부(2차): %s | 원문: %r -> 표로 폴백', error, raw)
+    return None

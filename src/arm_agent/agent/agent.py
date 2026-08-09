@@ -16,13 +16,13 @@ from std_msgs.msg import String
 
 from . import llm_planner
 
+
 # 복구 전략
 # 전략은 goal 파라미터가 아니라 시퀀스 조작이다.
 # REGRASP/RESCAN : 복구 자세로 물러나 재인지한 뒤 실패한 스텝을 다시 밟는다.
 RETRY = 'RETRY'
 REGRASP = 'REGRASP'
 RESCAN = 'RESCAN'
-REPLAN = 'REPLAN'
 ABORT = 'ABORT'
 # 에러 코드 -> 전략. 등록 안된 코드는 기본 abort(멈추는게 가장 안전)
 STRATEGY = {
@@ -203,7 +203,15 @@ class Agent(Node):
             )
             self._run_step()
             return
-        strategy = STRATEGY.get(code, ABORT)
+        # LLM에게 전략을 묻고 검증 통과한 라벨만 돌아온다.
+        model = self.get_parameter('model').value
+        strategy = llm_planner.choose_recovery(
+            code, result.failure.stage, result.failure.detail, self._attempt,
+            self._recovery, MAX_RECOVERY, llm_planner.make_recovery_caller(model))
+
+        if strategy is None:
+            strategy = STRATEGY.get(code, ABORT)
+            self.get_logger().warn('LLM 전략 실패 > 표 폴백')
         self.get_logger().warn(
             f'실패 code={code} stage={result.failure.stage} > 전략 {strategy}'
         )
@@ -211,8 +219,6 @@ class Agent(Node):
             self._do_retry(code)
         elif strategy in (REGRASP, RESCAN):
             self._do_recover(strategy)
-        elif strategy == REPLAN:
-            self._do_replan()
         else:
             self.get_logger().error(f'ABORT(code={code}) > 시퀀스 중단')
 
@@ -258,13 +264,6 @@ class Agent(Node):
             f'{pose}로 물러나 재인지, 복구 {len(steps)} 스텝 삽입'
         )
         self._run_step()
-
-    def _do_replan(self):
-        """운반 중 낙하로 대응 시나리오가 없어 현재는 중단.
-
-        예약된 자리. LLM 복구 판단 테스트
-        """
-        self.get_logger().error('REPLAN 미구현 > 중단')
 
 
 def main(args=None):

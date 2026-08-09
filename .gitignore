@@ -19,3 +19,4 @@ src/third_party/
 
 # HANDOFF
 HANDOFF*.md
+handoff/
