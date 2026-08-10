@@ -1634,7 +1634,7 @@ source /ws/install/setup.bash && python3 -c "import agent.llm_planner as m; prin
 
 ### 18일차
 GPU : RTX4070 SUPER -> GT 730으로 변경됨
-추론에 문제가 있을 것이라 판단됨
+추론에 문제가 있을 것이라 판단됨(old : compute capa : 5.0 이상 현재 : compute capa : 3.5)
 
 새로 생긴 문제점 
 1. 현재 LLM 추론이 CPU로 내려오며 Gazebo와 CPU 코어를 두고 싸운다.
@@ -1643,3 +1643,29 @@ GPU : RTX4070 SUPER -> GT 730으로 변경됨
 2. 그리퍼 정착 판정이 시뮬 시간이 아닌 현실 시간을 센다.
 현실 시간 5초를 세는데 RTF가 0.25 까지 떨어지면 시뮬 1.25초 밖에 안된다.
 정착 전에 데드라인에 걸려 grasp 판정을 받지 못한다. 만일 실기에서 제어 루프가 느려지면 똑같이 오판한다.
+
+RETRY(재시도)는 복구 전략 4종 중 유일하게 실측이 없던 분기이다. 
+RETRY, REGRASP의 다른점은 무엇인가? RETRY는 같은 goal을 보내 재시도하고 
+REGRASP는 HOME으로 돌아가서 해당 시점의 씬을 다시 읽어 물체 위치를 갱신하고 다시 좌표를 읽어온다.
+RETRY : 팔이 계획 한대로 갈수 없을 때, 시간이 아웃되었을때
+REGRASP : 집기를 실패할 때, 집었으나 그리퍼가 비어있을때 
+attempt는 오직 에이전트만 가지게 되면서 에이전트만 시도를 멈출 수 있다.
+서버는 상태를 가지지 않아, 서버가 재시작해도 시도횟수가 날아가지 않고 중단 정책은 오직 에이전트가 가지고 있다.
+
+복구 LLM 전략
+  - RETRY   : send the same goal again. Useful only when the failure is random.
+  - REGRASP : ... Use when the gripper missed the object or dropped it. 
+  - RESCAN  : ... Use when the object was not found.
+  - ABORT   : ... Use when retrying cannot help.
+
+프롬프트 RETRY 전략에서 굉장히 추상적인 프롬프트를 가지고 있다. 
+현재 _do_retry는 밟고 있지 않다. LLM이 해당 시도를 하고 있지 않다.
+code=3:PLANNING_FAILED는 가제보 환경으로 사실상 planning을 실패할 수는 없다. 물체가 있어서 팔이 충돌이 나면 경로를 찾지않을까?(추측)
+
+그에 따라 AI에게 검증할 물체와 씬을 만들라고 지시했다.
+실측 결과 파란 바스켓을 만들고 down 계획 실패, up 계획 실패. -> stage APPROACH에서 PLANNING_FAILED
+두 가지 해가 모두 막힘. 
+그리고 장애물(CollisionObject)을 치웠을때 해당 위치로 접근했다. 
+경로가 막혀있을 때 PLANNING_FAILED는 검증되었다. 경로가 있는데 플래너가 못찾음은 아직 찾지 못했다.
+
+또한 새로운 컴퓨터를 발견해서 다시 이사 준비중

@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<!-- 파란 바스켓 — 블록을 감싸 팔의 진입 경로를 막는 장애물.
+     용도: 진짜 PLANNING_FAILED(code=3)를 sim에서 만들어내기 위한 실험 자산.
+     M6 카드 9의 ⓐ("경로가 없다")를 재현한다.
+
+     ★ 이 모델만 띄워서는 계획이 실패하지 않는다.
+       MoveIt은 PlanningScene만 보고, 가제보 월드는 보지 않는다.
+       똑같은 기하를 moveit_msgs/CollisionObject로 /collision_object에 따로 발행해야
+       비로소 플래너가 막힌다. 지금 시스템에 인지 -> PlanningScene 경로가 없기 때문에
+       두 벌을 손으로 맞춰야 한다 — 그 부재 자체가 카드 9의 선결 조건이다.
+
+     기하: 벽 4장 + 열린 위쪽. 안쪽 개구부 9x9cm, 벽 두께 1.5cm, 높이 12cm.
+       - 블록(4x6x4cm, yaw 30도)의 대각선은 약 7.2cm라 9cm 안에 들어간다.
+       - 그리퍼+손목이 12cm 깊이를 9cm 구멍으로 내려가야 하므로 충돌한다.
+     static: 팔이 밀어도 안 움직인다. 장애물은 고정이어야 실험이 재현된다. -->
+<sdf version="1.10">
+  <model name="blue_basket">
+    <static>true</static>
+    <!-- red_block과 같은 자리(0.20, 0.06). 바닥에서 시작해 위로 12cm. -->
+    <pose>0.20 0.06 0 0 0 0</pose>
+
+    <link name="link">
+      <!-- +x 벽 -->
+      <collision name="wall_px_collision">
+        <pose>0.0525 0 0.06 0 0 0</pose>
+        <geometry><box><size>0.015 0.12 0.12</size></box></geometry>
+      </collision>
+      <visual name="wall_px_visual">
+        <pose>0.0525 0 0.06 0 0 0</pose>
+        <geometry><box><size>0.015 0.12 0.12</size></box></geometry>
+        <material><ambient>0 0.2 1 1</ambient><diffuse>0 0.2 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material>
+      </visual>
+
+      <!-- -x 벽 -->
+      <collision name="wall_nx_collision">
+        <pose>-0.0525 0 0.06 0 0 0</pose>
+        <geometry><box><size>0.015 0.12 0.12</size></box></geometry>
+      </collision>
+      <visual name="wall_nx_visual">
+        <pose>-0.0525 0 0.06 0 0 0</pose>
+        <geometry><box><size>0.015 0.12 0.12</size></box></geometry>
+        <material><ambient>0 0.2 1 1</ambient><diffuse>0 0.2 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material>
+      </visual>
+
+      <!-- +y 벽 (x로 길게 뻗어 모서리를 덮는다) -->
+      <collision name="wall_py_collision">
+        <pose>0 0.0525 0.06 0 0 0</pose>
+        <geometry><box><size>0.12 0.015 0.12</size></box></geometry>
+      </collision>
+      <visual name="wall_py_visual">
+        <pose>0 0.0525 0.06 0 0 0</pose>
+        <geometry><box><size>0.12 0.015 0.12</size></box></geometry>
+        <material><ambient>0 0.2 1 1</ambient><diffuse>0 0.2 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material>
+      </visual>
+
+      <!-- -y 벽 -->
+      <collision name="wall_ny_collision">
+        <pose>0 -0.0525 0.06 0 0 0</pose>
+        <geometry><box><size>0.12 0.015 0.12</size></box></geometry>
+      </collision>
+      <visual name="wall_ny_visual">
+        <pose>0 -0.0525 0.06 0 0 0</pose>
+        <geometry><box><size>0.12 0.015 0.12</size></box></geometry>
+        <material><ambient>0 0.2 1 1</ambient><diffuse>0 0.2 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material>
+      </visual>
+    </link>
+  </model>
+</sdf>
