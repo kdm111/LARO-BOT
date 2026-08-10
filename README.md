@@ -1569,6 +1569,8 @@ LLM은 무엇을 할 지 결정하고 코드가 어떻게를 실행한다.
 
 
 
+
+
 ---
 
 ## 부록 — 컴퓨터 이사 후 Ubuntu에서 할 일
@@ -1629,3 +1631,15 @@ source /ws/install/setup.bash && python3 -c "import agent.llm_planner as m; prin
 ### 7. M6(실기) 시작 전에
 - 내 계정을 `dialout` 그룹에 — U2D2 시리얼 포트 권한.
 - **U2D2 `latency_timer` 확인** — FTDI 기본값이 16ms인데 제어 루프는 100Hz(=10ms)다. 그대로면 주기를 못 맞춘다. `/sys/bus/usb-serial/devices/ttyUSB0/latency_timer`를 1로. *[미검증 — 브링업 때 실측할 것]*
+
+### 18일차
+GPU : RTX4070 SUPER -> GT 730으로 변경됨
+추론에 문제가 있을 것이라 판단됨
+
+새로 생긴 문제점 
+1. 현재 LLM 추론이 CPU로 내려오며 Gazebo와 CPU 코어를 두고 싸운다.
+유휴 상태에서는 93.8->4.0tok/s로 낮아지지만 Gazebo가 같이 돌 경우에는 0.1tok/s로 낮아진다.
+
+2. 그리퍼 정착 판정이 시뮬 시간이 아닌 현실 시간을 센다.
+현실 시간 5초를 세는데 RTF가 0.25 까지 떨어지면 시뮬 1.25초 밖에 안된다.
+정착 전에 데드라인에 걸려 grasp 판정을 받지 못한다. 만일 실기에서 제어 루프가 느려지면 똑같이 오판한다.
