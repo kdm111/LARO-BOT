@@ -297,10 +297,16 @@ def _call_ollama(prompt, model=None, schema=PLAN_SCHEMA):
         'messages': [{'role': 'user', 'content': prompt}],
     }).encode('utf-8')
 
+    # User-Agent를 명시하는 이유: OLLAMA_HOST가 runpod 프록시(*.proxy.runpod.net)일 때
+    # 앞단 CDN이 urllib의 기본 UA("Python-urllib/3.x")를 봇으로 보고 403을 준다.
+    # curl은 되는데 코드만 죽는 증상이 여기서 나온다. 값 자체는 무엇이든 상관없다.
     request = urllib.request.Request(
         f'{OLLAMA_HOST}/api/chat',
         data=body,
-        headers={'Content-Type': 'application/json'})
+        headers={
+            'Content-Type': 'application/json',
+            'User-Agent': 'singlearm-agent/1.0',
+        })
 
     with urllib.request.urlopen(request, timeout=HTTP_TIMEOUT_SEC) as response:
         payload = json.loads(response.read().decode('utf-8'))

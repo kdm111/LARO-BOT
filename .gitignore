@@ -24,3 +24,6 @@ handoff/
 # GT 730 머신 전용 런타임 (이 머신에서만 쓴다 — 레포에는 올리지 않는다)
 compose.gt730.yaml
 dc730
+
+# runpod pod 주소. ollama가 무인증이라 이 URL이 사실상 키다.
+.env
