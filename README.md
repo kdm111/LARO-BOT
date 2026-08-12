@@ -1689,4 +1689,11 @@ ros2 launch arm_perception sim_bringup.launch.py scene:='' headless:=true
 
 또한 gtx730으로 인해 에이전트가 환경 설정을 runpod으로 이전하게 된다.
 
+새로 생긴 undefined_pose를 에이전트 쪽에도 채운다.
+agent에 UNDEFINED_POSE를 처리하는 에러 코드가 없어서 ABORT 처리하고 다시 실행한다.
+시퀀스를 끝내고 다시 사람이 들어오던 해야 한다.
+
+
+
+
 

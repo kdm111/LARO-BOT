@@ -166,6 +166,7 @@ GRASP_FAILED = 4        # arm_interfaces ErrorCode 실값. 테스트가 ROS에 �
 UNREACHABLE = 2
 OBJECT_NOT_FOUND = 1
 PLANNING_FAILED = 3
+UNDEFINED_POSE = 8
 
 
 def test_strategy_retry():
@@ -190,6 +191,27 @@ def test_strategy_abort():
     # 도달 불가에 ABORT는 계약이 정한 답이다. 모델이 맞게 골랐으면 그대로 쓴다.
     llm = FakeLLM('{"strategy": "ABORT"}')
     assert choose_recovery(UNREACHABLE, 'APPROACH', call_llm=llm) == 'ABORT'
+
+
+def test_strategy_retry_rejected_on_unreachable():
+    # 4층. 문법도 화이트리스트도 통과하지만 올바르지 않은 답을 여기서 막는다.
+    # 못 닿는 목표는 몇 번을 보내도 못 닿는다 -> None으로 떨어뜨려 표 폴백에 맡긴다.
+    llm = FakeLLM('{"strategy": "RETRY"}')
+    assert choose_recovery(UNREACHABLE, 'APPROACH', call_llm=llm) is None
+
+
+def test_strategy_retry_rejected_on_undefined_pose():
+    # SRDF는 런타임에 바뀌지 않는다 -> UNREACHABLE과 같은 칸(NO_RETRY_CODES).
+    # 이 코드는 에이전트 화이트리스트(POSE_IDS)와 실제 SRDF가 어긋났을 때만 나온다.
+    llm = FakeLLM('{"strategy": "RETRY"}')
+    assert choose_recovery(UNDEFINED_POSE, 'PLAN', call_llm=llm) is None
+
+
+def test_strategy_retry_allowed_on_planning_failed():
+    # 대조군. NO_RETRY_CODES가 넓어지면 이 테스트가 먼저 깨진다.
+    # OMPL은 확률적이라 새 시드로 풀릴 수 있다 - 재시도는 여기서 정당하다.
+    llm = FakeLLM('{"strategy": "RETRY"}')
+    assert choose_recovery(PLANNING_FAILED, 'PLAN', call_llm=llm) == 'RETRY'
 
 
 def test_strategy_normalized():

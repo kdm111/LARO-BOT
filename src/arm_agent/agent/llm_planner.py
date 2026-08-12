@@ -39,11 +39,12 @@ RECOVERY_SCHEMA = {
 ERROR_NAMES = {
     1: 'OBJECT_NOT_FOUND', 2: 'UNREACHABLE', 3: 'PLANNING_FAILED',
     4: 'GRASP_FAILED', 5: 'OBJECT_MOVED', 6: 'GRIPPER_EMPTY',
-    7: 'EXECUTION_TIMEOUT', 99: 'INTERNAL_ERROR',
+    7: 'EXECUTION_TIMEOUT', 8: 'UNDEFINED_POSE', 99: 'INTERNAL_ERROR',
 }
 
 # 같은 조건으로 다시 해도 결과가 같다. 모델이 RETRY를 고르면 못 닿는 목표에 세번 매달린다.
-NO_RETRY_CODES = (2, 99)
+# 발행되지 않는 포즈를 리턴받았을 때도 막는다.
+NO_RETRY_CODES = (2, 8, 99)
 
 # SRDF omx_f.srdf의 arm 그룹 group_state 실제 값. observe는 아직 없다(M5 이관).
 POSE_IDS = ('init', 'home')
