@@ -1,7 +1,7 @@
-# MoveTo: 사전 정의된 자세로 이동
+# MoveTo: 사전 정의된 pose로 이동
 
 # ---- Goal ----
-string target_name                     # 움직여야 할 자세
+string pose_id                         # 움직여야 할 pose (SRDF group_state 이름)
 uint8  attempt                         # 시도 횟수
 ---
 # ---- Result ----

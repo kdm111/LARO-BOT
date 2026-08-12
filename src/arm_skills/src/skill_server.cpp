@@ -153,7 +153,7 @@ private:
   rclcpp_action::GoalResponse handle_goal(
     const rclcpp_action::GoalUUID & /*UUID*/, std::shared_ptr<const MoveTo::Goal> goal)
   {
-    RCLCPP_INFO(get_logger(), "move_to 목표 수신: target=%s", goal->target_name.c_str());
+    RCLCPP_INFO(get_logger(), "move_to 목표 수신: target=%s", goal->pose_id.c_str());
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
   }
   // 취소 요청 -> 지금은 무조건 수락
@@ -339,10 +339,20 @@ private:
   void execute_move_to(const std::shared_ptr<GoalHandleMoveTo> goal_handle)
   {
     const auto goal = goal_handle->get_goal();
-    RCLCPP_INFO(get_logger(), "move_to 실행 : %s", goal->target_name.c_str());
+    RCLCPP_INFO(get_logger(), "move_to 실행 : %s", goal->pose_id.c_str());
 
-    // SRDF에 정의된 이름 자세로 목표 설정 (arm group init /home)
-    move_group_->setNamedTarget(goal->target_name);
+    // SRDF에 정의된 pose로 목표 설정 (arm group init /home)
+    // 존재하지 않을 경우 없는 자세 에러 설정 이후 불가판정
+    if (!move_group_->setNamedTarget(goal->pose_id)) {
+      auto result = std::make_shared<MoveTo::Result>();
+      result->success = false;
+      result->failure = make_failure(
+        arm_interfaces::msg::ErrorCode::UNDEFINED_POSE,
+        arm_interfaces::msg::Stage::PLAN,
+        "SRDF에 없는 pose_id : " + goal->pose_id, goal->attempt);
+      goal_handle->abort(result);
+      return;
+    }
     // plan + execute (블로킹). SUCCESS면 성공. 벤더 qnode.cpp와 같은 판정
     const bool ok = (move_group_->move() == moveit::core::MoveItErrorCode::SUCCESS);
 
@@ -352,14 +362,14 @@ private:
       result->failure = make_failure(
         arm_interfaces::msg::ErrorCode::SUCCESS, "", "", goal->attempt);
       goal_handle->succeed(result);
-      RCLCPP_INFO(get_logger(), "move_to 성공 : %s", goal->target_name.c_str());
+      RCLCPP_INFO(get_logger(), "move_to 성공 : %s", goal->pose_id.c_str());
     } else {
       result->failure = make_failure(
         arm_interfaces::msg::ErrorCode::PLANNING_FAILED,
         arm_interfaces::msg::Stage::PLAN,
-        "move() 실패 : " + goal->target_name, goal->attempt);
+        "move() 실패 : " + goal->pose_id, goal->attempt);
       goal_handle->abort(result);
-      RCLCPP_WARN(get_logger(), "move_to 실패 : %s", goal->target_name.c_str());
+      RCLCPP_WARN(get_logger(), "move_to 실패 : %s", goal->pose_id.c_str());
     }
   }
   void execute_pick(const std::shared_ptr<GoalHandlePick> goal_handle)
@@ -536,12 +546,30 @@ private:
   std::optional<double> wait_gripper_settled(
     double pos_eps = 0.001, int stable_ms = 200, int timeout_ms = 5000)
   {
-    const auto deadline = std::chrono::steady_clock::now() +
-      std::chrono::milliseconds(timeout_ms);
-    int stable = 0;
+    // ★ [2026-08-11] 시계를 노드 시계로 바꿨다. launch가 use_sim_time:=true 를 주므로
+    // 이건 시뮬 시간이다. 전에는 steady_clock(현실 시간)으로 5초를 셌는데,
+    // 재는 대상(그리퍼가 닫히는 물리)은 시뮬 시간에 산다. RTF가 0.25로 떨어진 머신에서
+    // 「5초」가 시뮬 1.25초가 되어 정착 전에 데드라인이 끝났고, 성공한 파지가
+    // GRASP_FAILED -> REGRASP -> ABORT 연쇄로 뒤집혔다(08-10 실측: close 495.196 ->
+    // 정착 실패 500.214, 차이 5.018초 = 타임아웃 값과 일치).
+    // 범위 주의: 이건 sim 전용 수정이다. 실기는 use_sim_time=false라 now()가 곧 현실
+    // 시계이므로 이 교체가 아무것도 바꾸지 않는다. 실기에서 그리퍼가 5초 안에 못 닫히는
+    // 경우는 시계 어긋남이 아니라 「예산 5초가 작다」는 별개 문제이고 처방도 다르다
+    // (타임아웃 확대 또는 정착 기준 변경). M5 §6의 「실기에서도 똑같이 오판한다」는
+    // 두 문제를 한 문장으로 묶은 것이라 M6에서 그대로 쓰면 오독이 된다.
+    const rclcpp::Time deadline =
+      now() + rclcpp::Duration::from_seconds(timeout_ms / 1000.0);
+    double stable_acc_ms = 0.0;   // 20을 더하지 않는다. 실제로 흐른 시뮬 시간을 더한다
+    rclcpp::Time prev = now();
     std::optional<double> last;
-    while (std::chrono::steady_clock::now() < deadline) {
+    while (now() < deadline) {
+      // 잠은 현실 시간으로 잔다. 이건 폴링 간격일 뿐이고 판정에는 쓰지 않는다.
       std::this_thread::sleep_for(std::chrono::milliseconds(20));
+      const rclcpp::Time t = now();
+      const double dt_ms = (t - prev).seconds() * 1000.0;
+      prev = t;                  // seen 여부와 무관하게 항상 전진시킨다.
+                                 // 뒤에 두면 관절을 못 본 구간이 다음 바퀴의 dt에
+                                 // 합산돼 안정 시간이 부풀려진다.
       double pos = 0.0;
       bool seen = false;
       {
@@ -552,10 +580,11 @@ private:
       if (!seen) {
         continue;
       }
-      // 직전 표본과 견준다. 안 변하는 상태가 stable_ms 이어지면 멈춘 것으로 본다.
-      stable = (last.has_value() && std::abs(pos - *last) < pos_eps) ? stable + 20 : 0;
+      // 직전 표본과 견준다. 안 변하는 상태가 stable_ms(시뮬) 이어지면 멈춘 것으로 본다.
+      stable_acc_ms = (last.has_value() && std::abs(pos - *last) < pos_eps)
+        ? stable_acc_ms + dt_ms : 0.0;
       last = pos;
-      if (stable >= stable_ms) {
+      if (stable_acc_ms >= stable_ms) {
         return pos;
       }
     }

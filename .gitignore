@@ -20,3 +20,7 @@ src/third_party/
 # HANDOFF
 HANDOFF*.md
 handoff/
+
+# GT 730 머신 전용 런타임 (이 머신에서만 쓴다 — 레포에는 올리지 않는다)
+compose.gt730.yaml
+dc730

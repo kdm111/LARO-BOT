@@ -42,13 +42,13 @@ SCENE_EMPTY = []
 CATEGORY_DESC = {
     'N1': '정상 - pick 단일',
     'N2': '정상 - place 단일',
-    'N3': '정상 - move_to (이름 자세)',
+    'N3': '정상 - move_to (pose_id)',
     'N4': '정상 - deliver를 2스텝으로 펼치기',
     'N5': '정상 - 2물체 중 지정',
     'N6': '정상 - scene_ids 통제쌍',
     'N7': '정상 - 표기 견고성(대소문자/공백/구두점)',
     'R1': '거부 - 씬에 없는 물체',
-    'R2': '거부 - SRDF에 없는 자세',
+    'R2': '거부 - SRDF에 없는 pose_id',
     'R3': '거부 - 계약 밖 동작',
     'R4': '거부 - 명령이 아닌 발화',
     'R5': '거부 - 과잉·부족',
@@ -68,9 +68,9 @@ def _place(object_id, target_id):
     return [{'skill': 'place', 'object_id': object_id, 'target_id': target_id}]
 
 
-def _move(target_name):
+def _move(pose_id):
     """move_to 한 스텝."""
-    return [{'skill': 'move_to', 'target_name': target_name}]
+    return [{'skill': 'move_to', 'pose_id': pose_id}]
 
 
 def _deliver(object_id, target_id):
@@ -122,7 +122,7 @@ PAIRS = [
 
     # ---- N3. move_to (6쌍) ----
     _P('N3', 'move_to home', 'home 자세로 가', SCENE_ONE, _move('home'),
-       '기준선. 유일하게 target_name을 쓰는 스킬'),
+       '기준선. 유일하게 pose_id를 쓰는 스킬'),
     _P('N3', 'move to init', 'init 자세로 이동해줘', SCENE_ONE, _move('init'),
        '밑줄 없는 표기(move to)도 같은 스킬로'),
     _P('N3', 'go home', '홈으로 가', SCENE_ONE, _move('home'),
@@ -224,12 +224,12 @@ PAIRS = [
     _P('R1', 'pick red_blcok', 'red_blcok 집어', SCENE_ONE, None,
        '★오타. 씬에 없는 id이므로 거부가 정답 - 관대하게 고쳐주면 안 된다'),
 
-    # ---- R2. SRDF에 없는 자세 (7쌍) ----
+    # ---- R2. SRDF에 없는 pose_id (7쌍) ----
     # observe는 M5로 이관되어 아직 없다. v1 실측: 모델이 observe를 home으로 치환했다.
     _P('R2', 'move_to observe', 'observe 자세로 가', SCENE_ONE, None,
        '★observe는 M5 이관으로 아직 없다. home으로 치환하면 오답'),
     _P('R2', 'move_to ready', 'ready 자세로 가', SCENE_ONE, None,
-       '흔한 자세 이름이라 있을 법하다'),
+       '흔한 pose_id라 있을 법하다'),
     _P('R2', 'move_to standby', 'standby 자세로 이동해줘', SCENE_ONE, None,
        '같은 계열'),
     _P('R2', 'go to the camera pose', '카메라 자세로 이동', SCENE_ONE, None,
@@ -237,9 +237,9 @@ PAIRS = [
     _P('R2', 'move to the waiting pose', '대기 자세로 이동', SCENE_ONE, None,
        '"대기"가 init처럼 들린다 - 유추로 치환하면 오답'),
     _P('R2', 'move_to bin', 'bin 자세로 가', SCENE_ONE, None,
-       '★bin은 유효한 target_id지만 target_name이 아니다. 두 이름공간을 섞는가'),
+       '★bin은 유효한 target_id지만 pose_id가 아니다. 두 이름공간을 섞는가'),
     _P('R2', 'move_to red_block', 'red_block 자세로 가', SCENE_ONE, None,
-       '★물체 id를 자세 이름 자리에. 이름공간 혼동 유도'),
+       '★물체 id를 pose_id 자리에. 이름공간 혼동 유도'),
 
     # ---- R3. 계약 밖 동작 (8쌍) ----
     # 1강 성질 ②(환각). 문맥상 자연스럽지만 스킬 3종에 없는 동작이다.
@@ -296,7 +296,7 @@ PAIRS = [
     _P('R5', 'pick', '집어', SCENE_TWO, None,
        '★2물체라 대상 특정 불가. 1물체였다면 추론이 정당해져 모호해진다'),
     _P('R5', 'move_to', '자세로 가', SCENE_ONE, None,
-       'target_name 누락'),
+       'pose_id 누락'),
     _P('R5', 'pick red_block twice', 'red_block 두 번 집어', SCENE_ONE, None,
        '★반복 요구. 같은 스텝 2개는 계약상 의미가 없다'),
 

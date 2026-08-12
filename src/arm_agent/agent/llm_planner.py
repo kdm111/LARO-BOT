@@ -22,7 +22,7 @@ _LOG = logging.getLogger(__name__)
 SKILLS = {
     'pick': ('object_id',),
     'place': ('object_id', 'target_id'),
-    'move_to': ('target_name',),
+    'move_to': ('pose_id',),
 }
 
 STRATEGIES = ('RETRY', 'REGRASP', 'RESCAN', 'ABORT')
@@ -46,7 +46,7 @@ ERROR_NAMES = {
 NO_RETRY_CODES = (2, 99)
 
 # SRDF omx_f.srdf의 arm 그룹 group_state 실제 값. observe는 아직 없다(M5 이관).
-TARGET_NAMES = ('init', 'home')
+POSE_IDS = ('init', 'home')
 
 # place가 놓을 수 있는 유일한 장소(작업대 오른쪽 위 고정).
 # 카메라가 검출하는 물체가 아니라 고정 좌표라 scene_ids와 무관하게 검사한다.
@@ -83,7 +83,7 @@ PLAN_SCHEMA = {
             'skill': {'type': 'string', 'enum': list(SKILLS)},
             'object_id': {'type': 'string'},
             'target_id': {'type': 'string'},
-            'target_name': {'type': 'string'},
+            'pose_id': {'type': 'string'},
         },
         'required': ['skill'],
     },
@@ -201,11 +201,11 @@ def _validate_step(step, scene_ids):
         if not step.get(field):
             return f'{skill}에 필수 인자 {field}가 없다'
 
-    if skill == 'move_to' and step['target_name'] not in TARGET_NAMES:
-        return f'SRDF에 없는 자세 이름: {step["target_name"]!r}'
+    if skill == 'move_to' and step['pose_id'] not in POSE_IDS:
+        return f'SRDF에 없는 pose_id: {step["pose_id"]!r}'
 
     # target_id는 고정 장소 하나뿐이라 화이트리스트로 잡는다.
-    # 씬과 무관하므로 scene_ids가 없어도 검사한다 - target_name과 같은 취급.
+    # 씬과 무관하므로 scene_ids가 없어도 검사한다 - pose_id와 같은 취급.
     if skill == 'place' and step['target_id'] not in TARGET_IDS:
         return f'없는 장소: {step["target_id"]!r}'
 
@@ -230,9 +230,9 @@ def _build_prompt(command, scene_ids):
         'Available skills (use EXACTLY these names and fields):\n'
         '  {"skill": "pick",    "object_id": "<object>"}\n'
         '  {"skill": "place",   "object_id": "<object>", "target_id": "<target>"}\n'
-        '  {"skill": "move_to", "target_name": "<name>"}\n'
+        '  {"skill": "move_to", "pose_id": "<name>"}\n'
         '\n'
-        f'Valid target_name values: {", ".join(TARGET_NAMES)}\n'
+        f'Valid pose_id values: {", ".join(POSE_IDS)}\n'
         f'Valid target_id values: {", ".join(TARGET_IDS)}\n'
         f'Objects present in the scene: {scene}\n'
         '\n'

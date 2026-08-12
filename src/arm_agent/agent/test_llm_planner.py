@@ -49,10 +49,10 @@ def test_two_step_plan():
 
 
 def test_named_pose():
-    # move_to만 target_name(SRDF 이름 자세)을 쓴다. object_id가 아니다.
-    llm = FakeLLM('[{"skill": "move_to", "target_name": "home"}]')
+    # move_to만 pose_id(SRDF group_state 이름)를 쓴다. object_id가 아니다.
+    llm = FakeLLM('[{"skill": "move_to", "pose_id": "home"}]')
     assert plan('move_to home', SCENE, llm) == [
-        {'skill': 'move_to', 'target_name': 'home'}]
+        {'skill': 'move_to', 'pose_id': 'home'}]
 
 
 def test_scene_unknown_skips_object_check():
@@ -97,9 +97,9 @@ def test_truncated_json_rejected():
 def test_step_limit_rejected():
     # 과잉 생성의 1차 방어선. 지금 계약에서 가장 긴 계획은 deliver의 2스텝이다.
     llm = FakeLLM(
-        '[{"skill": "move_to", "target_name": "home"},'
+        '[{"skill": "move_to", "pose_id": "home"},'
         ' {"skill": "pick", "object_id": "red_block"},'
-        ' {"skill": "move_to", "target_name": "init"}]')
+        ' {"skill": "move_to", "pose_id": "init"}]')
     assert plan('pick red_block', SCENE, llm) is None
 
 
@@ -110,10 +110,10 @@ def test_object_not_in_scene_rejected():
     assert plan('pick blue_block', SCENE, llm) is None
 
 
-def test_unknown_target_name_rejected():
+def test_unknown_pose_id_rejected():
     # observe는 SRDF에 아직 없다(M5로 이관됨).
     # BFCL의 '관련성 판별'과 같은 상황 - 할 수 없는 일은 하지 말고 거부해야 한다.
-    llm = FakeLLM('[{"skill": "move_to", "target_name": "observe"}]')
+    llm = FakeLLM('[{"skill": "move_to", "pose_id": "observe"}]')
     assert plan('move_to observe', SCENE, llm) is None
 
 
@@ -132,7 +132,7 @@ def test_move_to_mixed_with_pick_rejected():
     # 스킬 이름도 스텝 수도 합법이라 화이트리스트와 스텝 상한을 둘 다 통과한다.
     # 잡는 근거는 계약의 구조다 - move_to는 어떤 유효한 계획에서도 단독으로만 온다.
     llm = FakeLLM(
-        '[{"skill": "move_to", "target_name": "home"},'
+        '[{"skill": "move_to", "pose_id": "home"},'
         ' {"skill": "pick", "object_id": "red_block"}]')
     assert plan('pick red_block', SCENE, llm) is None
 

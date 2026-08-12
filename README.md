@@ -1669,3 +1669,21 @@ code=3:PLANNING_FAILED는 가제보 환경으로 사실상 planning을 실패할
 경로가 막혀있을 때 PLANNING_FAILED는 검증되었다. 경로가 있는데 플래너가 못찾음은 아직 찾지 못했다.
 
 또한 새로운 컴퓨터를 발견해서 다시 이사 준비중
+
+### 19일차
+
+하드웨어 이사 후 전체 점검 중 발생한 문제
+
+1. 현재 move_to 이동이 SRDF에 정의되지 않은 자세를 성공 반환한다.
+llm_planner에서는 init, home으로만 반환이 되지만 skill_server는 성공반환한다. 
+move_group_->setNamedTarget 함수에서 체크 하는데 setNamedTarget이 이름을 못찾으면 false를 반환하면서 기존 목표를 유지하고 그걸 다시 수행해 성공이라 보고한다.
+
+그래서 arm_interfaces/msg/ErrorCode
+에 UNDEFINED_POSE라는 에러 코드를 추가하고 move_to의 경우 pose_id로 보내도록 AI가 수정했다.
+
+또한 pc 성능이 바뀌면서 runpod으로 gpu를 옮겼다.
+또한 가제보의 rtf가 흔들려 호출 방식을 바꾸어야 한다. 가제보 창을 띄우지 않고 가야한다.
+```
+ros2 launch arm_perception sim_bringup.launch.py scene:='' headless:=true
+```
+

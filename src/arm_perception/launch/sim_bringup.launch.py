@@ -25,6 +25,13 @@ def generate_launch_description():
         default_value='false',
         description='MoveIt RViz 창을 띄울지 여부'
     )
+    # 가제보 GUI는 이 머신에서 코어 하나를 통째로 먹는다(실측 36%, 4스레드 중).
+    # 눈으로 볼 필요가 없는 실행 — 사이클 측정, 장시간 회귀 — 은 headless:=true로 돌린다.
+    declare_headless = DeclareLaunchArgument(
+        'headless',
+        default_value='false',
+        description='true면 가제보 GUI 없이 서버만 (gz sim -s). 측정용'
+    )
 
     # ---------- (2) 경로 계산 ----------
     perception_share = get_package_share_directory('arm_perception')
@@ -46,7 +53,10 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(bringup_share, 'launch', 'omx_f_gazebo.launch.py')
         ),
-        launch_arguments={'world': world_path}.items(),
+        launch_arguments={
+            'world': world_path,
+            'headless': LaunchConfiguration('headless'),
+        }.items(),
     )
 
     # ---------- (4) MoveIt (move_group, 선택적 RViz) ----------
@@ -157,6 +167,7 @@ def generate_launch_description():
     return LaunchDescription([
         declare_scene,
         declare_use_rviz,
+        declare_headless,
         gazebo,
         moveit,
         skill_server,

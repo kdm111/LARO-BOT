@@ -21,14 +21,15 @@ RED_LOWER_2 = np.array([170, 120, 70])
 RED_UPPER_2 = np.array([180, 255, 255])
 
 MIN_AREA = 100  # 이보다 작은 덩어리는 잡음으로 버린다.
-PLANE_Z = 0.02 # 블록 중심의 높이. 블록 높이 0.04의 절반. 이 평면과 광선을 만나게 해서 거리를 정한다.
+PLANE_Z = 0.02  # 블록 중심의 높이. 블록 높이 0.04의 절반. 이 평면과 광선을 만나게 해서 거리를 정한다.
 # ★ 실치수(0.06)가 아니라 "이 카메라에서 관측되는" 하한이다.
 # minAreaRect는 윗면+옆면의 합집합을 감싸므로 관측 길이가 실치수보다 크고,
 # 블록의 위치·자세에 따라 6.3~8.4cm로 흔들린다(2026-08-07 실측, 5개 지점).
 # 상한은 두지 않는다 - 정상 블록을 오폭한다(8.4cm 실측). 조각난 blob만 거른다.
 MIN_SEEN_LONG = 0.055  # 가림으로 조각난 blob 상한 4.9cm과 정상 하한 6.3cm 사이
-WORLD_FRAME = 'world' # MoveIt 플래닝 프레임. skill_server가 알아듣는 좌표계
-OPTICAL_FRAME = 'camera_optical_frame' 
+WORLD_FRAME = 'world'  # MoveIt 플래닝 프레임. skill_server가 알아듣는 좌표계
+OPTICAL_FRAME = 'camera_optical_frame'
+
 
 class RedBlockDetector(Node):
 
@@ -64,7 +65,7 @@ class RedBlockDetector(Node):
     def pixel_to_world(self, u, v, stamp):
         """픽셀 하나를 테이블 평면 위의 world 좌표로 되돌린다."""
         if self.fx is None:
-            return None # camera_info가 오지 안으면 변환 금지
+            return None  # camera_info가 오지 안으면 변환 금지
         try:
             tf = self.tf_buffer.lookup_transform(WORLD_FRAME, OPTICAL_FRAME, stamp)
         except tf2_ros.TransformException as e:
@@ -86,7 +87,7 @@ class RedBlockDetector(Node):
 
         dz = far_w.z - near_w.z
         if dz >= 0:
-            return None # 광선이 아래로 향하지 않음. 평면과 만나지 않는다.
+            return None  # 광선이 아래로 향하지 않음. 평면과 만나지 않는다.
 
         # 평면까지 내려가야 할 높이 / 광선이 1칸 내려갈ㄸ ㅐ내려가는 높이. 늘려야할 매수
         t = (PLANE_Z - near_w.z) / dz
@@ -95,7 +96,7 @@ class RedBlockDetector(Node):
         return (x, y)
 
     def long_axis(self, box, stamp):
-        """회전 사각형의 긴 축을 world 평면 위의 yaw(rad), 길이(m)로 되돌린다"""
+        """회전 사각형의 긴 축을 world 평면 위의 yaw(rad), 길이(m)로 되돌린다."""
         # 코너 4개는 이웃끼리 붙어 있다. 이웃한 두 변 중 긴 쪽이 긴 축이다.
         if np.linalg.norm(box[1] - box[0]) >= np.linalg.norm(box[2] - box[1]):
             # box[0]보다 box[1]이 길다. 짧은 변 두 개의 중점을 이으면 긴 축이 된다.
@@ -157,7 +158,7 @@ class RedBlockDetector(Node):
         # 팔에 가려져서 여러 개의 물체가 나타나는 등의 이슈가 있었다.
         # 이름이 바뀌면 복구할 대상을 잃어버린다.
         # 복구 후 재시도할 물건은 항상 같아야 한다.
-         
+
         if len(centers) > 1:
             self.get_logger().warn(
                 f'같은 색 물체 {len(centers)}개 - 가장 큰 것만 발행',
@@ -207,12 +208,12 @@ class RedBlockDetector(Node):
             obj.last_seen = msg.header.stamp
             scene.objects.append(obj)
             parts.append(f'{obj.object_id} ({p[0]:.3f}, {p[1]:.3f}) yaw {math.degrees(yaw):.1f}도')
-            
+
         self.scene_pub.publish(scene)
-        
+
         if parts:
             self.get_logger().info(
-                f'/scene_state {len(scene.objects)}개 : ' + ', '.join(parts), 
+                f'/scene_state {len(scene.objects)}개 : ' + ', '.join(parts),
                 throttle_duration_sec=1.0)
         else:
             self.get_logger().warn('빨강 없음', throttle_duration_sec=2.0)

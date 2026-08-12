@@ -27,6 +27,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ros-jazzy-joint-state-publisher \
         ros-jazzy-joint-state-publisher-gui \
         ros-jazzy-realsense2-description \
+        # --- 그래픽 유저스페이스 (2026-08-11, GT 730 머신) ---
+        # 커널쪽 nouveau(DRM)는 호스트 것을 /dev/dri 로 넘겨받지만,
+        # OpenGL 구현체는 컨테이너 안의 Mesa다. libgl1-mesa-dri 가 없으면
+        # gallium 드라이버(nouveau)를 못 찾아 조용히 llvmpipe(CPU)로 떨어진다.
+        # -> "GPU를 넘겼는데 왜 느리지"의 진범. glxinfo로 확인할 것.
+        libgl1-mesa-dri \
+        libglx-mesa0 \
+        libegl-mesa0 \
+        libglu1-mesa \
+        mesa-utils \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /ws

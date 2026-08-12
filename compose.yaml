@@ -19,6 +19,13 @@ services:
       # llm_planner가 읽는 값. 컴포즈 네트워크의 DNS 이름이라 IP를 몰라도 된다.
       # 이 한 줄 덕분에 파이썬 코드는 로컬/컨테이너 어디서 돌든 그대로다.
       OLLAMA_HOST: "http://ollama:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     networks:
       - singlearm
 
@@ -61,6 +68,16 @@ services:
     environment:
       ROS_DOMAIN_ID: "48"
       DISPLAY: ${DISPLAY}
+      # 기본값은 compute,utility 뿐이라 OpenGL이 안 넘어온다.
+      # 이게 없으면 Gazebo/RViz가 llvmpipe(소프트웨어)로 떨어져 RTF가 주저앉는다.
+      NVIDIA_DRIVER_CAPABILITIES: "all"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     networks:
       - singlearm
   moveit:
@@ -79,6 +96,14 @@ services:
     environment:
       ROS_DOMAIN_ID: "48"
       DISPLAY: ${DISPLAY}
+      NVIDIA_DRIVER_CAPABILITIES: "all"   # sim과 같은 이유 (RViz/MoveIt 시각화)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     networks:
       - singlearm
 

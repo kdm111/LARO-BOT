@@ -20,5 +20,7 @@ int32 OBJECT_MOVED=5
 int32 GRIPPER_EMPTY=6  # 운반 중 낙하
 # 실행 시간 초과
 int32 EXECUTION_TIMEOUT=7 # 실행 시간 초과
+# 사전에 정의되지 않은 자세
+int32 UNDEFINED_POSE=8 # 실행 시간 초과
 int32 INTERNAL_ERROR=99 # 알 수 없는 에러
 

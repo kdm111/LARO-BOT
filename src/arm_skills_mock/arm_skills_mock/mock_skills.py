@@ -117,7 +117,7 @@ class MockSkills(Node):
         return result
 
     def execute_move_to(self, goal_handle):
-        return self._execute(goal_handle, 'move_to', MoveTo, '', goal_handle.request.target_name)
+        return self._execute(goal_handle, 'move_to', MoveTo, '', goal_handle.request.pose_id)
 
     def execute_pick(self, goal_handle):
         goal = goal_handle.request

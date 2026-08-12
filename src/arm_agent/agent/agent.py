@@ -124,7 +124,7 @@ class Agent(Node):
         if skill == 'move_to' and len(parts) == 2:
             client = self._move_to_client
             goal = MoveTo.Goal()
-            goal.target_name = parts[1]
+            goal.pose_id = parts[1]
             return [(client, goal)]
         elif skill == 'pick' and len(parts) == 2:
             client = self._pick_client
@@ -154,7 +154,7 @@ class Agent(Node):
             skill = step['skill']
             if skill == 'move_to':
                 goal = MoveTo.Goal()
-                goal.target_name = step['target_name']
+                goal.pose_id = step['pose_id']
                 goals.append((self._move_to_client, goal))
             elif skill == 'pick':
                 goal = Pick.Goal()
@@ -246,7 +246,7 @@ class Agent(Node):
         self._attempt = 1
         pose = self.get_parameter('recovery_pose').value
         move_goal = MoveTo.Goal()
-        move_goal.target_name = pose
+        move_goal.pose_id = pose
         steps = [(self._move_to_client, move_goal)]
 
         # 실패한 스텝이 place면 들고 있어야 할 물체가 없다. 다시 집는 스텝을 붙인다.
