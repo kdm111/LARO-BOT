@@ -1687,3 +1687,6 @@ move_group_->setNamedTarget 함수에서 체크 하는데 setNamedTarget이 이�
 ros2 launch arm_perception sim_bringup.launch.py scene:='' headless:=true
 ```
 
+또한 gtx730으로 인해 에이전트가 환경 설정을 runpod으로 이전하게 된다.
+
+
