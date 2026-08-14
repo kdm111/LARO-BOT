@@ -51,7 +51,7 @@ POSE_IDS = ('init', 'home')
 
 # place가 놓을 수 있는 유일한 장소(작업대 오른쪽 위 고정).
 # 카메라가 검출하는 물체가 아니라 고정 좌표라 scene_ids와 무관하게 검사한다.
-TARGET_IDS = ('bin',)
+TARGET_IDS = ('bin', 'shelf')
 
 # 지금 계약에서 가장 긴 계획은 deliver의 2스텝이다.
 # 과잉 생성(요청하지 않은 단계 삽입)의 1차 방어선이기도 하다.
@@ -133,6 +133,24 @@ def _safe_call(call_llm, prompt):
         return ''   # 파싱 단계에서 거부되고 폴백으로 이어진다
 
 
+def validate_steps(steps, scene_ids=None):
+    """steps를 검증 4층에 통과시킨다. (steps, None) 또는 (None, 실패이유)."""
+    if not isinstance(steps, list) or not steps:
+        return None, '계획은 비어 있지 않은 배열이어야 한다'
+    if len(steps) > MAX_STEPS:
+        return None, f'스텝 {len(steps)}개는 상한 {MAX_STEPS}를 넘을 수 없다'
+    for step in steps:
+        error = _validate_step(step, scene_ids)
+        if error is not None:
+            return None, error
+
+    # 계약의 구조에서 나오는 규칙: move_to는 단독 으로만 온다.
+    # pick,plce,move_to는 각 1스텝
+    if len(steps) > 1 and any(step['skill'] == 'move_to' for step in steps):
+        return None, 'move_to는 단독 스텝으로만 유효'
+    return steps, None
+
+
 def _parse_and_validate(raw, scene_ids):
     """응답 문자열을 계획으로 바꾼다. (계획, None) 또는 (None, 실패이유)."""
     try:
@@ -142,23 +160,7 @@ def _parse_and_validate(raw, scene_ids):
         # 관대하게 JSON만 긁어내지 않는다 - "거의 맞는" 출력을 통과시키게 된다.
         return None, f'JSON 파싱 실패: {exc}'
 
-    if not isinstance(steps, list) or not steps:
-        return None, '계획은 비어 있지 않은 배열이어야 한다'
-    if len(steps) > MAX_STEPS:
-        return None, f'스텝 {len(steps)}개는 상한 {MAX_STEPS}개를 넘는다'
-
-    for step in steps:
-        error = _validate_step(step, scene_ids)
-        if error is not None:
-            return None, error
-
-    # 계약의 구조에서 나오는 규칙: move_to는 어떤 유효한 계획에서도 단독으로만 온다
-    # (pick/place/move_to는 각 1스텝, deliver는 pick+place). 스킬 이름도 스텝 수도
-    # 합법인 채로 통과하는 "요청하지 않은 move_to 삽입"을 이걸로 잡는다.
-    if len(steps) > 1 and any(step['skill'] == 'move_to' for step in steps):
-        return None, 'move_to는 단독 스텝으로만 유효하다'
-
-    return steps, None
+    return validate_steps(steps, scene_ids)
 
 
 def _parse_and_validate_recovery(raw, code):

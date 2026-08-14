@@ -5,16 +5,50 @@
 노드 이름 : arm_agent
 """
 
+import math
+
 from arm_interfaces.action import MoveTo, Pick, Place
 from arm_interfaces.msg import ErrorCode, SceneState
 
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
+from rclpy.time import Time
 
 from std_msgs.msg import String
 
 from . import llm_planner
+
+# 명령 구분
+HUMAN = 'human'
+SELF = 'self'
+
+# 구역 전략
+# 좌표 구역
+ZONE = {
+    'shelf': (0.15, 0.15),  # 창고
+    'work': (0.21, 0.06),  # 작업 구역
+    'serve': (0.15, -0.15)  # 서빙
+}
+ZONE_RADIUS = 0.05
+LOITER_SEC = 2.0
+TIDY_TARGET = 'shelf'
+
+
+def zone_of(x, y):
+    """관측된 장소가 어디인지 돌려준다."""
+    for name, (zone_x, zone_y) in ZONE.items():
+        if math.hypot(x - zone_x, y - zone_y) <= ZONE_RADIUS:
+            return name
+    return None
+
+
+def tidy_steps(object_id):
+    """방치된 물건을 창고로 되돌리는 명령을 생성한다."""
+    return [
+        {'skill': 'pick', 'object_id': object_id},
+        {'skill': 'place', 'object_id': object_id, 'target_id': TIDY_TARGET}
+    ]
 
 
 # 복구 전략
@@ -47,6 +81,7 @@ class Agent(Node):
     def __init__(self):
         """구독 1개(/command)와 액션 클라이언트 3개를 만든다."""
         super().__init__('agent')   # 부모 생성자 호출 및 노드 이름
+        self._busy = False  # 현재 시퀀스 작업 중일땐 busy 설정. 시퀀스가 끝난 뒤에 False
         self.create_subscription(   # command 를 구독하고 있어 명령을 수신할 수 있음
             String,
             '/command',
@@ -70,6 +105,11 @@ class Agent(Node):
         )
         # 현재 agent가 보고 있을 씬
         self._scene_ids = None
+        # 방치 판정에 필요한 물건을 처음본 씬
+        # 구역 판정용
+        self._scene_xy = {}
+        self._first_seen = {}  # 여기에 ojbect_id와 시간이 찍힌다 씬에서 사라지면 지운다.
+        self._scene_stamp = None  # 마지막 스냅삿 시각. 경과 시간의 기준
         self.create_subscription(
             SceneState,
             '/scene_state',
@@ -83,68 +123,107 @@ class Agent(Node):
         # ros2 param set /agent recovery_pose init으로 실행 중 교체 가능
         self.declare_parameter('recovery_pose', 'home')
         self._recovery = 0  # 복구 예산 사용량. 명령 단위로만 리셋
+        self.create_timer(1.0, self._idle_tick)
 
     # 인지 노드가 보내고 있는 스냅샷
     def on_scene_state(self, msg):
-        """씬에 있는 물체 id 목록을 갱신한다."""
+        """씬에 있는 물체 id 목록과 처음 본 시각을 갱신한다."""
+        now = Time.from_msg(msg.header.stamp)
+        self._scene_stamp = now
         self._scene_ids = [obj.object_id for obj in msg.objects]
+        self._scene_xy = {
+            obj.object_id: (obj.pose.pose.position.x, obj.pose.pose.position.y)
+            for obj in msg.objects
+        }
+        # 구역에 물체가 들어온 시간을 재고 구역이 바뀌면 다시 잰다.
+        for object_id, (x, y) in self._scene_xy.items():
+            zone = zone_of(x, y)
+            seen = self._first_seen.get(object_id)
+            if seen is None or seen[0] != zone:
+                self._first_seen[object_id] = (zone, now)
+        # 스냅샷에서 빠진 물체는 기록을 지운다. 다시 나타나면 처음부터 다시 센다.
+        for object_id in list(self._first_seen):
+            if object_id not in self._scene_ids:
+                del self._first_seen[object_id]
 
-    # 해당 액션 서버로 보내는 라우터
-    # 계획을 세우고 실행 시작하는 함수
+    # 작업 구역에 방치되어 있는지 판단하는 함수
+    def _loitering(self):
+        """작업 구역에 LOITER_SEC 이상 머문 물체 id 하나를 돌려준다. 없으면 None."""
+        if self._scene_stamp is None:
+            return None
+        for object_id, (zone, since) in self._first_seen.items():
+            if zone != 'work':
+                continue
+            if (self._scene_stamp - since).nanoseconds >= LOITER_SEC * 1e9:
+                return object_id
+        return None
+
+    def _idle_tick(self):
+        """쉴 때만 돈다. 작업 구역에 방치된 물건을 찾아 스스로 치운다."""
+        if self._busy:
+            return
+        object_id = self._loitering()
+        if object_id is None:
+            return
+        self.get_logger().info(f'자가 정리 실시 : {object_id} > {TIDY_TARGET}')
+        self._dispatch(tidy_steps(object_id), SELF)
+
+    # 인간의 명령이 들어오는 곳
     def on_command(self, msg):
-        """명령 문자열을 계획으로 바꿔 실행을 시작한다."""
+        """토픽 메시지를 다듬어 넘기는 곳."""
         command = msg.data.strip()
         if not command:
             self.get_logger().warn('빈 명령')
             return
-
-        # 사다리 1~2칸 LLM에게 묻는다. 검증을 통과한 계획만 돌아온다.
-        # 파라미터는 콜백 안에서 매번 읽는다.
-        model = self.get_parameter('model').value
-        steps = llm_planner.plan(command, self._scene_ids, llm_planner.make_ollama_caller(model))
-        if steps is not None:
-            plan = self._steps_to_goals(steps)
-            self.get_logger().info(f'LLM 계획 채택 : {steps}')
-        else:
-            # 사다리 3칸 문자열 파싱
-            plan = self._build_plan(command.split())
-            self.get_logger().warn(f'LLM 계획 실패 > 문자열 파서 폴백 : {command}')
-
-        if plan is None:
+        steps = self._to_steps(command)
+        if steps is None:
             self.get_logger().warn(f'잘못된 명령 : {command}')
             return
-        self._plan = plan
+        self._dispatch(steps, HUMAN)
+
+    # 사람 명령과 자가 명령이 만나 계쇡으로 바꿔 실행 시키는 곳
+    def _dispatch(self, steps, source):
+        """명령을 계획으로 바꾸어 실행한다."""
+        steps, error = llm_planner.validate_steps(steps, self._scene_ids)
+        if error is not None:
+            self.get_logger().warn(f'검증 거부 : {error} | {source}')
+            return
+        self._plan = self._steps_to_goals(steps)  # 여기서 한번만 goal로
+        # 마지막 작업이 플레이스 일경우 recovery_pose로 최종 위치 설정
+        if steps[-1]['skill'] == 'place':
+            home_goal = MoveTo.Goal()
+            home_goal.pose_id = self.get_parameter('recovery_pose').value
+            self._plan.append((self._move_to_client, home_goal))
         self._step = 0
         self._attempt = 1
         self._recovery = 0  # 새 명령 = 복구 초기화
+        self._busy = True
         self._run_step()
+
+    # 텍스트를 실행을 위한 단계로 변경한다.
+    def _to_steps(self, command):
+        model = self.get_parameter('model').value
+        steps = llm_planner.plan(command, self._scene_ids, llm_planner.make_ollama_caller(model))
+        if steps is not None:
+            self.get_logger().info(f'LLM 계획 채택 : {steps}')
+            return steps
+
+        # 문자열 파싱
+        self.get_logger().warn(f'LLM 계획 실패 > 문자열 파서 폴백 : {command}')
+        return self._build_plan(command.split())
 
     # 계획을 만드는 함수
     def _build_plan(self, parts):
         skill = parts[0]
         if skill == 'move_to' and len(parts) == 2:
-            client = self._move_to_client
-            goal = MoveTo.Goal()
-            goal.pose_id = parts[1]
-            return [(client, goal)]
+            return [{'skill': skill, 'pose_id': parts[1]}]
         elif skill == 'pick' and len(parts) == 2:
-            client = self._pick_client
-            goal = Pick.Goal()
-            goal.object_id = parts[1]
-            return [(client, goal)]
+            return [{'skill': skill, 'object_id': parts[1]}]
         elif skill == 'place' and len(parts) == 3:
-            client = self._place_client
-            goal = Place.Goal()
-            goal.object_id = parts[1]
-            goal.target_id = parts[2]
-            return [(client, goal)]
+            return [{'skill': skill, 'object_id': parts[1], 'target_id': parts[2]}]
         elif skill == 'deliver' and len(parts) == 3:
-            pick_goal = Pick.Goal()
-            pick_goal.object_id = parts[1]
-            place_goal = Place.Goal()
-            place_goal.object_id = parts[1]
-            place_goal.target_id = parts[2]
-            return [(self._pick_client, pick_goal), (self._place_client, place_goal)]
+            return [{'skill': 'pick', 'object_id': parts[1]},
+                    {'skill': 'place', 'object_id': parts[1], 'target_id': parts[2]}]
         return None
 
     # LLM 계획(dict 리스트)을 실행 고리가 쓰는 (client, goal) 리스트로 바꾼다.
@@ -172,6 +251,7 @@ class Agent(Node):
     def _run_step(self):
         if self._step >= len(self._plan):
             self.get_logger().info('시퀀스 완료')
+            self._busy = False
             return
         client, goal = self._plan[self._step]
         goal.attempt = self._attempt
@@ -185,6 +265,7 @@ class Agent(Node):
         goal_handle = goal_future.result()
         if not goal_handle.accepted:
             self.get_logger().warn('goal 거부됨')
+            self._busy = False
             return
         self.get_logger().info('goal 수락됨')
         result_future = goal_handle.get_result_async()
@@ -222,11 +303,13 @@ class Agent(Node):
             self._do_recover(strategy)
         else:
             self.get_logger().error(f'ABORT(code={code}) > 시퀀스 중단')
+            self._busy = False
 
     def _do_retry(self, code):
         """같은 goal을 다시 보낸다. OMPL은 확률적이라 시드가 바뀌면 풀린다."""
         if self._attempt >= MAX_ATTEMPTS:
             self.get_logger().error(f'RETRY {MAX_ATTEMPTS}회에서 소진(code={code}) > 중단')
+            self._busy = False
             return
         self._attempt += 1
         self.get_logger().warn(f'RETRY attempt={self._attempt}')
@@ -242,6 +325,7 @@ class Agent(Node):
         """
         if self._recovery >= MAX_RECOVERY:
             self.get_logger().error(f'{strategy} {MAX_RECOVERY}회 소진 > 중단')
+            self._busy = False
             return
         self._recovery += 1
         self._attempt = 1

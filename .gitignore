@@ -27,3 +27,6 @@ dc730
 
 # runpod pod 주소. ollama가 무인증이라 이 URL이 사실상 키다.
 .env
+
+pod_paste.txt
+start_ollama.sh
