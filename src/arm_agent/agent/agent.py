@@ -5,10 +5,10 @@
 노드 이름 : arm_agent
 """
 
-import math, json
+import math
 
 from arm_interfaces.action import MoveTo, Pick, Place
-from arm_interfaces.msg import ErrorCode, RobotStatus, SceneState 
+from arm_interfaces.msg import ErrorCode, RobotStatus, SceneState
 
 import rclpy
 from rclpy.action import ActionClient
@@ -20,9 +20,11 @@ from std_msgs.msg import String
 from . import llm_planner
 
 # 로봇 상태
-IDLE = 'IDLE'  # 쉬는 중 
+IDLE = 'IDLE'  # 쉬는 중
 RUNNING = 'RUNNING'  # 정상 실행 중
 RECOVERING = 'RECOVERING'  # 실패 후 수습 중
+ABORTED_WAIT = 'ABORTED_WAIT'  # 사람이 조치할 때까지 멈춤
+RESUME = 'RESUME'  # 사람이 조치를 끝내고 로봇을 다시 재개하라고 명령함
 
 # 명령 구분
 HUMAN = 'human'
@@ -78,7 +80,6 @@ STRATEGY = {
 
 MAX_ATTEMPTS = 3
 MAX_RECOVERY = 2
-
 
 
 class Agent(Node):
@@ -207,6 +208,10 @@ class Agent(Node):
         if not command:
             self.get_logger().warn('빈 명령')
             return
+        # 재개는 계획이 아니라 상태 제어 LLM에 보내지 않음
+        if command == RESUME:
+            self._resume()
+            return
         steps = self._to_steps(command)
         if steps is None:
             self.get_logger().warn(f'잘못된 명령 : {command}')
@@ -240,19 +245,32 @@ class Agent(Node):
     def _finish(self, ok):
         """시퀀스를 종료하는 시점."""
         self._state = IDLE
-        
+
         # 자가 정리 시퀀스를 종료
         object_id = self._tidy_id
         self._tidy_id = None
 
+        # 정상 실행 완료
         if ok:
             self._tidy_tries.pop(object_id, None)  # 성공 예산 원복
-            return
-        if self._tidy_tries.get(object_id, 0) >= MAX_ATTEMPTS:
+        # 재시도 횟수 초과
+        elif self._tidy_tries.get(object_id, 0) >= MAX_ATTEMPTS:
             self._ignored.add(object_id)
+            self._state = ABORTED_WAIT
             self.get_logger().error(
                 f'정리 불가 : {object_id} {MAX_ATTEMPTS}회 실패 사람 확인 요청')
         self._source = ''
+
+    def _resume(self):
+        """사람이 조치를 끝내고 로봇이 재실행한다."""
+        if self._state != ABORTED_WAIT:
+            self.get_logger().warn(f'재개할 것이 없다. {self._state}')
+            return
+        self._ignored.clear()
+        self._tidy_tries.clear()
+        self.get_logger().info('로봇 재실행 - 다시 씬의 상태를 감지함')
+        pose = self.get_parameter('recovery_pose').value
+        self._dispatch([{'skill': 'move_to', 'pose_id': pose}], HUMAN)
 
     # 텍스트를 실행을 위한 단계로 변경한다.
     def _to_steps(self, command):
@@ -377,7 +395,6 @@ class Agent(Node):
 
         실패한 스텝이 place면 손이 비어있다. 물러나는 것만으로는 place를 다시 할 수 없으므로 pick을 하나 더 둔다.
         """
-       
         if self._recovery >= MAX_RECOVERY:
             self.get_logger().error(f'{strategy} {MAX_RECOVERY}회 소진 > 중단')
             self._finish(False)
