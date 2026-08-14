@@ -82,6 +82,7 @@ class Agent(Node):
         """구독 1개(/command)와 액션 클라이언트 3개를 만든다."""
         super().__init__('agent')   # 부모 생성자 호출 및 노드 이름
         self._busy = False  # 현재 시퀀스 작업 중일땐 busy 설정. 시퀀스가 끝난 뒤에 False
+        self._source = None  # 현재 작업의 주체 기록
         self.create_subscription(   # command 를 구독하고 있어 명령을 수신할 수 있음
             String,
             '/command',
@@ -125,6 +126,11 @@ class Agent(Node):
         self._recovery = 0  # 복구 예산 사용량. 명령 단위로만 리셋
         self.create_timer(1.0, self._idle_tick)
 
+        # 자가 명령 파라미터 정리
+        self._tidy_tries = {}  # object_id -> 정리 시도 횟수
+        self._ignored = set()  # 정리 포기한 물체. 사람이 치울때까지 건드리지 않음
+        self._tidy_id = None  # 지금 정리 중인 물체
+
     # 인지 노드가 보내고 있는 스냅샷
     def on_scene_state(self, msg):
         """씬에 있는 물체 id 목록과 처음 본 시각을 갱신한다."""
@@ -154,6 +160,8 @@ class Agent(Node):
         for object_id, (zone, since) in self._first_seen.items():
             if zone != 'work':
                 continue
+            if object_id in self._ignored:
+                continue
             if (self._scene_stamp - since).nanoseconds >= LOITER_SEC * 1e9:
                 return object_id
         return None
@@ -165,7 +173,12 @@ class Agent(Node):
         object_id = self._loitering()
         if object_id is None:
             return
-        self.get_logger().info(f'자가 정리 실시 : {object_id} > {TIDY_TARGET}')
+        
+        self._tidy_id = object_id
+        self._tidy_tries[object_id] = self._tidy_tries.get(object_id, 0) + 1
+        self.get_logger().info(
+            f'자가 정리 실시 : {object_id} > {TIDY_TARGET} '
+            f'{self._tidy_tries[object_id]} / {MAX_ATTEMPTS}')
         self._dispatch(tidy_steps(object_id), SELF)
 
     # 인간의 명령이 들어오는 곳
@@ -198,7 +211,23 @@ class Agent(Node):
         self._attempt = 1
         self._recovery = 0  # 새 명령 = 복구 초기화
         self._busy = True
+        self._source = source  # 이 시퀀스를 누가 시켰나
         self._run_step()
+
+    def _finish(self, ok):
+        """시퀀스를 종료하는 시점"""
+        self._busy = False
+        if self._source != SELF or self._tidy_id is None:
+            return
+        object_id = self._tidy_id
+        self._tidy_id = None
+        if ok:
+            self._tidy_tries.pop(object_id, None)  # 성공 예산 원복
+            return
+        if self._tidy_tries.get(object_id, 0) >= MAX_ATTEMPTS:
+            self._ignored.add(object_id)
+            self.get_logger().error(
+                f'정리 불가 : {object_id} {MAX_ATTEMPTS}회 실패 사람 확인 요청')
 
     # 텍스트를 실행을 위한 단계로 변경한다.
     def _to_steps(self, command):
@@ -251,7 +280,7 @@ class Agent(Node):
     def _run_step(self):
         if self._step >= len(self._plan):
             self.get_logger().info('시퀀스 완료')
-            self._busy = False
+            self._finish(True)
             return
         client, goal = self._plan[self._step]
         goal.attempt = self._attempt
@@ -265,7 +294,7 @@ class Agent(Node):
         goal_handle = goal_future.result()
         if not goal_handle.accepted:
             self.get_logger().warn('goal 거부됨')
-            self._busy = False
+            self._finish(False)
             return
         self.get_logger().info('goal 수락됨')
         result_future = goal_handle.get_result_async()
@@ -303,13 +332,13 @@ class Agent(Node):
             self._do_recover(strategy)
         else:
             self.get_logger().error(f'ABORT(code={code}) > 시퀀스 중단')
-            self._busy = False
+            self._finish(False)
 
     def _do_retry(self, code):
         """같은 goal을 다시 보낸다. OMPL은 확률적이라 시드가 바뀌면 풀린다."""
         if self._attempt >= MAX_ATTEMPTS:
             self.get_logger().error(f'RETRY {MAX_ATTEMPTS}회에서 소진(code={code}) > 중단')
-            self._busy = False
+            self._finish(False)
             return
         self._attempt += 1
         self.get_logger().warn(f'RETRY attempt={self._attempt}')
@@ -325,7 +354,7 @@ class Agent(Node):
         """
         if self._recovery >= MAX_RECOVERY:
             self.get_logger().error(f'{strategy} {MAX_RECOVERY}회 소진 > 중단')
-            self._busy = False
+            self._finish(False)
             return
         self._recovery += 1
         self._attempt = 1
