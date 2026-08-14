@@ -31,6 +31,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ErrorCode.msg"
   "msg/FailureReport.msg"
   "msg/Stage.msg"
+  "msg/RobotStatus.msg"
   # 액션
   "action/Pick.action"
   "action/Place.action"

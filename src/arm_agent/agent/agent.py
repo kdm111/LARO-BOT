@@ -5,10 +5,10 @@
 노드 이름 : arm_agent
 """
 
-import math
+import math, json
 
 from arm_interfaces.action import MoveTo, Pick, Place
-from arm_interfaces.msg import ErrorCode, SceneState
+from arm_interfaces.msg import ErrorCode, RobotStatus, SceneState 
 
 import rclpy
 from rclpy.action import ActionClient
@@ -18,6 +18,11 @@ from rclpy.time import Time
 from std_msgs.msg import String
 
 from . import llm_planner
+
+# 로봇 상태
+IDLE = 'IDLE'  # 쉬는 중 
+RUNNING = 'RUNNING'  # 정상 실행 중
+RECOVERING = 'RECOVERING'  # 실패 후 수습 중
 
 # 명령 구분
 HUMAN = 'human'
@@ -75,13 +80,14 @@ MAX_ATTEMPTS = 3
 MAX_RECOVERY = 2
 
 
+
 class Agent(Node):
     """명령을 받아 계획을 세우고 스킬 액션으로 실행하는 노드."""
 
     def __init__(self):
         """구독 1개(/command)와 액션 클라이언트 3개를 만든다."""
         super().__init__('agent')   # 부모 생성자 호출 및 노드 이름
-        self._busy = False  # 현재 시퀀스 작업 중일땐 busy 설정. 시퀀스가 끝난 뒤에 False
+        self._state = IDLE  # 현재 로봇의 상태
         self._source = None  # 현재 작업의 주체 기록
         self.create_subscription(   # command 를 구독하고 있어 명령을 수신할 수 있음
             String,
@@ -131,6 +137,10 @@ class Agent(Node):
         self._ignored = set()  # 정리 포기한 물체. 사람이 치울때까지 건드리지 않음
         self._tidy_id = None  # 지금 정리 중인 물체
 
+        # 현재 상태 발행 타이머 및 발행 등록
+        self._status_pub = self.create_publisher(RobotStatus, '/robot_status', 10)
+        self.create_timer(1.0, self._publish_status)
+
     # 인지 노드가 보내고 있는 스냅샷
     def on_scene_state(self, msg):
         """씬에 있는 물체 id 목록과 처음 본 시각을 갱신한다."""
@@ -168,18 +178,27 @@ class Agent(Node):
 
     def _idle_tick(self):
         """쉴 때만 돈다. 작업 구역에 방치된 물건을 찾아 스스로 치운다."""
-        if self._busy:
+        if self._state != IDLE:
             return
         object_id = self._loitering()
         if object_id is None:
             return
-        
+
         self._tidy_id = object_id
         self._tidy_tries[object_id] = self._tidy_tries.get(object_id, 0) + 1
         self.get_logger().info(
             f'자가 정리 실시 : {object_id} > {TIDY_TARGET} '
             f'{self._tidy_tries[object_id]} / {MAX_ATTEMPTS}')
         self._dispatch(tidy_steps(object_id), SELF)
+
+    def _publish_status(self):
+        """로봇의 상태를 밖으로 알린다."""
+        msg = RobotStatus()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.state = self._state
+        msg.source = self._source or ''
+        msg.ignored = sorted(self._ignored)
+        self._status_pub.publish(msg)
 
     # 인간의 명령이 들어오는 곳
     def on_command(self, msg):
@@ -192,6 +211,9 @@ class Agent(Node):
         if steps is None:
             self.get_logger().warn(f'잘못된 명령 : {command}')
             return
+        if self._state != IDLE:
+            self.get_logger().warn(f'작업 중이라 명령을 받지 않는다 : {command}')
+            return
         self._dispatch(steps, HUMAN)
 
     # 사람 명령과 자가 명령이 만나 계쇡으로 바꿔 실행 시키는 곳
@@ -200,6 +222,7 @@ class Agent(Node):
         steps, error = llm_planner.validate_steps(steps, self._scene_ids)
         if error is not None:
             self.get_logger().warn(f'검증 거부 : {error} | {source}')
+            self._finish(False)
             return
         self._plan = self._steps_to_goals(steps)  # 여기서 한번만 goal로
         # 마지막 작업이 플레이스 일경우 recovery_pose로 최종 위치 설정
@@ -210,17 +233,18 @@ class Agent(Node):
         self._step = 0
         self._attempt = 1
         self._recovery = 0  # 새 명령 = 복구 초기화
-        self._busy = True
+        self._state = RUNNING
         self._source = source  # 이 시퀀스를 누가 시켰나
         self._run_step()
 
     def _finish(self, ok):
-        """시퀀스를 종료하는 시점"""
-        self._busy = False
-        if self._source != SELF or self._tidy_id is None:
-            return
+        """시퀀스를 종료하는 시점."""
+        self._state = IDLE
+        
+        # 자가 정리 시퀀스를 종료
         object_id = self._tidy_id
         self._tidy_id = None
+
         if ok:
             self._tidy_tries.pop(object_id, None)  # 성공 예산 원복
             return
@@ -228,6 +252,7 @@ class Agent(Node):
             self._ignored.add(object_id)
             self.get_logger().error(
                 f'정리 불가 : {object_id} {MAX_ATTEMPTS}회 실패 사람 확인 요청')
+        self._source = ''
 
     # 텍스트를 실행을 위한 단계로 변경한다.
     def _to_steps(self, command):
@@ -352,10 +377,12 @@ class Agent(Node):
 
         실패한 스텝이 place면 손이 비어있다. 물러나는 것만으로는 place를 다시 할 수 없으므로 pick을 하나 더 둔다.
         """
+       
         if self._recovery >= MAX_RECOVERY:
             self.get_logger().error(f'{strategy} {MAX_RECOVERY}회 소진 > 중단')
             self._finish(False)
             return
+        self._state = RECOVERING
         self._recovery += 1
         self._attempt = 1
         pose = self.get_parameter('recovery_pose').value
