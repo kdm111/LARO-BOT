@@ -7,6 +7,7 @@
 #include <optional>
 #include <algorithm>
 #include <chrono>
+#include <map>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
@@ -31,6 +32,15 @@ using Place = arm_interfaces::action::Place;
 using GoalHandleMoveTo = rclcpp_action::ServerGoalHandle<MoveTo>;
 using GoalHandlePick = rclcpp_action::ServerGoalHandle<Pick>;
 using GoalHandlePlace = rclcpp_action::ServerGoalHandle<Place>;
+
+// 위치 맵 설정
+// agent와 scene_cell.sdf 기반 설정
+// 같은 좌표가 세곳에 있고 한 곳이 수정되면 모두가 수정되어야 한다. -> 추후 변경 예정
+// 1, scene_cell.sdf, agent.py의 ZONE,
+static const std::map<std::string, std::pair<double, double>> kTargets = {
+  {"bin", {0.15, -0.15}},
+  {"shelf", {0.15, 0.15}}
+};
 
 class SkillServer : public rclcpp::Node
 {
@@ -470,8 +480,17 @@ private:
     const auto goal = goal_handle->get_goal();
     RCLCPP_INFO(get_logger(), "place 실행 : target=%s", goal->target_id.c_str());
 
-    const double tgt_x = 0.169;
-    const double tgt_y = 0.10;  // pick 자리와 다른 곳에
+
+    const auto it = kTargets.find(goal->target_id);
+    if (it == kTargets.end()) {
+      goal_handle->abort(
+        make_place_result(
+          false, goal->attempt, arm_interfaces::msg::ErrorCode::UNDEFINED_POSE,
+          arm_interfaces::msg::Stage::TRANSFER, "계약에 없는 target_id"));
+      return;
+    }
+    const double tgt_x = it->second.first;
+    const double tgt_y = it->second.second;
     const double tgt_z = 0.0475;
     const double approach_phi = -M_PI / 2;   // 그리퍼가 아래를 향하는 접근각
     const double approach_dz = 0.06;    // 물체 위 6cm 에서 접근
