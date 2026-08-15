@@ -33,13 +33,45 @@ using GoalHandleMoveTo = rclcpp_action::ServerGoalHandle<MoveTo>;
 using GoalHandlePick = rclcpp_action::ServerGoalHandle<Pick>;
 using GoalHandlePlace = rclcpp_action::ServerGoalHandle<Place>;
 
-// 위치 맵 설정
-// agent와 scene_cell.sdf 기반 설정
-// 같은 좌표가 세곳에 있고 한 곳이 수정되면 모두가 수정되어야 한다. -> 추후 변경 예정
-// 1, scene_cell.sdf, agent.py의 ZONE,
+// 놓을 자리(base_link 기준). ★ 같은 좌표가 세 곳에 있다 - 하나만 고치면 조용히 어긋난다:
+//   ① scene_cell.sdf 의 zone_* 모델 pose  ② agent.py 의 ZONE(구역 판정)  ③ 여기(팔이 실제로 가는 곳)
+//   bin = 서빙 구역(zone_serve), shelf_block/shelf_ring = 물체별 창고.
+//   "bin"이 서빙 자리인 이름 어긋남은 eval 시험지 182케이스에 박혀 있어 유지한다.
 static const std::map<std::string, std::pair<double, double>> kTargets = {
   {"bin", {0.15, -0.15}},
-  {"shelf", {0.15, 0.15}}
+  {"shelf_block", {0.12, 0.16}},
+  {"shelf_ring", {0.19, 0.16}}
+};
+
+// 물체별 파지 파라미터. 어떻게 잡을 것인가의 주체는 skill이다.
+//   depth   : 인지가 준 물체 중심 z에서 TCP(손가락 끝)를 얼마나 더 내릴 것인가.
+//             손가락은 TCP에서 위로 뻗으므로 중심에 두면 윗절반만 물려 미끄러진다.
+//   offset  : 물체 중심에서 파지점까지의 반경 거리. 가운데가 빈 물체(링)는
+//             중심을 물면 허공을 문다 - 벽으로 옮겨 물어야 한다.
+//   place_z : 놓을 때의 TCP 높이. 물체 높이가 다르면 놓는 높이도 다르다.
+//   hold_eps: 파지 판정 임계. 문 두께가 다르면 손가락 관절값이 자릿수째로 다르다.
+//             빈 손은 어느 물체든 0에 가깝다(낙하 순간 0.32 -> 0.0001 실측).
+struct GraspSpec
+{
+  double depth;
+  double offset;
+  double place_z;
+  double hold_eps;
+};
+// 놓고 물러나는 높이. place_z + approach_dz로 잡으면 납작한 물체(링)에서 6.6cm밖에
+// 안 올라가고, 이어지는 home 복귀에서 팔이 방금 놓은 물체를 쓸고 간다(2026-08-14 실측 9cm 이탈).
+// 물체 높이와 무관한 절대값으로 둔다.
+static constexpr double kRetreatZ = 0.12;
+
+static const std::map<std::string, GraspSpec> kGrasps = {
+  // 블록 4x6x4cm. 중심 z=0.02에서 1cm 내려 아랫절반을 문다.
+  {"red_block", {0.010, 0.00000, 0.0475, 0.050}},
+  // 링 바깥지름 6.0 / 안지름 3.5 / 두께 1.2cm. 중심 z=0.006.
+  // 벽 중심 반경 = (3.0+1.75)/2 = 2.375cm. 거기에 TCP를 두고 반경 방향으로 닫으면
+  // 안쪽 손가락은 구멍(반경 1.75)에, 바깥 손가락은 링 밖(반경 3.0)에 놓여 벽을 문다.
+  // 벽 1.25cm를 물면 파지 직후 0.114, 운반 중 0.048까지 내려간다(2026-08-14 실측).
+  // 블록 기준 0.05를 그대로 쓰면 쥐고 있는데도 "빈 손"으로 판정해 place가 중단됐다.
+  {"blue_ring", {0.004, 0.02375, 0.0060, 0.020}}
 };
 
 class SkillServer : public rclcpp::Node
@@ -329,20 +361,21 @@ private:
 
   // 파지 판정 : 닫힘 목표에 도달했는가 물체 두께가 0이면 도달한다.
   // 에러 코드가 아니라 관절 위치를 본다. - stall은 sim 접촉 해석에 따라 안 날 수 있다.
-  static constexpr double HOLD_EPS = 0.05;
   // ⚠️ 정의역 : pinch(두께로 개구부를 막는) 물체에 한정.
-  // hook(링)은 손가락이 구멍을 통과해 끝까지 닫히므로 이 신호로 판정 불가 - 씬 재대조 몫.
-  bool is_holding(const char *tag = "파지 판정")
+  // 링도 pinch로 잡는다 - 구멍에 손가락을 통과시키는 hook이 아니라 벽(1.25cm)을
+  // 안팎에서 무는 방식이라 이 신호가 그대로 산다(2026-08-14 실측 0.114).
+  // 임계는 물체마다 다르다 -> kGrasps.hold_eps.
+  bool is_holding(double eps, const char *tag = "파지 판정")
   {
     const auto q = wait_gripper_settled();
     if (!q.has_value()) {
       RCLCPP_WARN(get_logger(), "%s 그리퍼 정착 실패 - 쥐었다고 판정하지 않는다", tag);
       return false;
     }
-    const bool held = std::abs(*q) > HOLD_EPS;
+    const bool held = std::abs(*q) > eps;
     RCLCPP_INFO(
       get_logger(), "%s 판정 : 관절=%.4f (임계 %.4f) -> %s",
-      tag, *q, HOLD_EPS, held ? "쥠" : "빈 손");
+      tag, *q, eps, held ? "쥠" : "빈 손");
     return held;
   }
   // 실제 일 - 지금은 자리표시자: 로그만 찍고 성공 반환 (MoveGroupInterface는 다음 스텝)
@@ -407,11 +440,36 @@ private:
     // 어떻게 잡을 것인가의 주체는 skill에 있다.
     // remainder(x, PI)는 [-PI/2, PI/2]로 접는다. 그리퍼는 180도 대칭이라 같은 파지가 된다.
     // TCP는 손가락의 끝이고 손가락은 거기서 위로 뻗는다.. 물체 중심에 TCP를 두면 윗절반만 물려서 미끄러진다.
-    const double grasp_depth = 0.01;
-    const double grasp_yaw = std::remainder(obj_yaw + M_PI_2, M_PI);
+    const auto git = kGrasps.find(goal->object_id);
+    if (git == kGrasps.end()) {
+      goal_handle->abort(
+        make_pick_result(
+          false, goal->attempt, arm_interfaces::msg::ErrorCode::INTERNAL_ERROR,
+          arm_interfaces::msg::Stage::PLAN, "파지 파라미터가 없는 물체"));
+      return;
+    }
+    const GraspSpec & gs = git->second;
+
+    // 파지점. 속이 빈 물체는 중심이 아니라 벽을 문다.
+    double grasp_x = obj_x;
+    double grasp_y = obj_y;
+    double grasp_yaw;
+    if (gs.offset > 0.0) {
+      // 로봇 쪽 벽으로 옮긴다. 반대편 벽을 물면 손목이 물체를 넘어가야 하고
+      // 반경도 멀어져 도달 한계(실측 0.25~0.27)에 더 가까워진다.
+      const double dir = std::atan2(-obj_y, -obj_x);   // 물체 중심 -> 로봇
+      grasp_x = obj_x + gs.offset * std::cos(dir);
+      grasp_y = obj_y + gs.offset * std::sin(dir);
+      grasp_yaw = std::remainder(dir, M_PI);           // 그리퍼가 반경 방향으로 닫힌다
+    } else {
+      grasp_yaw = std::remainder(obj_yaw + M_PI_2, M_PI);
+    }
+    RCLCPP_INFO(
+      get_logger(), "파지점 (%.3f, %.3f) z=%.3f yaw=%.1f도",
+      grasp_x, grasp_y, obj_z - gs.depth, grasp_yaw * 180.0 / M_PI);
     move_gripper("open");
     if (const auto r = move_to_pose(
-        obj_x, obj_y, obj_z + approach_dz, approach_phi, "approach", grasp_yaw);
+        grasp_x, grasp_y, obj_z + approach_dz, approach_phi, "approach", grasp_yaw);
       r != MoveResult::OK)
     {
       goal_handle->abort(
@@ -421,7 +479,7 @@ private:
       return;
     }
     if (const auto r = move_to_pose(
-        obj_x, obj_y, obj_z - grasp_depth, approach_phi, "grasp", grasp_yaw);
+        grasp_x, grasp_y, obj_z - gs.depth, approach_phi, "grasp", grasp_yaw);
       r != MoveResult::OK)
     {
       goal_handle->abort(
@@ -433,7 +491,7 @@ private:
     // close의 결과가 곧 파지 판정 lift전에 분기해야함.
     // 빈 손으로 들어올리면 성공한 pick이 되어 GRASP_FAILED가 영원히 잡히지 않는다.
     move_gripper("close");
-    if (!is_holding()) {
+    if (!is_holding(gs.hold_eps)) {
       RCLCPP_WARN(get_logger(), "파지 실패 : %s (그리퍼가 끝까지 닫힘)", goal->object_id.c_str());
       // 여기서 열지 않는다. 판정이 틀렸을 때 (실제로 쥐고 있을 때 물건이 떨어진다.)
       // move_gripper("open");   // 다음 시도를 위해 열어둠 REGRASP
@@ -449,7 +507,7 @@ private:
     RCLCPP_INFO(get_logger(), "가지 %s 고정(파지 중)", *locked_elbow_ ? "up" : "down");
 
     if (const auto r = move_to_pose(
-        obj_x, obj_y, obj_z + approach_dz, approach_phi, "lift", grasp_yaw);
+        grasp_x, grasp_y, obj_z + approach_dz, approach_phi, "lift", grasp_yaw);
       r != MoveResult::OK)
     {
       goal_handle->abort(
@@ -489,14 +547,36 @@ private:
           arm_interfaces::msg::Stage::TRANSFER, "계약에 없는 target_id"));
       return;
     }
+    const auto pit = kGrasps.find(goal->object_id);
+    if (pit == kGrasps.end()) {
+      goal_handle->abort(
+        make_place_result(
+          false, goal->attempt, arm_interfaces::msg::ErrorCode::INTERNAL_ERROR,
+          arm_interfaces::msg::Stage::TRANSFER, "파지 파라미터가 없는 물체"));
+      return;
+    }
     const double tgt_x = it->second.first;
     const double tgt_y = it->second.second;
-    const double tgt_z = 0.0475;
+    const double tgt_z = pit->second.place_z;
     const double approach_phi = -M_PI / 2;   // 그리퍼가 아래를 향하는 접근각
     const double approach_dz = 0.06;    // 물체 위 6cm 에서 접근
 
+    // 속이 빈 물체는 벽을 물고 있어서 물체 중심이 TCP에서 offset만큼 떨어져 있다.
+    // 놓을 때 TCP를 목표 중심에 두면 물체는 그만큼 밀려 놓인다(실측 11cm 이탈).
+    // 잡을 때와 같은 방향으로 TCP를 옮기고 손목도 같은 각으로 맞춘다.
+    const GraspSpec & ps = pit->second;
+    double put_x = tgt_x;
+    double put_y = tgt_y;
+    std::optional<double> put_yaw = std::nullopt;
+    if (ps.offset > 0.0) {
+      const double dir = std::atan2(-tgt_y, -tgt_x);   // 목표 중심 -> 로봇
+      put_x = tgt_x + ps.offset * std::cos(dir);
+      put_y = tgt_y + ps.offset * std::sin(dir);
+      put_yaw = std::remainder(dir, M_PI);
+    }
+
     if (const auto r = move_to_pose(
-        tgt_x, tgt_y, tgt_z + approach_dz, approach_phi, "place-approach");
+        put_x, put_y, tgt_z + approach_dz, approach_phi, "place-approach", put_yaw);
       r != MoveResult::OK)
     {
       goal_handle->abort(
@@ -507,7 +587,7 @@ private:
     }
     // transfer 파지 확인 : 운반 중 낙하면 손가락이 끝까지 닫혀 q가 0으로 떨어진다.
     // 실측 근거 - 낙하 순간 q 0.32 -> 0.0001
-    if (!is_holding("운반 중 파지 확인")) {
+    if (!is_holding(ps.hold_eps, "운반 중 파지 확인")) {
       locked_elbow_.reset();
       goal_handle->abort(
         make_place_result(
@@ -515,7 +595,7 @@ private:
           arm_interfaces::msg::Stage::TRANSFER, "운반 중 물체를 놓쳤다."));
       return;
     }
-    if (const auto r = move_to_pose(tgt_x, tgt_y, tgt_z, approach_phi, "place-lower");
+    if (const auto r = move_to_pose(put_x, put_y, tgt_z, approach_phi, "place-lower", put_yaw);
       r != MoveResult::OK)
     {
       goal_handle->abort(
@@ -527,7 +607,7 @@ private:
     move_gripper("open");
     locked_elbow_.reset();   // 그리퍼 놓음 잠금 해제
     if (const auto r = move_to_pose(
-        tgt_x, tgt_y, tgt_z + approach_dz, approach_phi, "place-retreat");
+        put_x, put_y, kRetreatZ, approach_phi, "place-retreat", put_yaw);
       r != MoveResult::OK)
     {
       goal_handle->abort(

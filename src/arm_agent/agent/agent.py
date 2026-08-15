@@ -30,31 +30,45 @@ RESUME = 'RESUME'  # 사람이 조치를 끝내고 로봇을 다시 재개하라
 HUMAN = 'human'
 SELF = 'self'
 
-# 구역 전략
-# 좌표 구역
+# 구역 좌표. scene_cell.sdf의 zone_* 모델과 같은 값이다(base_link 기준).
+# ★ 같은 좌표가 세 곳에 있다 - 하나만 고치면 조용히 어긋난다:
+#   ① scene_cell.sdf 의 zone_* 모델 pose  ② 여기(구역 판정)  ③ skill_server.cpp 의 kTargets
 ZONE = {
-    'shelf': (0.15, 0.15),  # 창고
-    'work': (0.21, 0.06),  # 작업 구역
-    'serve': (0.15, -0.15)  # 서빙
+    'shelf_ring': (0.19, 0.16),   # 링 창고
+    'shelf_block': (0.12, 0.16),  # 블록 창고
+    'work': (0.21, 0.06),         # 작업 구역
+    'serve': (0.15, -0.15),       # 서빙
 }
-ZONE_RADIUS = 0.05
+# 어느 구역에도 안 들어가는 거리. 구역 간 최단 간격이 0.07이라 그 절반보다 커도 된다
+# - 판정이 '반경 안에 드는가'가 아니라 '어느 구역이 가장 가까운가'이기 때문이다.
+ZONE_MAX = 0.06
 LOITER_SEC = 2.0
-TIDY_TARGET = 'shelf'
+# 물체별 정리 목적지. 물체가 늘면 여기 한 줄이 는다.
+DEST = {
+    'red_block': 'shelf_block',
+    'blue_ring': 'shelf_ring',
+}
 
 
 def zone_of(x, y):
-    """관측된 장소가 어디인지 돌려준다."""
+    """관측된 장소에서 가장 가까운 구역을 돌려준다. 너무 멀면 None.
+
+    반경 판정이 아니라 최근접 판정인 이유: 창고 둘의 간격이 7cm라
+    반경으로 나누면 검출 오차(최대 3cm)에서 둘 다 걸리거나 둘 다 안 걸린다.
+    """
+    best, best_d = None, ZONE_MAX
     for name, (zone_x, zone_y) in ZONE.items():
-        if math.hypot(x - zone_x, y - zone_y) <= ZONE_RADIUS:
-            return name
-    return None
+        d = math.hypot(x - zone_x, y - zone_y)
+        if d < best_d:
+            best, best_d = name, d
+    return best
 
 
 def tidy_steps(object_id):
-    """방치된 물건을 창고로 되돌리는 명령을 생성한다."""
+    """방치된 물건을 제 창고로 되돌리는 명령을 생성한다."""
     return [
         {'skill': 'pick', 'object_id': object_id},
-        {'skill': 'place', 'object_id': object_id, 'target_id': TIDY_TARGET}
+        {'skill': 'place', 'object_id': object_id, 'target_id': DEST[object_id]}
     ]
 
 
@@ -188,7 +202,7 @@ class Agent(Node):
         self._tidy_id = object_id
         self._tidy_tries[object_id] = self._tidy_tries.get(object_id, 0) + 1
         self.get_logger().info(
-            f'자가 정리 실시 : {object_id} > {TIDY_TARGET} '
+            f'자가 정리 실시 : {object_id} > {DEST[object_id]} '
             f'{self._tidy_tries[object_id]} / {MAX_ATTEMPTS}')
         self._dispatch(tidy_steps(object_id), SELF)
 
