@@ -23,10 +23,14 @@ RUNNING = 'RUNNING'  # 정상 실행 중
 RECOVERING = 'RECOVERING'  # 실패 후 수습 중
 ABORTED_WAIT = 'ABORTED_WAIT'  # 사람이 조치할 때까지 멈춤
 RESUME = 'RESUME'  # 사람이 조치를 끝내고 로봇을 다시 재개하라고 명령함
+VERIFYING = 'VERIFYING'  # 다 했다고 주장한 뒤 씬(비전)으로 확인 중
 
 # 명령 구분
 HUMAN = 'human'
 SELF = 'self'
+
+# 씬 인식 시간
+VERIFY_SEC = 1.8
 
 # 구역 = 사각형 (x0, x1, y0, y1). base_link 기준, +y=왼쪽.
 # ★ 진실은 arm_perception/config/cell_layout.yaml 이다. 여기와 skill_server.cpp의
@@ -67,6 +71,21 @@ def clean_steps(object_id):
         {'skill': 'pick', 'object_id': object_id},
         {'skill': 'place', 'object_id': object_id, 'target_id': DEST[object_id]}
     ]
+
+
+def placed_in(object_id, target_id, first_seen):
+    """물체가 목적지에 실제로 서 있는가.
+
+    skill이 성공을 돌려줘도 운반 중 떨어뜨리면 실패한다.
+    씬이 진실이고 액션 결과는 주장이다.
+    """
+    if target_id is None:
+        return True  # move_to만 있는 시퀀스 - 검증할 물체가 없다.
+
+    seen = first_seen.get(object_id)
+    if seen is None:
+        return False  # 씬에서 사라짐. 떨어뜨림
+    return seen[0] == target_id
 
 
 # 복구 전략
@@ -152,6 +171,10 @@ class Agent(Node):
         # 운영 카운터. 밖에서 얼마나 보는 지 확인
         self._work_counts = {'served': 0, 'cleaned': 0, 'discarded': 0, 'aborted': 0}
         self._last_target = None
+        self._last_object = None
+
+        # 재 명령을 받은 씬
+        self._verify_since = None
         # 현재 상태 발행 타이머 및 발행 등록
         self._status_pub = self.create_publisher(RobotStatus, '/robot_status', 10)
         self.create_timer(1.0, self._publish_status)
@@ -193,6 +216,9 @@ class Agent(Node):
 
     def _idle_tick(self):
         """쉴 때만 돈다. 작업 구역에 방치된 물건을 찾아 스스로 치운다."""
+        if self._state == VERIFYING:
+            self._verify_tick()
+            return
         if self._state != IDLE:
             return
         object_id = self._loitering()
@@ -205,6 +231,20 @@ class Agent(Node):
             f'자가 정리 실시 : {object_id} > {DEST[object_id]} '
             f'{self._clean_tries[object_id]} / {MAX_ATTEMPTS}')
         self._dispatch(clean_steps(object_id), SELF)
+
+    def _verify_tick(self):
+        """VERIFY_SEC 동안 씬을 더 받고 마지막 스냅샷으로 판정한다.
+
+        곧바로 판정하지 않는 이유는 그 순간의 씬이 아직 팔에 가려져 있어서다.
+        마감은 씬 시각이 아니라 벽시계로 잰다 - 검출이 죽어 씬이 끊겨도 끊어야 한다.
+        """
+        if (self.get_clock().now() - self._verify_since).nanoseconds < VERIFY_SEC * 1e9:
+            return
+        ok = placed_in(self._last_object, self._last_target, self._first_seen)
+        if not ok:
+            self.get_logger().error(
+                f'동작은 완료되었는데 물건이 없음 : {self._last_object} -> {self._last_target}')
+        self._finish(ok)
 
     def _publish_status(self):
         """로봇의 상태를 밖으로 알린다."""
@@ -270,6 +310,7 @@ class Agent(Node):
         self._source = source  # 이 시퀀스를 누가 시켰나
         # 마지막에 작업(place)한 팔의 위치
         self._last_target = steps[-1].get('target_id')
+        self._last_object = steps[-1].get('object_id')
         self._run_step()
 
     def _finish(self, ok):
@@ -365,7 +406,8 @@ class Agent(Node):
     def _run_step(self):
         if self._step >= len(self._plan):
             self.get_logger().info('시퀀스 완료')
-            self._finish(True)
+            self._state = VERIFYING
+            self._verify_since = self.get_clock().now()
             return
         client, goal = self._plan[self._step]
         goal.attempt = self._attempt
