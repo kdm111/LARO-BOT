@@ -66,7 +66,7 @@ def zone_of(x, y):
     return best
 
 
-def tidy_steps(object_id):
+def clean_steps(object_id):
     """방치된 물건을 제 창고로 되돌리는 명령을 생성한다."""
     return [
         {'skill': 'pick', 'object_id': object_id},
@@ -150,10 +150,13 @@ class Agent(Node):
         self.create_timer(1.0, self._idle_tick)
 
         # 자가 명령 파라미터 정리
-        self._tidy_tries = {}  # object_id -> 정리 시도 횟수
+        self._clean_tries = {}  # object_id -> 정리 시도 횟수
         self._ignored = set()  # 정리 포기한 물체. 사람이 치울때까지 건드리지 않음
-        self._tidy_id = None  # 지금 정리 중인 물체
+        self._clean_id = None  # 지금 정리 중인 물체
 
+        # 운영 카운터. 밖에서 얼마나 보는 지 확인
+        self._work_counts = {'served': 0, 'cleaned': 0, 'discarded': 0, 'aborted': 0}
+        self._last_target = None
         # 현재 상태 발행 타이머 및 발행 등록
         self._status_pub = self.create_publisher(RobotStatus, '/robot_status', 10)
         self.create_timer(1.0, self._publish_status)
@@ -201,12 +204,12 @@ class Agent(Node):
         if object_id is None:
             return
 
-        self._tidy_id = object_id
-        self._tidy_tries[object_id] = self._tidy_tries.get(object_id, 0) + 1
+        self._clean_id = object_id
+        self._clean_tries[object_id] = self._clean_tries.get(object_id, 0) + 1
         self.get_logger().info(
             f'자가 정리 실시 : {object_id} > {DEST[object_id]} '
-            f'{self._tidy_tries[object_id]} / {MAX_ATTEMPTS}')
-        self._dispatch(tidy_steps(object_id), SELF)
+            f'{self._clean_tries[object_id]} / {MAX_ATTEMPTS}')
+        self._dispatch(clean_steps(object_id), SELF)
 
     def _publish_status(self):
         """로봇의 상태를 밖으로 알린다."""
@@ -215,6 +218,10 @@ class Agent(Node):
         msg.state = self._state
         msg.source = self._source or ''
         msg.ignored = sorted(self._ignored)
+        msg.served = self._work_counts['served']
+        msg.cleaned = self._work_counts['cleaned']
+        msg.discarded = self._work_counts['discarded']
+        msg.aborted = self._work_counts['aborted']
         self._status_pub.publish(msg)
 
     # 인간의 명령이 들어오는 곳
@@ -233,7 +240,7 @@ class Agent(Node):
             self.get_logger().warn(f'잘못된 명령 : {command}')
             return
         if self._state != IDLE:
-            self.get_logger().warn(f'작업 중이라 명령을 받지 않는다 : {command}')
+            self.get_logger().warn(f'지금은 작업 중입니다. 잠시 후 말씀해주세요 : {command}')
             return
         self._dispatch(steps, HUMAN)
 
@@ -256,6 +263,8 @@ class Agent(Node):
         self._recovery = 0  # 새 명령 = 복구 초기화
         self._state = RUNNING
         self._source = source  # 이 시퀀스를 누가 시켰나
+        # 마지막에 작업(place)한 팔의 위치
+        self._last_target = steps[-1].get('target_id')
         self._run_step()
 
     def _finish(self, ok):
@@ -263,14 +272,24 @@ class Agent(Node):
         self._state = IDLE
 
         # 자가 정리 시퀀스를 종료
-        object_id = self._tidy_id
-        self._tidy_id = None
+        object_id = self._clean_id
+        self._clean_id = None
+
+        # 실패 횟수 카운트
+        if not ok:
+            self._work_counts['aborted'] += 1
 
         # 정상 실행 완료
         if ok:
-            self._tidy_tries.pop(object_id, None)  # 성공 예산 원복
+            self._clean_tries.pop(object_id, None)  # 성공 예산 원복
+            if self._source == SELF:
+                self._work_counts['cleaned'] += 1
+            elif self._last_target == 'counter':
+                self._work_counts['served'] += 1
+            elif self._last_target == 'bin':
+                self._work_counts['discarded'] += 1
         # 재시도 횟수 초과
-        elif self._tidy_tries.get(object_id, 0) >= MAX_ATTEMPTS:
+        elif self._clean_tries.get(object_id, 0) >= MAX_ATTEMPTS:
             self._ignored.add(object_id)
             self._state = ABORTED_WAIT
             self.get_logger().error(
@@ -283,7 +302,7 @@ class Agent(Node):
             self.get_logger().warn(f'재개할 것이 없다. {self._state}')
             return
         self._ignored.clear()
-        self._tidy_tries.clear()
+        self._clean_tries.clear()
         self.get_logger().info('로봇 재실행 - 다시 씬의 상태를 감지함')
         pose = self.get_parameter('recovery_pose').value
         self._dispatch([{'skill': 'move_to', 'pose_id': pose}], HUMAN)
