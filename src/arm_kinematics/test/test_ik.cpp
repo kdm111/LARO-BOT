@@ -179,20 +179,11 @@ TEST(SolveIk, GraspYawOmittedKeepsTheta5Zero)
   ASSERT_TRUE(sol.reachable);
   EXPECT_NEAR(sol.theta5, 0.0, 1e-9);
 }
-TEST(SolveIk, GraspYawSubtractsBaseRotation)
-{
-  // grasp_yaw를 넘기면 그리퍼 닫힘 축이 실제로 그 방향을 향하는지
-  // theta5를 world 각도로 착각해 theta1을 안 뺀 것이 파지 실패의 원인
-  const double grasp_yaw = 0.5;
-  auto sol = arm_kinematics::solve_ik(0.20, 0.06, 0.02, -M_PI / 2, true, grasp_yaw);
-  ASSERT_TRUE(sol.reachable);
-  EXPECT_GT(std::abs(sol.theta1), 1e-3);  // theta1이 0이면 이 테스트는 무의미
-
-  // 닫힌 축 방위각 = theta1 + 90deg + sol.theta5
-  const double closing = sol.theta1 + M_PI_2 + sol.theta5;
-  // 그리퍼는 180도 대칭이라 closing과 grasp_yaw가 pi의 배수만큼 달라도 같은 파지이다.
-  EXPECT_NEAR(std::remainder(closing - grasp_yaw, M_PI), 0.0, 1e-9);
-}
+// grasp_yaw 검증은 여기 있었다가 test_kdl_chain.cpp의 GraspYawFacesRequestedDirection로 옮겼다.
+// 옛 테스트는 기대값을 「theta1 + 90도 + theta5」로 손으로 적었는데, 그게 구현과 똑같이
+// 부호가 반대였다(FK 실측은 theta1 + 90도 - theta5). 그래서 버그를 통과시켰다 -
+// 검증 기준을 구현과 같은 머릿속 모델에서 뽑으면 둘이 같이 틀려도 초록불이 켜진다.
+// 새 테스트는 KDL FK로 실제 자세를 뽑아 비교한다. 그쪽은 URDF에서 온 독립된 기준이다.
 TEST(ToMotorAngles, StraightToMotor)
 {
   arm_kinematics::IkSolution geometry{};
