@@ -4,6 +4,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.actions import IncludeLaunchDescription
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch.substitutions import PathJoinSubstitution
@@ -31,6 +32,20 @@ def generate_launch_description():
         'headless',
         default_value='false',
         description='true면 가제보 GUI 없이 서버만 (gz sim -s). 측정용'
+    )
+    # 검출·판단 노드까지 여기서 같이 띄운다. 예전에는 터미널 셋을 손으로 열어야
+    # 셀이 살아났는데, 하나라도 빠뜨리면 증상이 엉뚱하게 나타났다
+    # (검출이 없으면 "명령을 받고도 가만히 있다", agent가 없으면 "/robot_status가 없다").
+    # 부품만 보고 싶을 때 끄라고 인자로 남긴다 - 기본은 셀 전체가 뜨는 것이다.
+    declare_detector = DeclareLaunchArgument(
+        'detector',
+        default_value='true',
+        description='false면 인지 노드를 띄우지 않는다(카메라만 보고 싶을 때)'
+    )
+    declare_agent = DeclareLaunchArgument(
+        'agent',
+        default_value='true',
+        description='false면 판단 노드를 띄우지 않는다(스킬만 직접 때려볼 때)'
     )
 
     # ---------- (2) 경로 계산 ----------
@@ -164,10 +179,36 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}],
     )
 
+    # ---------- (7) 인지 ----------
+    # sim 시계를 쓴다. /scene_state의 헤더 스탬프가 곧 방치 판정의 기준이라
+    # 벽시계를 찍으면 agent의 경과 시간 계산이 통째로 어긋난다.
+    detector = Node(
+        package='arm_perception',
+        executable='object_detector.py',
+        name='object_detector',
+        output='screen',
+        parameters=[{'use_sim_time': True}],
+        condition=IfCondition(LaunchConfiguration('detector')),
+    )
+
+    # ---------- (8) 판단 ----------
+    # ★ 여기만 sim 시계를 안 쓴다. 검증 마감(VERIFY_SEC)은 "검출이 멈춰도 끊긴다"가
+    #   목적이라 벽시계여야 한다. 방치 판정은 씬 헤더 스탬프끼리만 빼므로 영향이 없다.
+    #   (agent.py 안에 시계가 둘인 이유 - _verify_tick은 벽시계, _loitering은 sim)
+    agent = Node(
+        package='arm_agent',
+        executable='agent',
+        name='agent',
+        output='screen',
+        condition=IfCondition(LaunchConfiguration('agent')),
+    )
+
     return LaunchDescription([
         declare_scene,
         declare_use_rviz,
         declare_headless,
+        declare_detector,
+        declare_agent,
         gazebo,
         moveit,
         skill_server,
@@ -175,4 +216,6 @@ def generate_launch_description():
         image_bridge,
         camera_tf,
         camera_optical_tf,
+        detector,
+        agent,
     ])

@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# GT 730 머신에서 셀 하나를 통째로 띄우는 유일한 입구. dc730의 짝이다.
+#
+#   ./run730                      # scene=basic, 가제보 GUI
+#   ./run730 interrupted          # 다른 씬
+#   ./run730 basic headless       # GUI 없이(측정용)
+#   ./run730 basic gui build      # 띄우기 전에 colcon build
+#
+# 왜 있나: 예전에는 컨테이너를 띄운 뒤 터미널 셋을 손으로 열어야 셀이 살아났다
+# (sim_bringup / object_detector / agent). 하나를 빠뜨리면 증상이 엉뚱하게 나왔다 -
+# 검출이 없으면 "명령을 받고도 가만히 있다", agent가 없으면 "/robot_status가 없다".
+# 이제 셋 다 sim_bringup.launch.py 안에 있으므로 여기서는 컨테이너 + 런치 하나만 부른다.
+#
+# Ctrl+C 하면 런치가 내려간다. 컨테이너는 남는다(다시 띄우면 빠르다).
+# 컨테이너까지 내리려면:  ./dc730 down
+set -euo pipefail
+
+HERE="$(dirname "$(readlink -f "$0")")"
+cd "$HERE"
+
+SCENE="${1:-basic}"
+MODE="${2:-gui}"
+BUILD="${3:-}"
+
+HEADLESS=false
+[ "$MODE" = "headless" ] && HEADLESS=true
+
+# LLM은 이 머신에 없다(GT 730, CC 3.5). runpod pod을 HTTP로 본다.
+# 비어 있어도 뜨긴 뜬다 - LLM 경로만 죽고 문자열 파서로 폴백한다(의도된 사다리).
+if ! grep -q '^OLLAMA_HOST=..*' .env 2>/dev/null; then
+  echo "!! .env에 OLLAMA_HOST가 없다. LLM 없이 문자열 파서로만 돈다."
+  echo "   pod을 쓰려면:  echo 'OLLAMA_HOST=https://<POD_ID>-11434.proxy.runpod.net' > .env"
+fi
+
+echo "== 컨테이너 =="
+./dc730 up -d sim
+
+if [ "$BUILD" = "build" ] || [ ! -f install/setup.bash ]; then
+  echo "== 빌드 =="
+  ./dc730 exec -T sim bash -lc \
+    'source /opt/ros/jazzy/setup.bash && cd /ws && colcon build --symlink-install=false'
+fi
+
+echo "== 셀 기동 : scene=$SCENE headless=$HEADLESS =="
+echo "   (가제보 + MoveIt + skill_server + 카메라 + 인지 + 판단)"
+echo "   명령 보내기 :  ./dc730 exec sim bash -lc 'source /ws/install/setup.bash &&"
+echo "                  ros2 topic pub --once /command std_msgs/String \"{data: \\\"빨간 블록을 카운터에 놔줘\\\"}\"'"
+echo
+exec ./dc730 exec sim bash -lc \
+  "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && \
+   ros2 launch arm_perception sim_bringup.launch.py scene:=$SCENE headless:=$HEADLESS"

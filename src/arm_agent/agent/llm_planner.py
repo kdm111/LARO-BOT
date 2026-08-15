@@ -110,11 +110,6 @@ def plan(command, scene_ids=None, call_llm=None):
 
     # 1차 시도
     raw = _safe_call(call_llm, prompt)
-    # 검증기에 넣기전에 가른다.
-    # _parse_and_validate에 넘기면 계획은 빈 배열이 될 수 없다 판단되어 재 프롬프트로 밀려난다.
-    if _is_refusal(raw):
-        _LOG.info('현재 실행할 수 없는 명령 혹은 모델이 거부함 원문 %r', raw)
-        return []
     steps, error = _parse_and_validate(raw, scene_ids)
     if error is None:
         return steps
@@ -140,22 +135,22 @@ def _safe_call(call_llm, prompt):
         return ''   # 파싱 단계에서 거부되고 폴백으로 이어진다
 
 
-def _is_refusal(raw):
-    """모델이 빈 배열로 할 수 없다고 대답했는가."""
-    try:
-        return json.loads(raw) == []
-    except (TypeError, ValueError):
-        return False
-
-
 def _parse_and_validate(raw, scene_ids):
-    """응답 문자열을 계획으로 바꾼다. (계획, None) 또는 (None, 실패이유)."""
+    """응답 문자열을 계획으로 바꾼다. (계획, None) 또는 (None, 실패이유).
+
+    빈 배열은 여기서 '정당한 거부'로 통과시킨다.
+    validate_steps는 여전히 []을 거부한다.
+    """
     try:
         steps = json.loads(raw)
     except (TypeError, ValueError) as exc:
         # 앞뒤에 산문이 붙었거나 중간에 잘린 경우가 여기로 온다.
         # 관대하게 JSON만 긁어내지 않는다 - "거의 맞는" 출력을 통과시키게 된다.
         return None, f'JSON 파싱 실패: {exc}'
+
+    if steps == []:
+        _LOG.info('모델이 할수 없다고 답함- 거부')
+        return [], None
 
     return validate_steps(steps, scene_ids)
 
@@ -286,6 +281,15 @@ def _retry_prompt(prompt, raw, error):
     실측 실패(2026-08-07): 1차가 '씬에 없는 물체'로 거부되자 2차가 []를 냈다.
     거부당했다는 사실만 보고 "할 수 있는 게 없다"로 후퇴한 것이다.
     그래서 의도는 유지하고 틀린 필드만 고치라고 못박는다.
+
+    ★ 2026-08-15 정정. 위 처방으로 「[]를 내지 마라, 거절된 object_id는 씬 목록에서
+      가장 비슷한 것으로 갈아끼워라」를 넣었었다. 그때는 []가 그냥 실패였으니 맞는
+      말이었는데, []에 '정당한 거부'라는 뜻이 생기면서 전제가 사라졌다. 그 지시가
+      남아 있는 동안 실제로 사고가 났다 - 초록 블록을 시켰는데 초록이 그 순간 씬에서
+      빠져 1차가 반려되자, 2차가 시킨 대로 red_block으로 갈아끼워 완주하고 served까지
+      올렸다(실측). 모델이 틀린 게 아니라 시킨 대로 한 것이다.
+      이제는 반대로 못하겠으면 []를 내라고 말한다. 2차의 []도 1차와 똑같이 거부로
+      받는다 - 두 시도를 다르게 대할 이유가 없다.
     """
     return (
         f'{prompt}\n'
@@ -294,9 +298,11 @@ def _retry_prompt(prompt, raw, error):
         f'Previous answer: {raw}\n'
         f'Reason: {error}\n'
         'Fix ONLY the field that was wrong and keep the original intent.\n'
-        'Do NOT return an empty array here - the command was already judged\n'
-        'to be achievable. If an object_id was rejected, replace it with the\n'
-        'closest matching id from the scene list.\n'
+        'If the object_id you used is simply not in the scene list, then the\n'
+        'command cannot be done: output an empty array [] and nothing else.\n'
+        'That is the correct answer, not a failure.\n'
+        'NEVER swap in a different object or target to make the command work -\n'
+        'moving the wrong object is worse than doing nothing.\n'
         'Return only a corrected JSON array.'
     )
 

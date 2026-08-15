@@ -75,10 +75,10 @@
     <!-- === 구역 판 5장 === -->
     <model name="zone_shelf_ring">
       <static>true</static>
-      <pose>0.11 0.145 0.0005 0 0 0</pose>
+      <pose>0.085 0.175 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
-          <geometry><box><size>0.05 0.1 0.001</size></box></geometry>
+          <geometry><box><size>0.08 0.06 0.001</size></box></geometry>
           <material><ambient>0.25 0.25 0.25 1</ambient><diffuse>0.25 0.25 0.25 1</diffuse></material>
         </visual>
       </link>
@@ -86,10 +86,10 @@
 
     <model name="zone_shelf_block">
       <static>true</static>
-      <pose>0.06 0.145 0.0005 0 0 0</pose>
+      <pose>0.085 0.085 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
-          <geometry><box><size>0.05 0.1 0.001</size></box></geometry>
+          <geometry><box><size>0.08 0.06 0.001</size></box></geometry>
           <material><ambient>0.38 0.38 0.38 1</ambient><diffuse>0.38 0.38 0.38 1</diffuse></material>
         </visual>
       </link>
@@ -97,10 +97,10 @@
 
     <model name="zone_work">
       <static>true</static>
-      <pose>0.165 0.0 0.0005 0 0 0</pose>
+      <pose>0.165 0.000 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
-          <geometry><box><size>0.13 0.13 0.001</size></box></geometry>
+          <geometry><box><size>0.13 0.08 0.001</size></box></geometry>
           <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
         </visual>
       </link>
@@ -108,10 +108,10 @@
 
     <model name="zone_counter">
       <static>true</static>
-      <pose>0.06 -0.145 0.0005 0 0 0</pose>
+      <pose>0.085 -0.085 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
-          <geometry><box><size>0.05 0.1 0.001</size></box></geometry>
+          <geometry><box><size>0.08 0.06 0.001</size></box></geometry>
           <material><ambient>0.72 0.72 0.72 1</ambient><diffuse>0.72 0.72 0.72 1</diffuse></material>
         </visual>
       </link>
@@ -119,10 +119,10 @@
 
     <model name="zone_bin">
       <static>true</static>
-      <pose>0.11 -0.145 0.0005 0 0 0</pose>
+      <pose>0.085 -0.175 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
-          <geometry><box><size>0.05 0.1 0.001</size></box></geometry>
+          <geometry><box><size>0.08 0.06 0.001</size></box></geometry>
           <material><ambient>0.88 0.88 0.88 1</ambient><diffuse>0.88 0.88 0.88 1</diffuse></material>
         </visual>
       </link>
@@ -130,7 +130,7 @@
 
     <!-- 빨간 블록 : 작업 구역 (바깥쪽) -->
     <model name="red_block">
-      <pose>0.210 0.030 0.02 0 0 0.0</pose>
+      <pose>0.210 0.020 0.02 0 0 0.0</pose>
     <!-- spawn 위치(월드 기준). 팔 앞쪽(x=0.20) + 살짝 옆(y=0.06)으로 두어
          현재 쫙 펴진 팔에 가리지 않고 화면에 보이게. 바닥(z=0) 위에 얹히도록 살짝 띄워 놓음.
          값은 잠정 — 화면 보고 조정한다(피킹 도달 범위 안: 이전 pick/place가 x≈0.2, y≈0~0.1에서 성공). -->
@@ -184,7 +184,7 @@
 
     <!-- 초록 블록(불량) : 작업 구역 (창고 쪽) -->
     <model name="green_block">
-      <pose>0.120 0.045 0.02 0 0 0.7854</pose>
+      <pose>0.120 0.025 0.02 0 0 0.7854</pose>
 
     <link name="link">
       <!-- 관성 : 박스(질량 0.05kg) 근사. red_block과 같은 값. -->
@@ -235,7 +235,7 @@
 
     <!-- 파란 링 : 작업 구역 (카운터 쪽) -->
     <model name="blue_ring">
-      <pose>0.165 -0.050 0.0 0 0 0.0</pose>
+      <pose>0.165 -0.025 0.0 0 0 0.0</pose>
     <link name='link'>
       <inertial>
         <mass>0.04</mass>
