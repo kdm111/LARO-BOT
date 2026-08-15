@@ -100,6 +100,8 @@ def plan(command, scene_ids=None, call_llm=None):
 
     scene_ids가 None이면 씬 정보가 아직 없다는 뜻이므로 물체 대조를 건너뛴다.
     call_llm은 테스트에서 가짜 함수를 주입하는 자리다(프롬프트 -> 응답 문자열).
+
+    반환 : 스텝 리스트(계획), None(실패), [](정당한 거부, 명령을 아예 실행할 수 없다. : 빨간 블록이 있을 때 파란 링을 집어라)
     """
     if call_llm is None:
         call_llm = _call_ollama
@@ -108,6 +110,11 @@ def plan(command, scene_ids=None, call_llm=None):
 
     # 1차 시도
     raw = _safe_call(call_llm, prompt)
+    # 검증기에 넣기전에 가른다.
+    # _parse_and_validate에 넘기면 계획은 빈 배열이 될 수 없다 판단되어 재 프롬프트로 밀려난다.
+    if _is_refusal(raw):
+        _LOG.info('현재 실행할 수 없는 명령 혹은 모델이 거부함 원문 %r', raw)
+        return []
     steps, error = _parse_and_validate(raw, scene_ids)
     if error is None:
         return steps
@@ -133,6 +140,26 @@ def _safe_call(call_llm, prompt):
         return ''   # 파싱 단계에서 거부되고 폴백으로 이어진다
 
 
+def _is_refusal(raw):
+    """모델이 빈 배열로 할 수 없다고 대답했는가."""
+    try:
+        return json.loads(raw) == []
+    except (TypeError, ValueError):
+        return False
+
+
+def _parse_and_validate(raw, scene_ids):
+    """응답 문자열을 계획으로 바꾼다. (계획, None) 또는 (None, 실패이유)."""
+    try:
+        steps = json.loads(raw)
+    except (TypeError, ValueError) as exc:
+        # 앞뒤에 산문이 붙었거나 중간에 잘린 경우가 여기로 온다.
+        # 관대하게 JSON만 긁어내지 않는다 - "거의 맞는" 출력을 통과시키게 된다.
+        return None, f'JSON 파싱 실패: {exc}'
+
+    return validate_steps(steps, scene_ids)
+
+
 def validate_steps(steps, scene_ids=None):
     """steps를 검증 4층에 통과시킨다. (steps, None) 또는 (None, 실패이유)."""
     if not isinstance(steps, list) or not steps:
@@ -149,18 +176,6 @@ def validate_steps(steps, scene_ids=None):
     if len(steps) > 1 and any(step['skill'] == 'move_to' for step in steps):
         return None, 'move_to는 단독 스텝으로만 유효'
     return steps, None
-
-
-def _parse_and_validate(raw, scene_ids):
-    """응답 문자열을 계획으로 바꾼다. (계획, None) 또는 (None, 실패이유)."""
-    try:
-        steps = json.loads(raw)
-    except (TypeError, ValueError) as exc:
-        # 앞뒤에 산문이 붙었거나 중간에 잘린 경우가 여기로 온다.
-        # 관대하게 JSON만 긁어내지 않는다 - "거의 맞는" 출력을 통과시키게 된다.
-        return None, f'JSON 파싱 실패: {exc}'
-
-    return validate_steps(steps, scene_ids)
 
 
 def _parse_and_validate_recovery(raw, code):
@@ -252,11 +267,14 @@ def _build_prompt(command, scene_ids):
         '  English id from the scene list. Example: "빨간 블록" -> "red_block".\n'
         '- NEVER copy a word from the command into object_id. Always pick an id\n'
         '  that appears verbatim in the scene list above.\n'
-        # ⚠️ 거부 경로("불가능하면 [] 출력") 한 줄은 여기 넣지 않았다.
-        # _parse_and_validate가 빈 배열을 '계획은 비어 있지 않은 배열이어야 한다'로
-        # 거부하므로, 프롬프트만 고치면 모델이 []를 내도 재프롬프트로 밀려나
-        # 결국 아무 pick이나 낸다 - 안 넣느니만 못하다.
-        # 검증기가 []를 '정당한 거부'로 구분해서 받도록 고치는 게 선결이다(§1 부채).
+        # 거부 경로. 2026-08-15에 열었다 - _is_refusal이 검증기 앞에서 []를 가려내므로
+        # 이제 재프롬프트로 밀려나지 않는다(그 전에는 넣으면 안 되는 줄이었다).
+        # 이 줄이 없으면 모델은 못 하는 명령에도 억지로 씬 목록에서 아무거나 골라
+        # 낸다 - 조용히 틀린 일을 하는 것이 아무것도 안 하는 것보다 나쁘다.
+        '- If the command cannot be done with the skills, objects, and targets\n'
+        '  listed above, output an empty array [] and nothing else.\n'
+        '- NEVER substitute a different object or target to make it work.\n'
+        '  Asking for something absent is a refusal, not a naming mistake.\n'
         '\n'
         f'Command: {command}'
     )
