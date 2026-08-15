@@ -35,6 +35,15 @@ OBJECTS = {
         'plane_z': 0.02,    # 블록 높이 0.04의 절반
         'min_long': 0.055,  # 조각난 blob 상한 4.9cm과 정상 하한 6.3cm 사이
     },
+    'green_block': {
+        # 불량품. red_block과 모양·크기가 같아 plane_z/min_long을 공유한다.
+        # 색 RGB(0.05, 0.75, 0.15) = H 64 부근. 빨강(0/175)·파랑(113)과 안 겹친다.
+        'hsv': [
+            (np.array([50, 120, 70]), np.array([80, 255, 255])),
+        ],
+        'plane_z': 0.02,
+        'min_long': 0.055,
+    },
     'blue_ring': {
         # 링 색은 RGB(0.05, 0.25, 0.9) = H 113 부근. 구역 판은 채도 0이라 안 걸린다.
         'hsv': [
@@ -48,10 +57,10 @@ OBJECTS = {
 }
 
 
-class RedBlockDetector(Node):
+class ObjectDetector(Node):
 
     def __init__(self):
-        super().__init__('red_block_detector')
+        super().__init__('object_detector')
         self.bridge = CvBridge()
         self.sub = self.create_subscription(
             Image, '/camera/image_raw', self.on_image, 10)
@@ -70,7 +79,7 @@ class RedBlockDetector(Node):
         self.scene_pub = self.create_publisher(SceneState, '/scene_state', 10)
         # 튜닝용 디버그 영상 rqt_image_view로 보면서 임계값을 조정한다.
         self.debug_pub = self.create_publisher(Image, '/perception/debug_image', 10)
-        self.get_logger().info('red_block_detector 시작. /camera/image_raw 구독')
+        self.get_logger().info('object_detector 시작. /camera/image_raw 구독')
 
     def on_camera_info(self, msg):
         # K는 행 우선 9개 [fx 0 cs / 0 fy cy / 0 0 1]. 필요한 4개만 꺼낸다.
@@ -264,7 +273,7 @@ class RedBlockDetector(Node):
 
 def main():
     rclpy.init()
-    node = RedBlockDetector()
+    node = ObjectDetector()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:

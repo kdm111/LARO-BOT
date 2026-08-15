@@ -35,12 +35,15 @@ using GoalHandlePlace = rclcpp_action::ServerGoalHandle<Place>;
 
 // 놓을 자리(base_link 기준). ★ 같은 좌표가 세 곳에 있다 - 하나만 고치면 조용히 어긋난다:
 //   ① scene_cell.sdf 의 zone_* 모델 pose  ② agent.py 의 ZONE(구역 판정)  ③ 여기(팔이 실제로 가는 곳)
-//   bin = 서빙 구역(zone_serve), shelf_block/shelf_ring = 물체별 창고.
-//   "bin"이 서빙 자리인 이름 어긋남은 eval 시험지 182케이스에 박혀 있어 유지한다.
+//   counter = 카운터(zone_counter, 주문의 종착지), bin = 수거함(zone_bin, 불량품)
+//   shelf_block / shelf_ring = 물체별 창고.
+//   ※ eval 시험지 182케이스가 "bin"을 놓는 자리로 쓴다. 그 값은 계약 어휘로 살아 있으므로
+//     파싱 시험은 그대로 유효하다 - 다만 의미는 "수거함"으로 바뀌었다.
 static const std::map<std::string, std::pair<double, double>> kTargets = {
-  {"bin", {0.15, -0.15}},
-  {"shelf_block", {0.12, 0.16}},
-  {"shelf_ring", {0.19, 0.16}}
+  {"counter", {0.09, -0.15}},
+  {"bin", {0.16, -0.15}},
+  {"shelf_block", {0.08, 0.15}},
+  {"shelf_ring", {0.17, 0.15}}
 };
 
 // 물체별 파지 파라미터. 어떻게 잡을 것인가의 주체는 skill이다.
@@ -58,14 +61,20 @@ struct GraspSpec
   double place_z;
   double hold_eps;
 };
-// 놓고 물러나는 높이. place_z + approach_dz로 잡으면 납작한 물체(링)에서 6.6cm밖에
-// 안 올라가고, 이어지는 home 복귀에서 팔이 방금 놓은 물체를 쓸고 간다(2026-08-14 실측 9cm 이탈).
-// 물체 높이와 무관한 절대값으로 둔다.
-static constexpr double kRetreatZ = 0.12;
+// 놓고 물러나는 최소 높이. place_z + approach_dz로만 잡으면 납작한 물체(링)에서
+// 6.6cm밖에 안 올라가고, 이어지는 home 복귀에서 팔이 방금 놓은 물체를 쓸고 간다
+// (2026-08-14 실측 9cm 이탈). 그래서 하한을 둔다.
+// ★ 상한은 도달 범위다: 수거함(r=0.242)에서 z=0.12는 IK 불가였고 0.1075는 됐다.
+//    높이를 올릴수록 닿는 반경이 줄어든다.
+static constexpr double kRetreatZ = 0.10;
 
 static const std::map<std::string, GraspSpec> kGrasps = {
   // 블록 4x6x4cm. 중심 z=0.02에서 1cm 내려 아랫절반을 문다.
-  {"red_block", {0.010, 0.00000, 0.0475, 0.050}},
+  // place_z 0.020 : 구 0.0475는 3.75cm 위에서 떨어뜨리는 값이었고, 접근 높이가
+  //   0.1075가 되어 먼 자리(수거함 r=0.248)에서 IK 도달 불가였다(2026-08-15 실측).
+  {"red_block", {0.010, 0.00000, 0.0200, 0.050}},
+  // 불량품. red_block과 모양·크기·질량이 같아 값도 같다.
+  {"green_block", {0.010, 0.00000, 0.0200, 0.050}},
   // 링 바깥지름 6.0 / 안지름 3.5 / 두께 1.2cm. 중심 z=0.006.
   // 벽 중심 반경 = (3.0+1.75)/2 = 2.375cm. 거기에 TCP를 두고 반경 방향으로 닫으면
   // 안쪽 손가락은 구멍(반경 1.75)에, 바깥 손가락은 링 밖(반경 3.0)에 놓여 벽을 문다.
@@ -607,7 +616,8 @@ private:
     move_gripper("open");
     locked_elbow_.reset();   // 그리퍼 놓음 잠금 해제
     if (const auto r = move_to_pose(
-        put_x, put_y, kRetreatZ, approach_phi, "place-retreat", put_yaw);
+        put_x, put_y, std::max(tgt_z + approach_dz, kRetreatZ),
+        approach_phi, "place-retreat", put_yaw);
       r != MoveResult::OK)
     {
       goal_handle->abort(

@@ -7,7 +7,8 @@
        - 그리퍼는 x축(폭 4cm)을 물어야 한다. 구 2.5cm -> 4cm로 늘었으므로
          개구부 안에 들어오는지 scene_grasp_test로 확인할 것.
        - 높이가 2.5cm -> 4cm가 되었으므로 무게중심이 0.0125 -> 0.02로 올라간다.
-         red_block_detector.py의 PLANE_Z를 반드시 0.02로 같이 바꿔야 한다.
+         object_detector.py OBJECTS의 plane_z를 반드시 0.02로 같이 바꿔야 한다.
+         (구 전역 상수 PLANE_Z. 물체마다 높이가 달라 2026-08-15에 물체별로 나눴다.)
          안 바꾸면 역투영 평면이 실제 무게중심보다 낮아져 좌표가 어긋난다. -->
 <sdf version="1.10">
   <model name="red_block">

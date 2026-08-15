@@ -51,7 +51,7 @@ POSE_IDS = ('init', 'home')
 
 # place가 놓을 수 있는 유일한 장소(작업대 오른쪽 위 고정).
 # 카메라가 검출하는 물체가 아니라 고정 좌표라 scene_ids와 무관하게 검사한다.
-TARGET_IDS = ('bin', 'shelf_block', 'shelf_ring')
+TARGET_IDS = ('counter', 'bin', 'shelf_block', 'shelf_ring')
 
 # 지금 계약에서 가장 긴 계획은 deliver의 2스텝이다.
 # 과잉 생성(요청하지 않은 단계 삽입)의 1차 방어선이기도 하다.

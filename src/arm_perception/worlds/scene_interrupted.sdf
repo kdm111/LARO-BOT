@@ -1,0 +1,443 @@
+<?xml version="1.0"?>
+<!-- 씬: 어질러진 배치 (interrupted).
+     물체 셋이 전부 작업 구역에 있다. 사람이 쓰다 만 상태를 흉내낸 것으로,
+     자가 정리가 연달아 발동하는 상황이자 명령으로 하나씩 치우는 시험대다.
+     작업 구역 중심에서 4cm 떨어진 삼각 배치 - 물체 폭 6cm라 서로 0.9cm 뜬다.
+
+     구역 5개 (base_link 기준, +y=왼쪽 / +x=카메라에서 먼 쪽 = 화면 위).
+       창고(링)   (0.17, +0.15)  r=0.227  블록 창고 바로 위. 파란 링 재고.
+       창고(블록) (0.08, +0.15)  r=0.170  빨간/초록 블록 재고. 판이 넓다(둘이 들어간다).
+       작업       (0.17, +0.06)  r=0.180  여기 놓인 물체가 정리 대상. 판이 넓다(셋이 들어간다).
+       카운터     (0.09, -0.15)  r=0.175  주문의 종착지. 손님이 받아가는 자리.
+       수거함     (0.16, -0.15)  r=0.219  불량품을 버리는 자리. 카운터 바로 위.
+     창고 쌍과 카운터/수거함 쌍이 좌우 대칭이다 - 가까운 쪽이 먼저 쓰는 자리, 먼 쪽이 그 위.
+
+     ★ 반경 상한은 IK 실측이다(2026-08-15, reach_once 격자 훑기, phi=-90도):
+       닿는 반경이 높이에 따라 준다 - z=0.02에서 0.265~0.275, z=0.08에서 0.250,
+       z=0.10에서 0.240~0.250, z=0.12에서 0.230. 팔이 쓰는 최고 높이는 놓고 물러나는
+       0.10이라 그 한계(0.245)에서 2cm 이상 여유를 두고 전부 0.227 안쪽에 넣었다.
+     ★ 같은 좌표가 세 곳에 있다 - 하나만 고치면 조용히 어긋난다:
+       ① 이 파일의 zone_* 모델 pose  ② agent.py 의 ZONE  ③ skill_server.cpp 의 kTargets
+     ★ 블록 yaw는 자리마다 다르다. 파지 성패가 「팔의 베이스 각도 x 물체 yaw」 조합을
+       타기 때문이다 - 같은 자리에서 yaw만 바꾸면 성공/실패가 뒤집힌다
+       (2026-08-15 실측: (0.103,0.147)에서 yaw 30도 6회 연속 실패, yaw 0/45/90도 전부 성공.
+        (0.05,0.17)에서는 반대로 yaw 30도 성공, 45도 실패).
+       그래서 각 물체의 yaw는 그 자리에서 실측으로 통과한 값을 박아 두었다.
+       근본 원인(요청한 grasp_yaw가 실제로 구현되지 않는 문제)은 별도 카드다.
+     ★ 구역 판은 visual only(collision 없음)라 물리·파지 실측값에 영향이 없고,
+       색이 전부 무채색이라 HSV 마스크에 안 걸린다 - 검출 오염 0. -->
+<sdf version="1.10">
+  <world name="empty">
+    <physics name="1ms" type="ignored">
+      <!-- 파지는 접촉이 지배한다. 5ms에서는 한 스텝에 손가락이 물체 안으로 파고든다. -->
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+    <plugin name="gz::sim::systems::Physics" filename="gz-sim-physics-system"/>
+    <plugin name="gz::sim::systems::UserCommands" filename="gz-sim-user-commands-system"/>
+    <plugin name="gz::sim::systems::SceneBroadcaster" filename="gz-sim-scene-broadcaster-system"/>
+    <plugin name="gz::sim::systems::Contact" filename="gz-sim-contact-system"/>
+    <plugin name="gz::sim::systems::Sensors" filename="gz-sim-sensors-system">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <gravity>0 0 -9.8</gravity>
+    <scene>
+      <ambient>0.4 0.4 0.4 1</ambient>
+      <background>0.7 0.7 0.7 1</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry>
+          <surface><friction><ode/></friction></surface>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry>
+          <material><ambient>0.8 0.8 0.8 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <light name="sun" type="directional">
+      <pose>0 0 10 0 0 0</pose>
+      <cast_shadows>true</cast_shadows>
+      <intensity>1</intensity>
+      <direction>-0.5 0.1 -0.9</direction>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation><range>1000</range><linear>0.01</linear><constant>0.9</constant><quadratic>0.001</quadratic></attenuation>
+    </light>
+
+    <!-- === 구역 판 5장 === -->
+    <model name="zone_shelf_ring">
+      <static>true</static>
+      <pose>0.17 0.15 0.0005 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.06 0.06 0.001</size></box></geometry>
+          <material><ambient>0.25 0.25 0.25 1</ambient><diffuse>0.25 0.25 0.25 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="zone_shelf_block">
+      <static>true</static>
+      <pose>0.08 0.15 0.0005 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.1 0.08 0.001</size></box></geometry>
+          <material><ambient>0.35 0.35 0.35 1</ambient><diffuse>0.35 0.35 0.35 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="zone_work">
+      <static>true</static>
+      <pose>0.17 0.06 0.0005 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.1 0.1 0.001</size></box></geometry>
+          <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="zone_counter">
+      <static>true</static>
+      <pose>0.09 -0.15 0.0005 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.06 0.06 0.001</size></box></geometry>
+          <material><ambient>0.72 0.72 0.72 1</ambient><diffuse>0.72 0.72 0.72 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="zone_bin">
+      <static>true</static>
+      <pose>0.16 -0.15 0.0005 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.06 0.06 0.001</size></box></geometry>
+          <material><ambient>0.88 0.88 0.88 1</ambient><diffuse>0.88 0.88 0.88 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 빨간 블록 : 작업 구역 (바깥쪽) -->
+    <model name="red_block">
+      <pose>0.21 0.06 0.02 0 0 0.0</pose>
+    <!-- spawn 위치(월드 기준). 팔 앞쪽(x=0.20) + 살짝 옆(y=0.06)으로 두어
+         현재 쫙 펴진 팔에 가리지 않고 화면에 보이게. 바닥(z=0) 위에 얹히도록 살짝 띄워 놓음.
+         값은 잠정 — 화면 보고 조정한다(피킹 도달 범위 안: 이전 pick/place가 x≈0.2, y≈0~0.1에서 성공). -->
+
+    <link name="link">
+      <!-- 관성 : 박스(질량 0.05kg) 근사. 동적 물체라 바닥에 얹혀 있다가 나중에 집혀 들린다. -->
+      <inertial>
+        <mass>0.05</mass>
+        <inertia>
+          <ixx>0.0000217</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.0000133</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.0000217</izz>
+        </inertia>
+      </inertial>
+
+      <!-- 충돌 형상 : 바닥·그리퍼와 부딪히는 실제 몸체 -->
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.04 0.06 0.04</size>
+          </box>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+
+      <!-- 시각 형상 : 카메라가 보는 빨간 겉모습. HSV 검출이 이 빨강을 찾는다. -->
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.04 0.06 0.04</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>1.0 0.0 0.0 1</ambient>
+          <diffuse>1.0 0.0 0.0 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+        </material>
+      </visual>
+    </link>
+  </model>
+
+    <!-- 초록 블록(불량) : 작업 구역 (창고 쪽) -->
+    <model name="green_block">
+      <pose>0.15 0.095 0.02 0 0 0.7854</pose>
+
+    <link name="link">
+      <!-- 관성 : 박스(질량 0.05kg) 근사. red_block과 같은 값. -->
+      <inertial>
+        <mass>0.05</mass>
+        <inertia>
+          <ixx>0.0000217</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.0000133</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.0000217</izz>
+        </inertia>
+      </inertial>
+
+      <!-- 충돌 형상 : 바닥·그리퍼와 부딪히는 실제 몸체 -->
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>0.04 0.06 0.04</size>
+          </box>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+
+      <!-- 시각 형상 : HSV 검출이 이 초록을 찾는다. -->
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>0.04 0.06 0.04</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.05 0.75 0.15 1</ambient>
+          <diffuse>0.05 0.75 0.15 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+        </material>
+      </visual>
+    </link>
+  </model>
+
+    <!-- 파란 링 : 작업 구역 (카운터 쪽) -->
+    <model name="blue_ring">
+      <pose>0.15 0.025 0.0 0 0 0.0</pose>
+    <link name='link'>
+      <inertial>
+        <mass>0.04</mass>
+        <!-- 속 빈 원통 근사: izz = m/2*(Ro^2+Ri^2), ixx=iyy = m/12*(3*(Ro^2+Ri^2)+h^2) -->
+        <inertia>
+          <ixx>1.254e-05</ixx><ixy>0</ixy><ixz>0</ixz>
+          <iyy>1.254e-05</iyy><iyz>0</iyz><izz>2.413e-05</izz>
+        </inertia>
+      </inertial>
+      <collision name='ring_col_0'>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_0'>
+        <pose>0.02375 0.00000 0.00600 0 0 0.00000</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_1'>
+        <pose>0.02194 0.00909 0.00600 0 0 0.39270</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_1'>
+        <pose>0.02194 0.00909 0.00600 0 0 0.39270</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_2'>
+        <pose>0.01679 0.01679 0.00600 0 0 0.78540</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_2'>
+        <pose>0.01679 0.01679 0.00600 0 0 0.78540</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_3'>
+        <pose>0.00909 0.02194 0.00600 0 0 1.17810</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_3'>
+        <pose>0.00909 0.02194 0.00600 0 0 1.17810</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_4'>
+        <pose>0.00000 0.02375 0.00600 0 0 1.57080</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_4'>
+        <pose>0.00000 0.02375 0.00600 0 0 1.57080</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_5'>
+        <pose>-0.00909 0.02194 0.00600 0 0 1.96350</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_5'>
+        <pose>-0.00909 0.02194 0.00600 0 0 1.96350</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_6'>
+        <pose>-0.01679 0.01679 0.00600 0 0 2.35619</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_6'>
+        <pose>-0.01679 0.01679 0.00600 0 0 2.35619</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_7'>
+        <pose>-0.02194 0.00909 0.00600 0 0 2.74889</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_7'>
+        <pose>-0.02194 0.00909 0.00600 0 0 2.74889</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_8'>
+        <pose>-0.02375 0.00000 0.00600 0 0 3.14159</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_8'>
+        <pose>-0.02375 0.00000 0.00600 0 0 3.14159</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_9'>
+        <pose>-0.02194 -0.00909 0.00600 0 0 3.53429</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_9'>
+        <pose>-0.02194 -0.00909 0.00600 0 0 3.53429</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_10'>
+        <pose>-0.01679 -0.01679 0.00600 0 0 3.92699</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_10'>
+        <pose>-0.01679 -0.01679 0.00600 0 0 3.92699</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_11'>
+        <pose>-0.00909 -0.02194 0.00600 0 0 4.31969</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_11'>
+        <pose>-0.00909 -0.02194 0.00600 0 0 4.31969</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_12'>
+        <pose>-0.00000 -0.02375 0.00600 0 0 4.71239</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_12'>
+        <pose>-0.00000 -0.02375 0.00600 0 0 4.71239</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_13'>
+        <pose>0.00909 -0.02194 0.00600 0 0 5.10509</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_13'>
+        <pose>0.00909 -0.02194 0.00600 0 0 5.10509</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_14'>
+        <pose>0.01679 -0.01679 0.00600 0 0 5.49779</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_14'>
+        <pose>0.01679 -0.01679 0.00600 0 0 5.49779</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+      <collision name='ring_col_15'>
+        <pose>0.02194 -0.00909 0.00600 0 0 5.89049</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+      </collision>
+      <visual name='ring_vis_15'>
+        <pose>0.02194 -0.00909 0.00600 0 0 5.89049</pose>
+        <geometry><box><size>0.01250 0.00980 0.01200</size></box></geometry>
+        <material>
+          <ambient>0.05 0.25 0.9 1</ambient>
+          <diffuse>0.05 0.25 0.9 1</diffuse>
+        </material>
+      </visual>
+    </link>
+  </model>
+
+  </world>
+</sdf>
