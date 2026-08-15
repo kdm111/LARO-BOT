@@ -40,10 +40,10 @@ using GoalHandlePlace = rclcpp_action::ServerGoalHandle<Place>;
 //   ※ eval 시험지 182케이스가 "bin"을 놓는 자리로 쓴다. 그 값은 계약 어휘로 살아 있으므로
 //     파싱 시험은 그대로 유효하다 - 다만 의미는 "수거함"으로 바뀌었다.
 static const std::map<std::string, std::pair<double, double>> kTargets = {
-  {"counter", {0.09, -0.15}},
-  {"bin", {0.16, -0.15}},
-  {"shelf_block", {0.08, 0.15}},
-  {"shelf_ring", {0.17, 0.15}}
+  {"counter", {0.06, -0.145}},
+  {"bin", {0.11, -0.145}},
+  {"shelf_block", {0.06, 0.145}},
+  {"shelf_ring", {0.11, 0.145}}
 };
 
 // 물체별 파지 파라미터. 어떻게 잡을 것인가의 주체는 skill이다.

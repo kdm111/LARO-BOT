@@ -5,8 +5,6 @@
 노드 이름 : arm_agent
 """
 
-import math
-
 from arm_interfaces.action import MoveTo, Pick, Place
 from arm_interfaces.msg import ErrorCode, RobotStatus, SceneState
 
@@ -30,19 +28,17 @@ RESUME = 'RESUME'  # 사람이 조치를 끝내고 로봇을 다시 재개하라
 HUMAN = 'human'
 SELF = 'self'
 
-# 구역 좌표. scene_cell.sdf의 zone_* 모델과 같은 값이다(base_link 기준).
-# ★ 같은 좌표가 세 곳에 있다 - 하나만 고치면 조용히 어긋난다:
-#   ① scene_cell.sdf 의 zone_* 모델 pose  ② 여기(구역 판정)  ③ skill_server.cpp 의 kTargets
+# 구역 = 사각형 (x0, x1, y0, y1). base_link 기준, +y=왼쪽.
+# ★ 진실은 arm_perception/config/cell_layout.yaml 이다. 여기와 skill_server.cpp의
+#   kTargets, scene_*.sdf의 zone_* 판이 그 사본이고, test_cell_layout.py가 넷을 대조한다.
+#   하나만 고치면 pytest가 빨개진다.
 ZONE = {
-    'shelf_ring': (0.17, 0.15),   # 링 창고. 블록 창고 바로 위
-    'shelf_block': (0.08, 0.15),  # 블록 창고 (빨강·초록이 같이 선다)
-    'work': (0.17, 0.06),         # 작업 구역
-    'counter': (0.09, -0.15),     # 카운터 - 주문의 종착지
-    'bin': (0.16, -0.15),         # 수거함 - 불량품. 카운터 바로 위
+    'shelf_ring': (0.085, 0.135, 0.095, 0.195),    # 링 창고. 블록 창고 바로 위
+    'shelf_block': (0.035, 0.085, 0.095, 0.195),   # 블록 창고 (빨강·초록이 같이 선다)
+    'work': (0.100, 0.230, -0.065, 0.065),         # 작업 구역. 물체 셋이 들어간다
+    'counter': (0.035, 0.085, -0.195, -0.095),     # 카운터 - 주문의 종착지
+    'bin': (0.085, 0.135, -0.195, -0.095),         # 수거함 - 불량품. 카운터 바로 위
 }
-# 어느 구역에도 안 들어가는 거리. 구역 간 최단 간격이 0.07이라 그 절반보다 커도 된다
-# - 판정이 '반경 안에 드는가'가 아니라 '어느 구역이 가장 가까운가'이기 때문이다.
-ZONE_MAX = 0.06
 LOITER_SEC = 2.0
 # 물체별 정리 목적지. 물체가 늘면 여기 한 줄이 는다.
 DEST = {
@@ -53,17 +49,16 @@ DEST = {
 
 
 def zone_of(x, y):
-    """관측된 장소에서 가장 가까운 구역을 돌려준다. 너무 멀면 None.
+    """좌표가 들어 있는 구역을 돌려준다. 어디에도 안 들어가면 None.
 
-    반경 판정이 아니라 최근접 판정인 이유: 창고 둘의 간격이 7cm라
-    반경으로 나누면 검출 오차(최대 3cm)에서 둘 다 걸리거나 둘 다 안 걸린다.
+    최근접 판정을 버리고 사각형 포함으로 바꿨다 - 구역이 커지면서
+    "중심에서 얼마나 가까운가"가 "어느 구역 안인가"와 어긋났다.
+    구역끼리 겹치지 않는 것은 test_cell_layout.py가 보장한다.
     """
-    best, best_d = None, ZONE_MAX
-    for name, (zone_x, zone_y) in ZONE.items():
-        d = math.hypot(x - zone_x, y - zone_y)
-        if d < best_d:
-            best, best_d = name, d
-    return best
+    for name, (x0, x1, y0, y1) in ZONE.items():
+        if x0 <= x <= x1 and y0 <= y <= y1:
+            return name
+    return None
 
 
 def clean_steps(object_id):
@@ -218,6 +213,9 @@ class Agent(Node):
         msg.state = self._state
         msg.source = self._source or ''
         msg.ignored = sorted(self._ignored)
+        # 어느 구역에 무엇이 있는가. 구역 밖 물체는 싣지 않는다.
+        msg.zone_objects = sorted(
+            f'{zone}:{object_id}' for object_id, (zone, _) in self._first_seen.items() if zone)
         msg.served = self._work_counts['served']
         msg.cleaned = self._work_counts['cleaned']
         msg.discarded = self._work_counts['discarded']
@@ -236,9 +234,16 @@ class Agent(Node):
             self._resume()
             return
         steps = self._to_steps(command)
+        # 명령을 읽지 못함 -> 다시 말하도록 요구
         if steps is None:
-            self.get_logger().warn(f'잘못된 명령 : {command}')
+            self.get_logger().warn(f'잘못된 명령입니다.: {command}')
             return
+        # 못하는 일 -> 다른 일을 시키도록 요구
+        if not steps:
+            # [] = 모델이 할 수 없다고 말한 정당한 거부
+            self.get_logger().warn(f'{", ".join(DEST)} 이 물건들에 속하지 않습니다. 다른 명령을 주세요: {command}')
+            return
+        # 현재 작업 중 -> 잠시 후 일을 시키도록 유도
         if self._state != IDLE:
             self.get_logger().warn(f'지금은 작업 중입니다. 잠시 후 말씀해주세요 : {command}')
             return
@@ -312,7 +317,9 @@ class Agent(Node):
         model = self.get_parameter('model').value
         steps = llm_planner.plan(command, self._scene_ids, llm_planner.make_ollama_caller(model))
         if steps is not None:
-            self.get_logger().info(f'LLM 계획 채택 : {steps}')
+            # [] == 문자열 파서로 내려가면 안됨.
+            if steps:
+                self.get_logger().info(f'LLM 계획 채택 : {steps}')
             return steps
 
         # 문자열 파싱

@@ -5,25 +5,25 @@
      작업 구역 중심에서 4cm 떨어진 삼각 배치 - 물체 폭 6cm라 서로 0.9cm 뜬다.
 
      구역 5개 (base_link 기준, +y=왼쪽 / +x=카메라에서 먼 쪽 = 화면 위).
-       창고(링)   (0.17, +0.15)  r=0.227  블록 창고 바로 위. 파란 링 재고.
-       창고(블록) (0.08, +0.15)  r=0.170  빨간/초록 블록 재고. 판이 넓다(둘이 들어간다).
-       작업       (0.17, +0.06)  r=0.180  여기 놓인 물체가 정리 대상. 판이 넓다(셋이 들어간다).
-       카운터     (0.09, -0.15)  r=0.175  주문의 종착지. 손님이 받아가는 자리.
-       수거함     (0.16, -0.15)  r=0.219  불량품을 버리는 자리. 카운터 바로 위.
-     창고 쌍과 카운터/수거함 쌍이 좌우 대칭이다 - 가까운 쪽이 먼저 쓰는 자리, 먼 쪽이 그 위.
+     ★ 2026-08-15 : 감으로 잡던 크기를 IK 격자 훑기로 다시 쟀다(sweep + reach_once, phi=-90도).
+       사용 가능 영역 = 「IK 도달」 ∩ 「카메라 시야」 ∩ 「반경 0.10 바깥」.
+       - 닿는 반경이 높이에 따라 준다 : z=0.08에서 y=0이면 x 0.250, |y|=0.16이면 0.195.
+         z=0.10(놓고 물러나는 높이)에서는 각각 0.240 / 0.185.
+       - 시야 한계는 |y| 0.255다(HFOV 60도).
+       - 안쪽은 r=0.10에서도 팔이 도달해 파지를 시도했다(실측). 자기 충돌로 막히는 벽이 없다.
+       아래 사각형은 그 안에서 최대로 키운 것이다. 판 = 구역이고, 판 밖은 계약 밖이다.
 
-     ★ 반경 상한은 IK 실측이다(2026-08-15, reach_once 격자 훑기, phi=-90도):
-       닿는 반경이 높이에 따라 준다 - z=0.02에서 0.265~0.275, z=0.08에서 0.250,
-       z=0.10에서 0.240~0.250, z=0.12에서 0.230. 팔이 쓰는 최고 높이는 놓고 물러나는
-       0.10이라 그 한계(0.245)에서 2cm 이상 여유를 두고 전부 0.227 안쪽에 넣었다.
+       창고(링)   x 0.130~0.180  y +0.100~+0.155    5.0 x  5.5cm  중심(0.1550,+0.1275)
+       창고(블록) x 0.045~0.125  y +0.100~+0.200    8.0 x 10.0cm  중심(0.0850,+0.1500)
+       작업       x 0.100~0.215  y -0.090~+0.090   11.5 x 18.0cm  중심(0.1575, 0.0000)
+       카운터     x 0.045~0.125  y -0.200~-0.100    8.0 x 10.0cm  중심(0.0850,-0.1500)
+       수거함     x 0.130~0.180  y -0.155~-0.100    5.0 x  5.5cm  중심(0.1550,-0.1275)
+
+       창고 쌍과 카운터/수거함 쌍이 좌우 대칭이고, 먼 쪽(x 큰 쪽)이 각각 링/수거함이다.
+       바깥 구역이 작은 것은 부채꼴이 바깥에서 좁아지기 때문이다 - 억지로 키우면 모서리가
+       도달 밖으로 나간다(구 배치의 링 창고가 실제로 그랬다).
      ★ 같은 좌표가 세 곳에 있다 - 하나만 고치면 조용히 어긋난다:
        ① 이 파일의 zone_* 모델 pose  ② agent.py 의 ZONE  ③ skill_server.cpp 의 kTargets
-     ★ 블록 yaw는 자리마다 다르다. 파지 성패가 「팔의 베이스 각도 x 물체 yaw」 조합을
-       타기 때문이다 - 같은 자리에서 yaw만 바꾸면 성공/실패가 뒤집힌다
-       (2026-08-15 실측: (0.103,0.147)에서 yaw 30도 6회 연속 실패, yaw 0/45/90도 전부 성공.
-        (0.05,0.17)에서는 반대로 yaw 30도 성공, 45도 실패).
-       그래서 각 물체의 yaw는 그 자리에서 실측으로 통과한 값을 박아 두었다.
-       근본 원인(요청한 grasp_yaw가 실제로 구현되지 않는 문제)은 별도 카드다.
      ★ 구역 판은 visual only(collision 없음)라 물리·파지 실측값에 영향이 없고,
        색이 전부 무채색이라 HSV 마스크에 안 걸린다 - 검출 오염 0. -->
 <sdf version="1.10">
@@ -75,10 +75,10 @@
     <!-- === 구역 판 5장 === -->
     <model name="zone_shelf_ring">
       <static>true</static>
-      <pose>0.17 0.15 0.0005 0 0 0</pose>
+      <pose>0.11 0.145 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
-          <geometry><box><size>0.06 0.06 0.001</size></box></geometry>
+          <geometry><box><size>0.05 0.1 0.001</size></box></geometry>
           <material><ambient>0.25 0.25 0.25 1</ambient><diffuse>0.25 0.25 0.25 1</diffuse></material>
         </visual>
       </link>
@@ -86,21 +86,21 @@
 
     <model name="zone_shelf_block">
       <static>true</static>
-      <pose>0.08 0.15 0.0005 0 0 0</pose>
+      <pose>0.06 0.145 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
-          <geometry><box><size>0.1 0.08 0.001</size></box></geometry>
-          <material><ambient>0.35 0.35 0.35 1</ambient><diffuse>0.35 0.35 0.35 1</diffuse></material>
+          <geometry><box><size>0.05 0.1 0.001</size></box></geometry>
+          <material><ambient>0.38 0.38 0.38 1</ambient><diffuse>0.38 0.38 0.38 1</diffuse></material>
         </visual>
       </link>
     </model>
 
     <model name="zone_work">
       <static>true</static>
-      <pose>0.17 0.06 0.0005 0 0 0</pose>
+      <pose>0.165 0.0 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
-          <geometry><box><size>0.1 0.1 0.001</size></box></geometry>
+          <geometry><box><size>0.13 0.13 0.001</size></box></geometry>
           <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
         </visual>
       </link>
@@ -108,10 +108,10 @@
 
     <model name="zone_counter">
       <static>true</static>
-      <pose>0.09 -0.15 0.0005 0 0 0</pose>
+      <pose>0.06 -0.145 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
-          <geometry><box><size>0.06 0.06 0.001</size></box></geometry>
+          <geometry><box><size>0.05 0.1 0.001</size></box></geometry>
           <material><ambient>0.72 0.72 0.72 1</ambient><diffuse>0.72 0.72 0.72 1</diffuse></material>
         </visual>
       </link>
@@ -119,10 +119,10 @@
 
     <model name="zone_bin">
       <static>true</static>
-      <pose>0.16 -0.15 0.0005 0 0 0</pose>
+      <pose>0.11 -0.145 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
-          <geometry><box><size>0.06 0.06 0.001</size></box></geometry>
+          <geometry><box><size>0.05 0.1 0.001</size></box></geometry>
           <material><ambient>0.88 0.88 0.88 1</ambient><diffuse>0.88 0.88 0.88 1</diffuse></material>
         </visual>
       </link>
@@ -130,7 +130,7 @@
 
     <!-- 빨간 블록 : 작업 구역 (바깥쪽) -->
     <model name="red_block">
-      <pose>0.21 0.06 0.02 0 0 0.0</pose>
+      <pose>0.210 0.030 0.02 0 0 0.0</pose>
     <!-- spawn 위치(월드 기준). 팔 앞쪽(x=0.20) + 살짝 옆(y=0.06)으로 두어
          현재 쫙 펴진 팔에 가리지 않고 화면에 보이게. 바닥(z=0) 위에 얹히도록 살짝 띄워 놓음.
          값은 잠정 — 화면 보고 조정한다(피킹 도달 범위 안: 이전 pick/place가 x≈0.2, y≈0~0.1에서 성공). -->
@@ -184,7 +184,7 @@
 
     <!-- 초록 블록(불량) : 작업 구역 (창고 쪽) -->
     <model name="green_block">
-      <pose>0.15 0.095 0.02 0 0 0.7854</pose>
+      <pose>0.120 0.045 0.02 0 0 0.7854</pose>
 
     <link name="link">
       <!-- 관성 : 박스(질량 0.05kg) 근사. red_block과 같은 값. -->
@@ -235,7 +235,7 @@
 
     <!-- 파란 링 : 작업 구역 (카운터 쪽) -->
     <model name="blue_ring">
-      <pose>0.15 0.025 0.0 0 0 0.0</pose>
+      <pose>0.165 -0.050 0.0 0 0 0.0</pose>
     <link name='link'>
       <inertial>
         <mass>0.04</mass>
