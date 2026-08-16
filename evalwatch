@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# 지금 돌고 있는 시험지 진행을 본다. dc730/run730과 같은 자리의 입구다.
+#
+#   ./evalwatch          한 번 찍고 끝
+#   ./evalwatch -f       2초마다 갱신 (Ctrl+C로 나감)
+#
+# 왜 있나: 시험 한 판이 182케이스 x k회라 수십 분 걸리는데, 컨테이너 안 로그를
+# 매번 docker exec로 꺼내 보는 게 번거롭다. 모델별 진행률과 남은 시간을 한 화면에 낸다.
+set -u
+C=singlearm-sim
+
+show() {
+  docker exec "$C" bash -lc '
+    echo "===== 시험 진행 ====="
+    if grep -q V3DONE /tmp/v3.log 2>/dev/null; then echo "  *** 전부 끝났다 ***"; fi
+    grep "##########" /tmp/v3.log 2>/dev/null | tail -6
+    echo
+    for f in /tmp/v3_*.log; do
+      [ -e "$f" ] || continue
+      name=$(basename "$f" .log | sed "s/^v3_//")
+      last=$(grep -c "/182" "$f" 2>/dev/null || echo 0)
+      done_line=$(grep "/182" "$f" 2>/dev/null | tail -1)
+      if grep -q "합계" "$f" 2>/dev/null; then
+        printf "  %-18s 완료  %s\n" "$name" "$(grep 합계 "$f" | tail -1)"
+      elif [ "$last" -gt 0 ]; then
+        # 경과 시간으로 남은 시간을 추정한다.
+        st=$(stat -c %Y "$f"); now=$(date +%s); el=$((now-st))
+        eta=$(( el * (182-last) / (last>0?last:1) ))
+        printf "  %-18s %3d/182  경과 %d분  남은 %d분\n" \
+               "$name" "$last" "$((el/60))" "$((eta/60))"
+        printf "      %s\n" "$done_line"
+      else
+        printf "  %-18s 모델 적재 중…\n" "$name"
+      fi
+    done
+  '
+}
+
+if [ "${1:-}" = "-f" ]; then
+  while true; do clear; show; sleep 2; done
+else
+  show
+fi

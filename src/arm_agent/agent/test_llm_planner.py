@@ -106,8 +106,23 @@ def test_step_limit_rejected():
 def test_object_not_in_scene_rejected():
     # 3강 "유효한 JSON != 올바른 JSON". 형식은 완벽한데 씬에 없는 물체다.
     # plan()이 scene_ids 인자를 받는 이유가 바로 이 케이스다.
+    #
+    # ★ 2026-08-16에 반환이 None -> []로 바뀌었다. 뜻이 다르다:
+    #   None = 계획을 못 냈다 -> 문자열 파서로 내려간다(폴백 사다리)
+    #   []   = 낼 계획이 없다 -> 사람에게 되묻고 멈춘다(정당한 거부)
+    #   없는 물건은 파서가 대신 풀 수 있는 문제가 아니므로 내려보낼 이유가 없다.
+    #   되묻지도 않는다 - 다시 물으면 모델이 씬에 있는 다른 물체로 갈아끼우고,
+    #   그게 실제 사고를 냈다(초록을 시켰는데 빨강을 옮기고 served까지 올림).
     llm = FakeLLM('[{"skill": "pick", "object_id": "blue_block"}]')
-    assert plan('pick blue_block', SCENE, llm) is None
+    assert plan('pick blue_block', SCENE, llm) == []
+
+
+def test_not_in_scene_does_not_reprompt():
+    """없는 물건이면 2차 시도 자체가 없어야 한다. 되묻는 순간 바꿔치기가 열린다."""
+    llm = FakeLLM('[{"skill": "pick", "object_id": "blue_block"}]')
+    assert plan('pick blue_block', SCENE, llm) == []
+    # FakeLLM은 호출될 때마다 같은 답을 주지만, 호출 횟수는 센다.
+    assert llm.calls == 1, f'재프롬프트가 일어났다(호출 {llm.calls}회)'
 
 
 def test_unknown_pose_id_rejected():

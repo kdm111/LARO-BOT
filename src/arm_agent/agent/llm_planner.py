@@ -90,6 +90,9 @@ PLAN_SCHEMA = {
     },
 }
 
+# 재프롬프트로 고칠수 없는 실패. 다시 물으면 모델이 씬 목록에 있는 다른 물체를 갈아끼운다. 
+# 씬에 없는 물체
+NOT_IN_SCENE = '씬에 없는 물체'
 
 def plan(command, scene_ids=None, call_llm=None):
     """자연어 명령을 검증된 스킬 계획으로 바꾼다. 실패하면 None.
@@ -114,6 +117,10 @@ def plan(command, scene_ids=None, call_llm=None):
     if error is None:
         return steps
     _LOG.warning('계획 거부(1차): %s | 원문: %r', error, raw)
+
+    # 없는 물건으로 돌아올 경우 되묻지 않는다.
+    if error.startswith(NOT_IN_SCENE):
+        return []
 
     # 2차 시도 - 무엇이 왜 틀렸는지 알려주고 다시 묻는다. 딱 한 번만.
     raw = _safe_call(call_llm, _retry_prompt(prompt, raw, error))
@@ -224,7 +231,7 @@ def _validate_step(step, scene_ids):
 
     if scene_ids is not None and 'object_id' in SKILLS[skill]:
         if step['object_id'] not in scene_ids:
-            return f'씬에 없는 물체: {step["object_id"]!r}'
+            return f'{NOT_IN_SCENE}: {step["object_id"]!r}'
 
     return None
 
@@ -328,7 +335,13 @@ def _call_ollama(prompt, model=None, schema=PLAN_SCHEMA):
     로컬 백엔드의 최대 장점인 재현성이 이 한 줄에서 나온다.
     urllib만 쓰므로 새 의존성이 없다.
     """
+    # think=False : 추론(thinking) 모드를 끈다.
+    # 로봇 명령에 답 앞의 긴 추론은 지연으로만 나타난다. 2026-08-16 실측 —
+    # qwen3:8b가 켠 채 6.43초(추론 591자), 끄면 4.12초. exaone3.5:7.8b는
+    # 추론 모드가 없어서 값에 영향도 없고 오류도 안 난다(0.75 vs 0.78초).
+    # 모든 모델을 "바로 답한다"는 같은 조건에 세워야 비교가 성립한다.
     body = json.dumps({
+        'think': False,
         'model': model or OLLAMA_MODEL,
         'stream': False,
         'format': schema,
