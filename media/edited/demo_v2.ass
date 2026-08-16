@@ -1,0 +1,41 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 760
+PlayResY: 470
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Sub,Noto Sans CJK KR,24,&H00FFFFFF,&H000000FF,&H00000000,&H50000000,0,0,0,0,100,100,0,0,3,5,0,2,26,26,20,1
+Style: Hud,Noto Sans CJK KR,20,&H0000E5FF,&H000000FF,&H00000000,&H70000000,1,0,0,0,100,100,0,0,3,5,0,7,16,16,14,1
+Style: Title,Noto Sans CJK KR,36,&H00FFFFFF,&H000000FF,&H00000000,&H90000000,1,0,0,0,100,100,0,0,3,8,0,8,30,30,20,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.30,0:00:04.50,Title,,0,0,0,,Self-Recovering Service Cell
+Dialogue: 0,0:00:00.00,0:00:25.77,Hud,,0,0,0,,① 주문을 받아 서빙한다
+Dialogue: 0,0:00:25.77,0:00:52.24,Hud,,0,0,0,,② 명령 없이 스스로 치운다
+Dialogue: 0,0:00:52.24,0:01:19.86,Hud,,0,0,0,,③ 실패를 스스로 수습한다
+Dialogue: 0,0:01:19.86,0:02:39.67,Hud,,0,0,0,,④ 포기할 줄 알아야 자율이다
+Dialogue: 0,0:00:00.40,0:00:05.00,Sub,,0,0,0,,명령 · 자가 판단 · 실패 복구가 모두 같은 계약을 지나는 로봇 셀
+Dialogue: 0,0:00:05.50,0:00:11.00,Sub,,0,0,0,,사람 명령 : "빨간 블록을 카운터에 놔줘" → LLM이 계약 어휘로 옮긴다
+Dialogue: 0,0:00:12.00,0:00:18.00,Sub,,0,0,0,,물체의 긴 축을 재서 그리퍼 방향을 정한다
+Dialogue: 0,0:00:20.00,0:00:25.50,Sub,,0,0,0,,놓고 나면 카메라로 다시 확인한다 — 액션의 성공 보고를 믿지 않는다
+Dialogue: 0,0:00:26.77,0:00:32.77,Sub,,0,0,0,,불량품이 작업 구역에 떨어진다. 아무도 명령하지 않는다
+Dialogue: 0,0:00:33.77,0:00:39.77,Sub,,0,0,0,,2초 이상 머물면 방치로 판정 → 로봇이 스스로 명령을 만든다
+Dialogue: 0,0:00:40.77,0:00:47.77,Sub,,0,0,0,,자가 명령도 사람 명령과 똑같은 검증 4층을 지난다
+Dialogue: 0,0:00:48.77,0:00:54.77,Sub,,0,0,0,,초록의 목적지는 카운터가 아니라 수거함이다
+Dialogue: 0,0:00:53.24,0:00:59.24,Sub,,0,0,0,,같은 주문. 이번에는 운반 중에 물체를 빼앗긴다
+Dialogue: 0,0:01:00.74,0:01:07.24,Sub,,0,0,0,,GRIPPER_EMPTY 감지 → 전략 REGRASP
+Dialogue: 0,0:01:08.24,0:01:14.24,Sub,,0,0,0,,복구 자세로 물러나 재인지 — 옛 좌표로 다시 집지 않는다
+Dialogue: 0,0:01:15.24,0:01:19.74,Sub,,0,0,0,,완주. 사람은 아무것도 하지 않았다
+Dialogue: 0,0:01:20.86,0:01:26.86,Sub,,0,0,0,,이번에는 실패가 계속된다. 로봇은 언제 포기해야 하는가
+Dialogue: 0,0:01:27.86,0:01:33.86,Sub,,0,0,0,,들어 올릴 때마다 빼앗는다 — REGRASP는 시퀀스마다 2회까지
+Dialogue: 0,0:01:41.53,0:01:48.53,Sub,,0,0,0,,▶ 20배속 — 같은 실패가 아홉 번 반복된다
+Dialogue: 0,0:01:49.53,0:01:56.53,Sub,,0,0,0,,시도 예산 3회가 차례로 깎인다
+Dialogue: 0,0:02:00.53,0:02:07.53,Sub,,0,0,0,,정리 불가 : 3회 실패 → 사람 확인 요청. 팔이 멈춘다
+Dialogue: 0,0:02:08.53,0:02:16.53,Sub,,0,0,0,,초록은 아직 작업 구역에 있다. 알고도 손대지 않는다 — 무시 목록
+Dialogue: 0,0:02:17.53,0:02:24.53,Sub,,0,0,0,,예산이 없으면 자율 작업은 같은 실패를 영원히 반복한다
+Dialogue: 0,0:02:27.17,0:02:32.67,Sub,,0,0,0,,"RESUME" → 예산 원복. 포기 3건은 지워지지 않는다
+Dialogue: 0,0:02:33.67,0:02:39.17,Sub,,0,0,0,,실패를 숨기지 않는 것이 이 셀의 계약이다

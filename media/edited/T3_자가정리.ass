@@ -1,0 +1,29 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 760
+PlayResY: 470
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Sub,Noto Sans CJK KR,24,&H00FFFFFF,&H000000FF,&H00000000,&H50000000,0,0,0,0,100,100,0,0,3,5,0,2,26,26,20,1
+Style: Hud,Noto Sans CJK KR,18,&H0000E5FF,&H000000FF,&H00000000,&H70000000,1,0,0,0,100,100,0,0,3,5,0,7,16,16,14,1
+Style: Title,Noto Sans CJK KR,34,&H00FFFFFF,&H000000FF,&H00000000,&H90000000,1,0,0,0,100,100,0,0,3,8,0,8,30,30,18,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.50,0:00:04.50,Title,,0,0,0,,② 명령 없이 스스로 치운다
+Dialogue: 0,0:00:00.00,0:00:17.80,Hud,,0,0,0,,상태  IDLE            서빙 1 · 정리 0
+Dialogue: 0,0:00:17.80,0:01:20.50,Hud,,0,0,0,,상태  RUNNING · 자가 명령   서빙 1 · 정리 0
+Dialogue: 0,0:01:20.50,0:01:22.60,Hud,,0,0,0,,상태  VERIFYING (씬 재확인)  서빙 1 · 정리 0
+Dialogue: 0,0:01:22.60,0:01:44.00,Hud,,0,0,0,,상태  IDLE            서빙 1 · 정리 1
+Dialogue: 0,0:00:00.50,0:00:11.00,Sub,,0,0,0,,작업 구역이 비어 있다. 로봇은 아무 명령도 받지 않은 상태다
+Dialogue: 0,0:00:12.30,0:00:17.30,Sub,,0,0,0,,불량품(초록)이 작업 구역에 떨어진다 — 아무도 명령하지 않는다
+Dialogue: 0,0:00:17.80,0:00:25.00,Sub,,0,0,0,,2초 이상 머물면 방치로 판정 → 로봇이 스스로 명령을 만든다
+Dialogue: 0,0:00:25.50,0:00:33.00,Sub,,0,0,0,,자가 명령도 사람 명령과 똑같은 검증 4층을 지난다
+Dialogue: 0,0:00:42.00,0:00:49.00,Sub,,0,0,0,,파지 성공
+Dialogue: 0,0:00:55.00,0:01:06.00,Sub,,0,0,0,,초록의 목적지는 카운터가 아니라 수거함이다 — 물체별 라우팅
+Dialogue: 0,0:01:12.00,0:01:19.50,Sub,,0,0,0,,수거함에 놓기 완료
+Dialogue: 0,0:01:20.00,0:01:27.00,Sub,,0,0,0,,검증 통과 — '스스로 치움' 1건
+Dialogue: 0,0:01:28.00,0:01:38.00,Sub,,0,0,0,,사람이 시킨 일과 스스로 한 일이 다른 칸에 쌓인다

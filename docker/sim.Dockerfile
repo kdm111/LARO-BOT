@@ -37,6 +37,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libegl-mesa0 \
         libglu1-mesa \
         mesa-utils \
+        # --- 데모 영상 편집 (2026-08-15) ---
+        # media/edited/edit.py, demo.py가 촬영 원본에 자막·배속을 얹을 때 쓴다.
+        # 자막이 한국어라 CJK 글리프가 있는 폰트가 있어야 한다 - 없으면 libass가
+        # 조용히 두부(□□□)로 그린다. 렌더는 성공하는데 글자만 안 보인다.
+        ffmpeg \
+        fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /ws

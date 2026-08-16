@@ -1,0 +1,32 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 760
+PlayResY: 470
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Sub,Noto Sans CJK KR,24,&H00FFFFFF,&H000000FF,&H00000000,&H50000000,0,0,0,0,100,100,0,0,3,5,0,2,26,26,20,1
+Style: Hud,Noto Sans CJK KR,18,&H0000E5FF,&H000000FF,&H00000000,&H70000000,1,0,0,0,100,100,0,0,3,5,0,7,16,16,14,1
+Style: Title,Noto Sans CJK KR,34,&H00FFFFFF,&H000000FF,&H00000000,&H90000000,1,0,0,0,100,100,0,0,3,8,0,8,30,30,18,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.50,0:00:04.50,Title,,0,0,0,,③ 실패를 스스로 수습한다
+Dialogue: 0,0:00:00.00,0:00:17.05,Hud,,0,0,0,,상태  IDLE            서빙 1 · 정리 1 · 포기 0
+Dialogue: 0,0:00:17.05,0:00:52.70,Hud,,0,0,0,,상태  RUNNING · 사람 명령   서빙 1 · 정리 1 · 포기 0
+Dialogue: 0,0:00:52.70,0:00:58.20,Hud,,0,0,0,,상태  RECOVERING · REGRASP 1/2   포기 0
+Dialogue: 0,0:00:58.20,0:01:59.30,Hud,,0,0,0,,상태  RUNNING · 복구 후 재개   서빙 1 · 정리 1
+Dialogue: 0,0:01:59.30,0:02:01.40,Hud,,0,0,0,,상태  VERIFYING (씬 재확인)
+Dialogue: 0,0:02:01.40,0:02:10.40,Hud,,0,0,0,,상태  IDLE            서빙 2 · 정리 1 · 포기 0
+Dialogue: 0,0:00:00.50,0:00:09.00,Sub,,0,0,0,,같은 주문을 다시. 이번에는 운반 도중에 사고가 난다
+Dialogue: 0,0:00:17.50,0:00:24.00,Sub,,0,0,0,,사람 명령 : "빨간 블록을 카운터에 놔줘"
+Dialogue: 0,0:00:39.50,0:00:45.00,Sub,,0,0,0,,파지 성공 — 운반 시작
+Dialogue: 0,0:00:45.30,0:00:52.00,Sub,,0,0,0,,운반 중에 물체를 빼앗겼다 (실물에서는 낙하에 해당한다)
+Dialogue: 0,0:00:52.70,0:00:59.00,Sub,,0,0,0,,GRIPPER_EMPTY 감지 → 전략 REGRASP · LLM이 고르고 검증기가 승인한다
+Dialogue: 0,0:00:59.50,0:01:08.00,Sub,,0,0,0,,복구 자세로 물러난다 — 팔이 시야를 가리면 다시 인지할 수 없다
+Dialogue: 0,0:01:10.00,0:01:20.00,Sub,,0,0,0,,재인지 : 좌표를 새로 읽는다. 옛 좌표로 다시 집지 않는다
+Dialogue: 0,0:01:22.00,0:01:29.00,Sub,,0,0,0,,다시 파지
+Dialogue: 0,0:01:52.00,0:01:59.00,Sub,,0,0,0,,카운터에 놓기 완료
+Dialogue: 0,0:01:59.50,0:02:08.00,Sub,,0,0,0,,포기 0건 — 실패했지만 사람은 아무것도 하지 않았다

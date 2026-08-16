@@ -266,8 +266,20 @@ def _build_prompt(command, scene_ids):
         # 이제 재프롬프트로 밀려나지 않는다(그 전에는 넣으면 안 되는 줄이었다).
         # 이 줄이 없으면 모델은 못 하는 명령에도 억지로 씬 목록에서 아무거나 골라
         # 낸다 - 조용히 틀린 일을 하는 것이 아무것도 안 하는 것보다 나쁘다.
-        '- If the command cannot be done with the skills, objects, and targets\n'
-        '  listed above, output an empty array [] and nothing else.\n'
+        # 거부 조건을 "할 수 없으면"으로 넓게 적었더니 모델이 멀쩡한 명령까지 거부했다
+        # (2026-08-16 실측 : 오거부 20건. 'red_block 집어' 3/3 거부, 'RED_BLOCK 집어',
+        #  'red_block 집어, 고마워', '홈으로 가' 전부 []. 영어 'pick red_block'은 통과).
+        # 짧은 말투·존댓말·대문자·인사말을 "못 하는 일"로 읽은 것이다.
+        # -> 거부 조건을 닫힌 목록으로 좁히고, 반대로 해야 하는 경우를 못박는다.
+        '- Output [] (empty array, nothing else) ONLY in these cases:\n'
+        '    (a) the object named is not in the scene list above,\n'
+        '    (b) the target named is not in the target_id list above,\n'
+        '    (c) the pose named is not in the pose_id list above,\n'
+        '    (d) the action is not one of the three skills above.\n'
+        '- Otherwise you MUST output a plan. If the object is in the scene list,\n'
+        '  [] is always the wrong answer. Short, casual, polite, uppercase or\n'
+        '  punctuated commands are still valid commands - just plan them.\n'
+        '- A pick needs no target. "pick X" alone is a complete, valid command.\n'
         '- NEVER substitute a different object or target to make it work.\n'
         '  Asking for something absent is a refusal, not a naming mistake.\n'
         '\n'

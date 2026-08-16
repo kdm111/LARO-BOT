@@ -108,8 +108,8 @@ STRATEGY = {
     ErrorCode.INTERNAL_ERROR: ABORT,
 }
 
-MAX_ATTEMPTS = 3
-MAX_RECOVERY = 2
+MAX_ATTEMPTS = 2
+MAX_RECOVERY = 1
 
 
 class Agent(Node):
