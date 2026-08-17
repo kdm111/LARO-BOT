@@ -81,6 +81,7 @@ class ObjectDetector(Node):
         self.debug_pub = self.create_publisher(Image, '/perception/debug_image', 10)
         self.get_logger().info('object_detector 시작. /camera/image_raw 구독')
 
+    # 카메라 정보 파악
     def on_camera_info(self, msg):
         # K는 행 우선 9개 [fx 0 cs / 0 fy cy / 0 0 1]. 필요한 4개만 꺼낸다.
         self.fx = msg.k[0]
@@ -88,8 +89,20 @@ class ObjectDetector(Node):
         self.cx = msg.k[2]
         self.cy = msg.k[5]
 
+        # 캘리브레이션이 안된 카메라는 K를 전부 0으로 되돌린다.
+        # 0
+        if not (self.fx > 0 and self.fy > 0):
+            self.get_logger().error(
+                f'camera_info가 캘리브레이션되지 않음 캘리브 yaml을 물려야 함{self.fx} {self.fy}', throttle_duration_sec = 2.0)
+            self.fx = None
+            self.fy = None
+            self.cx = None
+            self.cy = None
+            
+
     def pixel_to_world(self, u, v, stamp, plane_z):
         """픽셀 하나를 plane_z 평면 위의 world 좌표로 되돌린다."""
+        # 현재 카메라 값이 아니면 막지 못한다.
         if self.fx is None:
             return None  # camera_info가 오지 안으면 변환 금지
         try:
