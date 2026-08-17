@@ -223,3 +223,127 @@ joint1 / joint4 / joint5는 서보 한계가 한 바퀴라 넓다. 다만 joint4
 가제보에서는 전부 0이었을 값이다. skill_server에 도착 확인을 넣을 때
 이 값이 허용치의 근거가 된다. 관절을 바꿔가며 재서 여기에 채워 넣어라.
 
+
+
+═══════════════════════════════════════════════════════════════════════
+[11] 카메라 띄우기  (2026-08-17 추가 — 전부 실제로 돌려서 확인한 명령)
+═══════════════════════════════════════════════════════════════════════
+카메라 = Sunplus FHD 웹캠, /dev/video0. 팔과 별개라 팔이 꺼져 있어도 된다.
+명령 하나가 터미널 하나를 잡아먹는다(Ctrl+C 전까지 안 끝난다).
+=> 터미널을 여러 개 열어라. 열 때마다 아래 [11-0]을 먼저 한다.
+
+--- [11-0] 컨테이너 들어가기 (터미널 열 때마다) ---
+
+./dc730 exec sim bash
+
+═══ [11-1] 카메라 드라이버 ═══════════════════════════════════════════
+이게 /camera/image_raw 와 /camera/camera_info 두 개를 낸다.
+토픽 이름을 -r 로 바꿔주는 이유: object_detector.py 가 이 이름을 코드에 박아 뒀다.
+
+ros2 run usb_cam usb_cam_node_exe --ros-args -p video_device:=/dev/video0 -p pixel_format:=yuyv2rgb -p image_width:=640 -p image_height:=480 -p framerate:=30.0 -p camera_name:=default_cam -p frame_id:=camera_optical_frame -p camera_info_url:=file:///tmp/camera_info.yaml -r image_raw:=/camera/image_raw -r camera_info:=/camera/camera_info
+
+  pixel_format=yuyv2rgb : MJPG 말고 YUYV. 압축 아티팩트가 HSV 임계값을 흔든다.
+  640x480               : sim 카메라와 같은 해상도. detector의 픽셀 상수가 그대로 산다.
+  camera_info_url       : 없으면 K가 전부 0으로 나가고 detector가 좌표를 못 만든다.
+
+═══ [11-2] 눈으로 보기 ═══════════════════════════════════════════════
+창이 하나 뜬다. 카메라를 들고 움직이면 그대로 보인다.
+
+ros2 run image_view image_view --ros-args -r image:=/camera/image_raw
+
+  창이 안 뜨면 호스트(컨테이너 밖) 터미널에서 한 번 :   xhost +local:
+
+--- 사진 한 장만 파일로 (ROS 없이 카메라만 확인할 때. 드라이버를 끄고 해라) ---
+
+ffmpeg -f v4l2 -input_format yuyv422 -video_size 640x480 -i /dev/video0 -frames:v 20 /tmp/shot_%03d.png
+
+  20장을 찍고 마지막 /tmp/shot_020.png 을 본다. 첫 장은 노출이 안 잡혀 어둡다.
+
+═══ [11-3] 검출까지 (카메라 -> /scene_state) ═════════════════════════
+카메라가 어디에 어떤 각도로 있는지를 TF 두 개로 심는다.
+★ 아래 좌표는 아직 가제보 값이다. 삼각대 놓고 실측해서 바꿔야 한다.
+
+ros2 run tf2_ros static_transform_publisher --x -0.10 --y 0.0 --z 0.50 --roll 0.0 --pitch 0.9 --yaw 0.0 --frame-id world --child-frame-id camera_link
+
+ros2 run tf2_ros static_transform_publisher --x 0.0 --y 0.0 --z 0.0 --roll -1.5707963 --pitch 0.0 --yaw -1.5707963 --frame-id camera_link --child-frame-id camera_optical_frame
+
+  두 번째는 광축 규약 변환이라 상수다. 실물에서도 이 값 그대로다.
+
+--- 검출 노드 ---
+
+ros2 run arm_perception object_detector.py
+
+═══ [11-4] 확인 ═════════════════════════════════════════════════════
+--- 이미지가 오나 (약 30Hz. topic hz 자체가 느려서 10Hz로 보이면 정상이다) ---
+
+ros2 topic hz /scene_state
+
+--- K 값 보기 (0.0 이면 캘리브 안 된 것) ---
+
+ros2 topic echo /camera/camera_info --once
+
+--- 검출 결과 ---
+
+ros2 topic echo /scene_state --once
+
+═══ [11-5] 끄기 ═════════════════════════════════════════════════════
+
+pkill -f usb_cam_node_exe ; pkill -f image_view ; pkill -f object_detector.py ; pkill -f static_transform_publisher
+
+═══════════════════════════════════════════════════════════════════════
+[12] 카메라 캘리브 파일  /tmp/camera_info.yaml
+═══════════════════════════════════════════════════════════════════════
+★ /tmp 에 있으므로 컨테이너를 재생성하면 사라진다. 없으면 아래를 다시 만들어라.
+★ fx = 485 는 2026-08-17 이 웹캠으로 직접 잰 값이다 (가제보의 554 가 아니다).
+   재는 법 : 크기를 아는 물건을 카메라와 마주보게 두고, 거리를 재고, 사진에서 픽셀을 센다
+     fx = (픽셀 폭 x 거리) / 실제 폭
+   이번 실측 : 체크카드(85.6 x 54.0mm, 국제 규격)를 24cm 앞에 두었더니 176 x 107 px
+     가로 기준 176 / 85.6 x 240 = 493.5
+     세로 기준 107 / 54.0 x 240 = 475.6      -> 평균 485
+   검산 : fx=485 면 24cm 에서 화면에 31.7cm 가 담긴다. 눈대중 30cm 와 맞는다.
+          화각으로는 가로 66.9도 (가제보 60도보다 조금 넓다. 웹캠으로 자연스러운 값).
+   ★ 정밀도 : 거리를 1cm 잘못 재면 fx 가 20 (4%) 움직인다. 지금 24cm 는 눈대중이므로
+              이 값도 ±5% 쯤으로 본다. 최종 판정은 단계 3 의 "정답 대조 5mm 이하" 에서 한다.
+
+★★ fx 는 카메라를 어디에 두든 안 바뀐다. 24cm 는 재기 위한 발판이었을 뿐,
+   앞으로 그 거리를 지킬 필요가 없다. 카메라를 옮기면 바뀌는 것은 fx 가 아니라
+   [11-3] 의 static TF (카메라가 어디에 어떤 각도로 있나) 다.
+   fx 가 바뀌는 경우는 : 해상도를 640x480 에서 바꾸거나, 렌즈/카메라를 교체할 때뿐이다.
+
+--- 통째로 복사해서 붙여넣으면 파일이 만들어진다 ---
+
+cat > /tmp/camera_info.yaml << 'YAML'
+image_width: 640
+image_height: 480
+camera_name: default_cam
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [485.0, 0.0, 320.0,
+         0.0, 485.0, 240.0,
+         0.0, 0.0, 1.0]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [0.0, 0.0, 0.0, 0.0, 0.0]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1.0, 0.0, 0.0,
+         0.0, 1.0, 0.0,
+         0.0, 0.0, 1.0]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [485.0, 0.0, 320.0, 0.0,
+         0.0, 485.0, 240.0, 0.0,
+         0.0, 0.0, 1.0, 0.0]
+YAML
+
+  camera_matrix 의 9개 숫자가 K다. 쓰는 건 4개뿐 :
+    485.0       = fx   가로 확대율  (2026-08-17 실측). "1m 앞의 1m 물건이 몇 픽셀인가"
+    485.0       = fy   세로 확대율
+    320.0       = cx   화면의 어디가 정면인가 (가로, 640의 절반)
+    240.0       = cy   화면의 어디가 정면인가 (세로, 480의 절반)
+  나머지 0과 1은 항상 고정이다.
