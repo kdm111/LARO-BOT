@@ -1782,7 +1782,7 @@ runpod 연결 기념 더 고급 모델 사용하여 테스트
 LLM에게 다시 물었을 경우 오답을 냈지만 시스템 적으로 보이지 않는 물체의 경우 다시 묻지 않고 로그를 내는 방향으로 처리하였다.
 
 
-2. 거부 규칙이 너무 넓었다
+거부 규칙이 너무 넓었다
 
 거부 경로를 열었더니 총점은 올랐는데 정상 명령이 깨졌다.
 
@@ -1799,11 +1799,6 @@ LLM에게 다시 물었을 경우 오답을 냈지만 시스템 적으로 보이
 
 3. 모델 비교
 
-thinking 모드를 껐다. llm_planner._call_ollama 에 "think": false 를 박았다.
-qwen3:8b가 켠 채 6.43초(추론 591자), 끄면 4.12초.
-exaone은 추론 모드가 없어서 무영향이고 오류도 안 난다(0.75 vs 0.78초).
-로봇 명령에 답 앞의 긴 추론은 지연으로만 나타난다.
-모든 모델을 "바로 답한다"는 같은 조건에 세워야 비교가 성립한다.
 
 v3 (거부 규칙 좁힘 + thinking 끔, k=3, 182케이스, 같은 프롬프트)
 
@@ -1827,47 +1822,167 @@ v2 (2026-08-04, thinking 켠 채로 잰 값)
 gemma4:26b 86% / exaone3.5:7.8b 86% / exaone3.5:32b 80% / qwen3:8b 68%
 옛날에는 0%였다. 거부 경로가 없어서 전부 검증기가 잡았다.
 
-**이 시험지의 오차는 +-3%p 다**
 
-같은 프롬프트로 exaone3.5:7.8b를 두 번 돌렸더니 152/182와 146/182가 나왔다.
-케이스별로 대조하니 176개는 같은 판정이고 6개(3.3%)만 뒤집혔다.
-temperature 0.3 때문이고 재현성을 일부러 포기한 값이다.
-0으로 두면 완전히 재현되지만 재프롬프트가 같은 답만 반복한다.
-1~2%p 차이로 모델 우열을 말하면 안 된다.
+이제 실제 로봇을 움직인다.
+header:
+  stamp:
+    sec: 1786877916
+    nanosec: 555631500
+  frame_id: base_link
+name:
+- gripper_joint_1
+- joint1
+- joint2
+- joint3
+- joint4
+- joint5
+position:
+- -0.03834951969734801
+- -0.06902913545506095
+- -2.015650755281939
+- 1.6873788666739982
+- 1.1366797638230528
+- -0.085902924121803
+velocity:
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0239691227
+- 0.0239691227
+effort:
+- .nan
+- .nan
+- .nan
+- .nan
+- .nan
+- .nan
 
-**VRAM이 모자라면 오류가 아니라 지연으로 나타난다**
+실제 팔에서 나오는 joint_states값
 
-ollama가 조용히 일부 레이어를 CPU로 내린다. 오류가 안 나서 "왜 이 모델만 느리지"로 보인다.
-/api/ps 의 size_vram / size 로 확인한다.
-20.7GB 모델이 15.4GB만 GPU에 올라갔다. 이 카드는 16GB다.
-gemma4:26b와 exaone3.5:32b는 같은 74%인데 32b가 훨씬 느리다.
-gemma4는 MoE라 매 토큰에 전체를 안 쓰는데 exaone 32b는 dense라 CPU에 얹힌 부분을 매번 탄다.
-정확도만 보고 모델을 고르면 안 된다. 100% GPU에 올라가는지를 먼저 본다.
+이 값으로 최대한 토크를 켜고 끌 수 있다.
+ros2 service call /dynamixel_hardware_interface/set_dxl_torque std_srvs/src/SetBool "{data: false}"
 
-**시험 중에 다른 모델을 부르면 안 된다**
+header:
+  stamp:
+    sec: 1786878666
+    nanosec: 825140234
+  frame_id: base_link
+name:
+- gripper_joint_1
+- joint1
+- joint2
+- joint3
+- joint4
+- joint5
+position:
+- 0.08743690490927447
+- -0.012271846303292033
+- -0.15953400194031353
+- 0.20708740636435463
+- 1.1213399559441966
+- -0.0843689433339172
+velocity:
+- 0.0239691227
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+effort:
+- .nan
+- .nan
+- .nan
+- .nan
+- .nan
+- .nan
+---
 
-시험이 도는 동안 다른 모델로 몇 번 물어봤더니 ollama가 큰 모델을 내리고
-작은 모델을 올렸다가 되돌리기를 반복했다. 그 스왑 비용이 결과에 섞인다.
-gemma4 실측 - 끼어든 38케이스 중앙값 16.23초, 깨끗한 144케이스 4.29초. 4배 차이다.
-전체 62.9분 중 28.4분(45%)이 스왑 비용이었다.
-정확도는 90.3% vs 84.2%로 덜 흔들렸다. 지연은 스왑에 직격이지만 답의 질은 아니다.
+6. 구조 재편
 
-4. place 단독은 시험지가 틀렸다
+파일이 길어지고 sim과 실물이 한 파일을 나눠 쓰기 시작해서 역할별로 다시 나눴다.
+로직은 한 줄도 바꾸지 않았다. 함수와 파일만 옮겼고, 전부 빌드/테스트/스모크로 확인했다.
 
-N2가 1/12로 세 판 내내 바닥이었다. 네 모델 전부 그랬다. 모델 문제인 줄 알았는데 아니다.
-탁자 위 물건에 [place]만 내면 빈 손으로 수거함에 가서 그리퍼를 여는 동작이다.
-모델이 내는 [pick, place]가 맞다. 기대값이 실행 불가능한 답에 점수를 주고 있었다.
-place는 이미 쥐고 있을 때만 성립하는데 계약에 그 전제조건이 없다.
-게다가 프롬프트의 "Do NOT add steps that were not requested"가 pick을 붙이지 말라고 막는다.
-물리는 붙이라 하고 규칙은 붙이지 말라 한다.
-아직 안 고쳤다. CASE_SET을 올려야 해서 시험이 다 끝난 뒤에 한다.
+```
+src/
+├── arm_interfaces/        계약 — msg/action. 모든 패키지가 이 어휘로 말한다
+│     msg/  ErrorCode  Stage  FailureReport  DetectedObject  SceneState  RobotStatus
+│     action/  MoveTo  Pick  Place
+│
+├── arm_kinematics/        수학 — 해석적 IK. ROS 없는 순수 라이브러리
+│     ik.hpp ik.cpp        solve_ik / to_motor_angles / FK
+│     bench_ik  reach_once 측정 도구
+│
+├── arm_perception/        인지 — 카메라 → /scene_state
+│     scripts/object_detector.py
+│
+├── arm_skills/            팔 — 액션 서버 3종 + MoveIt (한 파일 723줄 → 9파일)
+│     include/arm_skills/
+│       skill_server.hpp   클래스 선언 = 이 패키지의 지도
+│       params.hpp         kTargets(놓을 자리) · kGrasps(파지 파라미터) · kRetreatZ
+│     src/
+│       main.cpp           진입점
+│       skill_server.cpp   생성자 · 액션 배선 · 구독 · 결과 헬퍼
+│       motion.cpp         move_to_pose(IK 가지 선택 → MoveIt) · joint_distance
+│       gripper.cpp        move_gripper · is_holding · wait_gripper_settled
+│       skill_move_to.cpp  스킬 하나 = 파일 하나
+│       skill_pick.cpp
+│       skill_place.cpp
+│
+├── arm_agent/agent/       판단 — 상태기계 + LLM 사다리 (2파일 → 9파일)
+│     agent.py             Agent 노드. 상태(IDLE/RUNNING/…)와 시퀀스 실행
+│     cell.py              ZONE · DEST · zone_of · clean_steps · placed_in
+│     recovery.py          에러코드→전략 표 · MAX_ATTEMPTS · MAX_RECOVERY
+│     llm_planner.py       사다리 — plan() · choose_recovery() · _safe_call()
+│     llm_contract.py      SKILLS · TARGET_IDS · POSE_IDS · 스키마 (계약의 LLM 사본)
+│     llm_prompts.py       프롬프트 3종 (계획 · 재프롬프트 · 복구)
+│     llm_validate.py      검증 4층 · NOT_IN_SCENE
+│     llm_ollama.py        HTTP 클라이언트 · 모델 표 · think=False
+│     eval_*.py  test_*.py 시험지와 결정론 테스트
+│
+├── arm_gazebo/            가제보 자산 — 실물에는 없는 것들
+│     worlds/  scene_*.sdf (구역 판 + 물체 인라인)
+│     models/  urdf/camera.urdf.xacro
+│
+├── arm_bringup/           띄우는 곳 — sim이든 실물이든 여기서 시작한다
+│     launch/  sim.launch.py  real.launch.py  camera_sim.launch.py
+│     config/  cell_layout.yaml  ← 구역 좌표의 진실
+│
+└── arm_skills_mock/       CI용 목업 (변경 없음)
+```
 
-5. 실물 연결
+실행 흐름
 
-ROBOTIS OpenRB-150 -> /dev/ttyACM0. 컨테이너가 장치를 못 보고 있었다.
-devices로 직접 넘기면 팔이 안 꽂혀 있을 때 컨테이너가 아예 안 뜬다. sim만 돌리는 날에도 실패한다.
-device_cgroup_rules로 권한만 주고 /dev를 바인드해서 핫플러그가 되게 했다.
-실물 대비로 예산을 낮췄다. MAX_ATTEMPTS 3->2, MAX_RECOVERY 2->1.
-실물에서는 최대 9번 부딪히던 것이 2번이 된다.
-아직 팔은 움직이지 않는다. kGrasps가 전부 가제보 물리 기준이라 실물에서는 으스러뜨린다.
-관절 읽기 -> 그리퍼로 hold_eps 실측 -> 구역 자로 재기 -> 그다음 pick.
+```
+사람 /command ──┐
+                ▼
+             agent.py ──── llm_planner(사다리) ── llm_ollama ──▶ pod의 LLM
+   자가명령(cell.py) │           │
+                     │      llm_validate(4층)
+                     ▼
+          MoveTo/Pick/Place 액션
+                     ▼
+             skill_server ── motion(IK+MoveIt) ── gripper(파지판정)
+                     ▼
+          sim: gz_ros2_control        real: dynamixel_hardware_interface
+                     ▲
+  카메라 ──▶ object_detector ──▶ /scene_state ──▶ agent(구역판정·검증)와 skill(좌표)
+```
+
+같은 숫자가 사는 곳 (test_cell_layout.py가 넷을 대조한다. 하나만 고치면 pytest가 빨개진다)
+
+```
+arm_bringup/config/cell_layout.yaml   ← 진실
+arm_agent/agent/cell.py의 ZONE        구역 판정
+arm_skills/…/params.hpp의 kTargets    팔이 실제로 가는 곳
+arm_gazebo/worlds/scene_*.sdf         눈에 보이는 판
+```
+
+sim과 실물의 경계
+
+```
+sim만 쓰는 것   arm_gazebo 전부 · sim.launch.py · use_sim_time
+실물만 쓰는 것  real.launch.py · /dev/ttyACM0 · 서보 EEPROM 한계
+둘 다 쓰는 것   나머지 전부. 값이 바뀌는 곳은 cell_layout.yaml · params.hpp ·
+                object_detector의 HSV — 실물에서 다시 재서 채운다
+```

@@ -48,4 +48,4 @@ echo "                  ros2 topic pub --once /command std_msgs/String \"{data: 
 echo
 exec ./dc730 exec sim bash -lc \
   "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && \
-   ros2 launch arm_perception sim_bringup.launch.py scene:=$SCENE headless:=$HEADLESS"
+   ros2 launch arm_bringup sim.launch.py scene:=$SCENE headless:=$HEADLESS"

@@ -14,7 +14,14 @@ find_package(moveit_ros_planning_interface REQUIRED)
 find_package(arm_kinematics REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
-add_executable(skill_server src/skill_server.cpp)
+add_executable(skill_server
+  src/main.cpp
+  src/skill_server.cpp
+  src/motion.cpp
+  src/gripper.cpp
+  src/skill_move_to.cpp
+  src/skill_pick.cpp
+  src/skill_place.cpp)
 target_include_directories(skill_server PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)

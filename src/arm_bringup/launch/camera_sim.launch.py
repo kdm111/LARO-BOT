@@ -8,8 +8,8 @@ import xacro
 
 def generate_launch_description():
     # 패키지 경로에서 sahre 경로에서 카메라 xacro를 찾는다.
-    perception_path = get_package_share_directory('arm_perception')
-    xacro_file = os.path.join(perception_path, 'urdf', 'camera.urdf.xacro')
+    gazebo_path = get_package_share_directory('arm_gazebo')
+    xacro_file = os.path.join(gazebo_path, 'urdf', 'camera.urdf.xacro')
 
     # xacro -> URDF 문자열로 펼침
     camera_description = xacro.process_file(xacro_file).toprettyxml(indent=' ')

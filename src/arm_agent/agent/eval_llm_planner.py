@@ -45,7 +45,9 @@ import sys
 import time
 
 from .eval_cases import CASES, CASE_SET
-from .llm_planner import _build_prompt, make_ollama_caller, plan
+from .llm_ollama import make_ollama_caller
+from .llm_planner import plan
+from .llm_prompts import _build_prompt
 
 
 def _scene_label(scene):

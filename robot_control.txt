@@ -1,0 +1,225 @@
+실물 팔 조작 명령 모음 — 한 줄씩 복사해서 컨테이너 터미널에 붙여넣는다.
+줄바꿈 없이 통째로 긁어라.
+
+★★ 제일 중요한 규칙
+   아래 명령들은 「기준 자세」를 기억한 상태로 만들어져 있다.
+   팔이 그 자세에 있지 않으면, 움직이라고 시킨 관절 말고 다른 관절도 같이 움직인다.
+   실제로 2026-08-16에 그 사고가 났다 - joint1만 10도 돌리려 했는데
+   joint2가 12도, joint3이 9도 같이 갔다. 파일의 값이 옛 자세였기 때문이다.
+   => 움직이기 전에 [1]로 읽어서 「기준 자세」와 같은지 확인해라.
+      다르면 명령의 숫자 5개를 읽은 값으로 바꾸거나, 나에게 출력을 붙여 새로 받아라.
+
+═══════════════════════════════════════════════════════════════════════
+[1] 지금 관절값 읽기   ← 움직이기 전에 항상 먼저
+═══════════════════════════════════════════════════════════════════════
+
+ros2 topic echo /joint_states --once
+
+("A message was lost!!!"는 무시해도 된다. 센서 토픽의 QoS 경고일 뿐이다.)
+
+═══════════════════════════════════════════════════════════════════════
+[2] 기준 자세  (2026-08-16 측정)
+═══════════════════════════════════════════════════════════════════════
+  joint1   +0.1549 rad  =   +8.88 도
+  joint2   -0.3697 rad  =  -21.18 도
+  joint3   +0.3666 rad  =  +21.01 도
+  joint4   +1.1213 rad  =  +64.25 도
+  joint5   -0.0844 rad  =   -4.83 도
+
+--- 어디에 있든 이 자세로 되돌아오기 (다른 명령의 출발점) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.3666, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+═══════════════════════════════════════════════════════════════════════
+[3] joint1  —  베이스 수평 회전. 중력 없음. 제일 안전하다
+═══════════════════════════════════════════════════════════════════════
+
+--- joint1 +5도   (+8.88 -> +13.88도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.2422, -0.3697, 0.3666, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint1 +10도   (+8.88 -> +18.88도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.3295, -0.3697, 0.3666, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint1 +20도   (+8.88 -> +28.88도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.5040, -0.3697, 0.3666, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint1 -5도   (+8.88 -> +3.88도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.0677, -0.3697, 0.3666, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint1 -10도   (+8.88 -> -1.12도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [-0.0196, -0.3697, 0.3666, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint1 -20도   (+8.88 -> -11.12도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [-0.1941, -0.3697, 0.3666, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+═══════════════════════════════════════════════════════════════════════
+[4] joint2  —  어깨. 팔 전체 무게를 든다. 중력 처짐이 여기서 나온다
+═══════════════════════════════════════════════════════════════════════
+
+--- joint2 +5도   (-21.18 -> -16.18도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.2824, 0.3666, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint2 +10도   (-21.18 -> -11.18도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.1952, 0.3666, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint2 +20도   (-21.18 -> -1.18도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.0206, 0.3666, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint2 -5도   (-21.18 -> -26.18도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.4570, 0.3666, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint2 -10도   (-21.18 -> -31.18도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.5442, 0.3666, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint2 -20도   (-21.18 -> -41.18도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.7188, 0.3666, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+═══════════════════════════════════════════════════════════════════════
+[5] joint3  —  팔꿈치. 중력 걸린다
+═══════════════════════════════════════════════════════════════════════
+
+--- joint3 +5도   (+21.01 -> +26.01도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.4539, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint3 +10도   (+21.01 -> +31.01도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.5412, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint3 +20도   (+21.01 -> +41.01도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.7157, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint3 -5도   (+21.01 -> +16.01도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.2794, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint3 -10도   (+21.01 -> +11.01도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.1921, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint3 -20도   (+21.01 -> +1.01도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.0176, 1.1213, -0.0844], time_from_start: {sec: 3}}]}"
+
+═══════════════════════════════════════════════════════════════════════
+[6] joint4  —  손목 피치. 크게 꺾으면 그리퍼가 테이블을 친다
+═══════════════════════════════════════════════════════════════════════
+
+--- joint4 +5도   (+64.25 -> +69.25도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.3666, 1.2086, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint4 +10도   (+64.25 -> +74.25도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.3666, 1.2959, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint4 +20도   (+64.25 -> +84.25도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.3666, 1.4704, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint4 -5도   (+64.25 -> +59.25도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.3666, 1.0341, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint4 -10도   (+64.25 -> +54.25도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.3666, 0.9468, -0.0844], time_from_start: {sec: 3}}]}"
+
+--- joint4 -20도   (+64.25 -> +44.25도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.3666, 0.7723, -0.0844], time_from_start: {sec: 3}}]}"
+
+═══════════════════════════════════════════════════════════════════════
+[7] joint5  —  그리퍼 롤. 회전만 하므로 안전하다
+═══════════════════════════════════════════════════════════════════════
+
+--- joint5 +5도   (-4.83 -> +0.17도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.3666, 1.1213, 0.0029], time_from_start: {sec: 3}}]}"
+
+--- joint5 +10도   (-4.83 -> +5.17도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.3666, 1.1213, 0.0902], time_from_start: {sec: 3}}]}"
+
+--- joint5 +20도   (-4.83 -> +15.17도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.3666, 1.1213, 0.2647], time_from_start: {sec: 3}}]}"
+
+--- joint5 -5도   (-4.83 -> -9.83도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.3666, 1.1213, -0.1716], time_from_start: {sec: 3}}]}"
+
+--- joint5 -10도   (-4.83 -> -14.83도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.3666, 1.1213, -0.2589], time_from_start: {sec: 3}}]}"
+
+--- joint5 -20도   (-4.83 -> -24.83도) ---
+
+ros2 topic pub --once /arm_controller/joint_trajectory trajectory_msgs/msg/JointTrajectory "{joint_names: [joint1, joint2, joint3, joint4, joint5], points: [{positions: [0.1549, -0.3697, 0.3666, 1.1213, -0.4334], time_from_start: {sec: 3}}]}"
+
+
+═══════════════════════════════════════════════════════════════════════
+[8] 힘 빼고 켜기
+═══════════════════════════════════════════════════════════════════════
+
+--- 힘 빼기 (팔이 주저앉는다. 잡고 실행해라) ---
+
+ros2 service call /dynamixel_hardware_interface/set_dxl_torque std_srvs/srv/SetBool "{data: false}"
+
+--- 힘 주기 ---
+
+ros2 service call /dynamixel_hardware_interface/set_dxl_torque std_srvs/srv/SetBool "{data: true}"
+
+--- 팔 컨트롤러 내리기 (손으로 자유롭게 만지려면 이것까지 해야 한다) ---
+
+ros2 control set_controller_state arm_controller inactive
+
+--- 팔 컨트롤러 올리기 (★ 올리는 순간의 자세를 목표로 잡는다. 자세 잡고 실행해라) ---
+
+ros2 control set_controller_state arm_controller active
+
+--- 컨트롤러 상태 ---
+
+ros2 control list_controllers
+
+
+═══════════════════════════════════════════════════════════════════════
+[9] 넘으면 안 되는 값
+═══════════════════════════════════════════════════════════════════════
+서보 EEPROM에 박힌 실제 한계다. URDF의 ±2pi가 아니라 이쪽이 진짜다.
+가제보에는 이 한계가 존재하지 않으므로, sim에서 되던 자세가 실물에서 거부될 수 있다.
+
+  joint2   -1.868 ~ +1.658 rad   (-107 ~ +95 도)
+  joint3   -1.571 ~ +1.675 rad   ( -90 ~ +96 도)
+
+joint1 / joint4 / joint5는 서보 한계가 한 바퀴라 넓다. 다만 joint4는 기구가 걸린다.
+한 번에 20도를 넘기지 마라. 나눠서 여러 번 보내라.
+
+
+═══════════════════════════════════════════════════════════════════════
+[10] 지금까지 잰 도달 오차  (명령 대비 실제)
+═══════════════════════════════════════════════════════════════════════
+2026-08-16, 3초 궤적, 기준 자세 부근
+
+  joint1   -0.07 도      중력 없음
+  joint2   +1.67 도   ★ 어깨. 중력 처짐
+  joint3   +0.44 도
+  joint4   +0.09 도
+  joint5   +0.09 도
+
+가제보에서는 전부 0이었을 값이다. skill_server에 도착 확인을 넣을 때
+이 값이 허용치의 근거가 된다. 관절을 바꿔가며 재서 여기에 채워 넣어라.
+

@@ -3,12 +3,12 @@
 같은 숫자가 언어가 다른 파일 넷에 흩어져 있다. 한 곳을 import 할 수 없으니
 cell_layout.yaml을 진실로 두고 나머지를 텍스트로 읽어 대조한다.
 
-  ① arm_perception/config/cell_layout.yaml   진실
-  ② arm_agent/agent/agent.py 의 ZONE          구역 판정
-  ③ arm_skills/src/skill_server.cpp 의 kTargets  팔이 실제로 가는 곳
-  ④ arm_perception/worlds/scene_*.sdf 의 zone_*  눈에 보이는 판
+  ① arm_bringup/config/cell_layout.yaml   진실
+  ② arm_agent/agent/cell.py 의 ZONE          구역 판정
+  ③ arm_skills/include/arm_skills/params.hpp 의 kTargets  팔이 실제로 가는 곳
+  ④ arm_gazebo/worlds/scene_*.sdf 의 zone_*  눈에 보이는 판
 
-ROS를 import 하지 않는다. agent.py도 실행하지 않고 ast로 소스에서 값만 꺼내므로
+ROS를 import 하지 않는다. cell.py도 실행하지 않고 ast로 소스에서 값만 꺼내므로
 rclpy 없이 pytest가 돈다('노드 != 도구'와 같은 이유).
 """
 
@@ -34,10 +34,10 @@ def _src_root():
 
 
 SRC = _src_root()
-LAYOUT = SRC / 'arm_perception' / 'config' / 'cell_layout.yaml'
-AGENT = SRC / 'arm_agent' / 'agent' / 'agent.py'
-SKILL = SRC / 'arm_skills' / 'src' / 'skill_server.cpp'
-WORLDS = sorted((SRC / 'arm_perception' / 'worlds').glob('scene_*.sdf'))
+LAYOUT = SRC / 'arm_bringup' / 'config' / 'cell_layout.yaml'
+CELL = SRC / 'arm_agent' / 'agent' / 'cell.py'
+SKILL = SRC / 'arm_skills' / 'include' / 'arm_skills' / 'params.hpp'
+WORLDS = sorted((SRC / 'arm_gazebo' / 'worlds').glob('scene_*.sdf'))
 
 
 def _truth():
@@ -54,20 +54,20 @@ def _center(x0, x1, y0, y1):
 
 
 def _agent_zone():
-    """agent.py의 ZONE 딕셔너리를 소스에서 꺼낸다(실행하지 않는다)."""
-    tree = ast.parse(AGENT.read_text())
+    """cell.py의 ZONE 딕셔너리를 소스에서 꺼낸다(실행하지 않는다)."""
+    tree = ast.parse(CELL.read_text())
     for node in tree.body:
         if isinstance(node, ast.Assign) and any(
                 isinstance(t, ast.Name) and t.id == 'ZONE' for t in node.targets):
             return ast.literal_eval(node.value)
-    raise AssertionError('agent.py에서 ZONE을 찾지 못했다')
+    raise AssertionError('cell.py에서 ZONE을 찾지 못했다')
 
 
 def _skill_targets():
-    """skill_server.cpp의 kTargets를 정규식으로 꺼낸다. name -> (x, y)."""
+    """params.hpp의 kTargets를 정규식으로 꺼낸다. name -> (x, y)."""
     text = SKILL.read_text()
     block = re.search(r'kTargets\s*=\s*\{(.*?)\n\};', text, re.S)
-    assert block, 'skill_server.cpp에서 kTargets 블록을 찾지 못했다'
+    assert block, 'params.hpp에서 kTargets 블록을 찾지 못했다'
     found = re.findall(
         r'\{\s*"([A-Za-z_]+)"\s*,\s*\{\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\}\s*\}',
         block.group(1))
@@ -107,17 +107,17 @@ def test_zones_do_not_overlap():
 
 
 def test_agent_zone_matches_layout():
-    """② agent.py ZONE == 진실. 사각형 네 값이 그대로 있어야 한다."""
+    """② cell.py ZONE == 진실. 사각형 네 값이 그대로 있어야 한다."""
     zones = _truth()
     got = _agent_zone()
     assert set(got) == set(zones), (
-        f'구역 이름이 다르다. agent.py={sorted(got)} / yaml={sorted(zones)}')
+        f'구역 이름이 다르다. cell.py={sorted(got)} / yaml={sorted(zones)}')
     for name, (x0, x1, y0, y1, _) in zones.items():
         assert len(got[name]) == 4, (
-            f'{name}: agent.py의 ZONE 값이 4개가 아니다({got[name]}). '
+            f'{name}: cell.py의 ZONE 값이 4개가 아니다({got[name]}). '
             '사각형 (x0, x1, y0, y1) 형식이어야 한다')
         for want, have, axis in zip((x0, x1, y0, y1), got[name], 'x0 x1 y0 y1'.split()):
-            assert abs(want - have) < TOL, f'{name}.{axis} : yaml {want} != agent.py {have}'
+            assert abs(want - have) < TOL, f'{name}.{axis} : yaml {want} != cell.py {have}'
 
 
 def test_skill_targets_match_layout_centers():

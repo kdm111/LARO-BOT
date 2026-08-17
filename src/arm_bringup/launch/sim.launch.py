@@ -49,7 +49,7 @@ def generate_launch_description():
     )
 
     # ---------- (2) 경로 계산 ----------
-    perception_share = get_package_share_directory('arm_perception')
+    gazebo_share = get_package_share_directory('arm_gazebo')
     bringup_share = get_package_share_directory('open_manipulator_bringup')
     moveit_share = get_package_share_directory('open_manipulator_moveit_config')
 
@@ -58,7 +58,7 @@ def generate_launch_description():
     # 절대경로라 GZ_SIM_RESOURCE_PATH에 의존하지 않는다
     # (벤더가 그 env를 SetEnvironmentVariable로 덮어써서 export 방식은 안 통함).
     world_path = PathJoinSubstitution([
-        perception_share,
+        gazebo_share,
         'worlds',
         ['scene_', LaunchConfiguration('scene')],  # 중첩 리스트 = 경로 조각 하나
     ])
@@ -103,7 +103,7 @@ def generate_launch_description():
 
     # ---------- (6) 카메라 (씬 world에는 없다 -> launch가 얹는다) ----------
     # 블록은 world에 baking돼 있어 여기서 spawn하지 않는다.
-    camera_xacro = os.path.join(perception_share, 'urdf', 'camera.urdf.xacro')
+    camera_xacro = os.path.join(gazebo_share, 'urdf', 'camera.urdf.xacro')
     camera_description = xacro.process_file(camera_xacro).toprettyxml(indent=' ')
 
     # create는 가제보가 뜰 때까지 자동 재시도한다.

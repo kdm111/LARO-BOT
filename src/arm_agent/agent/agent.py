@@ -6,7 +6,7 @@
 """
 
 from arm_interfaces.action import MoveTo, Pick, Place
-from arm_interfaces.msg import ErrorCode, RobotStatus, SceneState
+from arm_interfaces.msg import RobotStatus, SceneState
 
 import rclpy
 from rclpy.action import ActionClient
@@ -15,7 +15,11 @@ from rclpy.time import Time
 
 from std_msgs.msg import String
 
+from .cell import DEST, LOITER_SEC, clean_steps, placed_in, zone_of
 from . import llm_planner
+from .llm_ollama import make_ollama_caller, make_recovery_caller
+from .llm_validate import validate_steps
+from .recovery import ABORT, MAX_ATTEMPTS, MAX_RECOVERY, REGRASP, RESCAN, RETRY, STRATEGY
 
 # 로봇 상태
 IDLE = 'IDLE'  # 쉬는 중
@@ -31,85 +35,6 @@ SELF = 'self'
 
 # 씬 인식 시간
 VERIFY_SEC = 1.8
-
-# 구역 = 사각형 (x0, x1, y0, y1). base_link 기준, +y=왼쪽.
-# ★ 진실은 arm_perception/config/cell_layout.yaml 이다. 여기와 skill_server.cpp의
-#   kTargets, scene_*.sdf의 zone_* 판이 그 사본이고, test_cell_layout.py가 넷을 대조한다.
-#   하나만 고치면 pytest가 빨개진다.
-ZONE = {
-    'shelf_ring': (0.045, 0.125, 0.145, 0.205),    # 링 창고. 블록 창고에서 3cm 바깥
-    'shelf_block': (0.045, 0.125, 0.055, 0.115),   # 블록 창고
-    'work': (0.100, 0.230, -0.040, 0.040),         # 작업 구역. 물체 셋이 들어간다
-    'counter': (0.045, 0.125, -0.115, -0.055),     # 카운터 - 주문의 종착지
-    'bin': (0.045, 0.125, -0.205, -0.145),         # 수거함 - 불량품. 카운터에서 3cm 바깥
-}
-LOITER_SEC = 2.0
-# 물체별 정리 목적지. 물체가 늘면 여기 한 줄이 는다.
-DEST = {
-    'red_block': 'shelf_block',
-    'blue_ring': 'shelf_ring',
-    'green_block': 'bin',   # 불량품은 창고로 되돌리지 않는다. 버린다.
-}
-
-
-def zone_of(x, y):
-    """좌표가 들어 있는 구역을 돌려준다. 어디에도 안 들어가면 None.
-
-    최근접 판정을 버리고 사각형 포함으로 바꿨다 - 구역이 커지면서
-    "중심에서 얼마나 가까운가"가 "어느 구역 안인가"와 어긋났다.
-    구역끼리 겹치지 않는 것은 test_cell_layout.py가 보장한다.
-    """
-    for name, (x0, x1, y0, y1) in ZONE.items():
-        if x0 <= x <= x1 and y0 <= y <= y1:
-            return name
-    return None
-
-
-def clean_steps(object_id):
-    """방치된 물건을 제 창고로 되돌리는 명령을 생성한다."""
-    return [
-        {'skill': 'pick', 'object_id': object_id},
-        {'skill': 'place', 'object_id': object_id, 'target_id': DEST[object_id]}
-    ]
-
-
-def placed_in(object_id, target_id, first_seen):
-    """물체가 목적지에 실제로 서 있는가.
-
-    skill이 성공을 돌려줘도 운반 중 떨어뜨리면 실패한다.
-    씬이 진실이고 액션 결과는 주장이다.
-    """
-    if target_id is None:
-        return True  # move_to만 있는 시퀀스 - 검증할 물체가 없다.
-
-    seen = first_seen.get(object_id)
-    if seen is None:
-        return False  # 씬에서 사라짐. 떨어뜨림
-    return seen[0] == target_id
-
-
-# 복구 전략
-# 전략은 goal 파라미터가 아니라 시퀀스 조작이다.
-# REGRASP/RESCAN : 복구 자세로 물러나 재인지한 뒤 실패한 스텝을 다시 밟는다.
-RETRY = 'RETRY'
-REGRASP = 'REGRASP'
-RESCAN = 'RESCAN'
-ABORT = 'ABORT'
-# 에러 코드 -> 전략. 등록 안된 코드는 기본 abort(멈추는게 가장 안전)
-STRATEGY = {
-    ErrorCode.PLANNING_FAILED: RETRY,
-    ErrorCode.EXECUTION_TIMEOUT: RETRY,
-    ErrorCode.GRASP_FAILED: REGRASP,
-    ErrorCode.OBJECT_MOVED: RESCAN,
-    ErrorCode.OBJECT_NOT_FOUND: RESCAN,
-    ErrorCode.GRIPPER_EMPTY: REGRASP,
-    ErrorCode.UNREACHABLE: ABORT,
-    ErrorCode.UNDEFINED_POSE: ABORT,
-    ErrorCode.INTERNAL_ERROR: ABORT,
-}
-
-MAX_ATTEMPTS = 2
-MAX_RECOVERY = 1
 
 
 class Agent(Node):
@@ -292,7 +217,7 @@ class Agent(Node):
     # 사람 명령과 자가 명령이 만나 계쇡으로 바꿔 실행 시키는 곳
     def _dispatch(self, steps, source):
         """명령을 계획으로 바꾸어 실행한다."""
-        steps, error = llm_planner.validate_steps(steps, self._scene_ids)
+        steps, error = validate_steps(steps, self._scene_ids)
         if error is not None:
             self.get_logger().warn(f'검증 거부 : {error} | {source}')
             self._finish(False)
@@ -356,7 +281,7 @@ class Agent(Node):
     # 텍스트를 실행을 위한 단계로 변경한다.
     def _to_steps(self, command):
         model = self.get_parameter('model').value
-        steps = llm_planner.plan(command, self._scene_ids, llm_planner.make_ollama_caller(model))
+        steps = llm_planner.plan(command, self._scene_ids, make_ollama_caller(model))
         if steps is not None:
             # [] == 문자열 파서로 내려가면 안됨.
             if steps:
@@ -445,7 +370,7 @@ class Agent(Node):
         model = self.get_parameter('model').value
         strategy = llm_planner.choose_recovery(
             code, result.failure.stage, result.failure.detail, self._attempt,
-            self._recovery, MAX_RECOVERY, llm_planner.make_recovery_caller(model))
+            self._recovery, MAX_RECOVERY, make_recovery_caller(model))
 
         if strategy is None:
             strategy = STRATEGY.get(code, ABORT)
