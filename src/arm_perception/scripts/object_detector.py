@@ -29,8 +29,8 @@ OPTICAL_FRAME = 'camera_optical_frame'
 OBJECTS = {
     'red_block': {
         'hsv': [
-            (np.array([0, 120, 70]), np.array([10, 255, 255])),
-            (np.array([170, 120, 70]), np.array([180, 255, 255])),
+            (np.array([0, 90, 70]), np.array([10, 255, 255])),
+            (np.array([170, 90, 70]), np.array([180, 255, 255])),
         ],
         'plane_z': 0.02,    # 블록 높이 0.04의 절반
         'min_long': 0.055,  # 조각난 blob 상한 4.9cm과 정상 하한 6.3cm 사이
@@ -39,7 +39,7 @@ OBJECTS = {
         # 불량품. red_block과 모양·크기가 같아 plane_z/min_long을 공유한다.
         # 색 RGB(0.05, 0.75, 0.15) = H 64 부근. 빨강(0/175)·파랑(113)과 안 겹친다.
         'hsv': [
-            (np.array([50, 120, 70]), np.array([80, 255, 255])),
+            (np.array([50, 90, 70]), np.array([80, 255, 255])),
         ],
         'plane_z': 0.02,
         'min_long': 0.055,
@@ -47,7 +47,7 @@ OBJECTS = {
     'blue_ring': {
         # 링 색은 RGB(0.05, 0.25, 0.9) = H 113 부근. 구역 판은 채도 0이라 안 걸린다.
         'hsv': [
-            (np.array([100, 120, 70]), np.array([130, 255, 255])),
+            (np.array([100, 90, 70]), np.array([130, 255, 255])),
         ],
         'plane_z': 0.006,   # 링 두께 0.012의 절반 (blue_ring.sdf 실치수)
         # 2026-08-14 실측 4개 지점: 정상 5.8~6.2cm(실치수 6.0 - 납작해서 부풀림이 작다),
