@@ -27,7 +27,9 @@ void SkillServer::execute_place(const std::shared_ptr<GoalHandlePlace> goal_hand
   const double tgt_y = it->second.second;
   const double tgt_z = pit->second.place_z;
   const double approach_phi = -M_PI / 2;   // 그리퍼가 아래를 향하는 접근각
-  const double approach_dz = 0.06;    // 물체 위 6cm 에서 접근
+  // 물체마다 다르다(params.hpp 주석). 단 놓으러 갈 때는 물체를 쥐고 있으므로
+  // 너무 낮게 접근하면 쥔 물체가 테이블에 끌린다 - 6cm 를 하한으로 둔다.
+  const double approach_dz = std::max(pit->second.approach_dz, 0.06);
 
   // 속이 빈 물체는 벽을 물고 있어서 물체 중심이 TCP에서 offset만큼 떨어져 있다.
   // 놓을 때 TCP를 목표 중심에 두면 물체는 그만큼 밀려 놓인다(실측 11cm 이탈).

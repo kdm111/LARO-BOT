@@ -97,6 +97,8 @@ private:
     double x, double y, double z, double phi, const char * label,
     std::optional<double> grasp_yaw = std::nullopt);
   moveit::core::MoveItErrorCode move_gripper(const char * named);
+  // 이름 자세 대신 관절값을 직접 준다. 물체마다 벌리는 폭이 다를 때 쓴다.
+  moveit::core::MoveItErrorCode move_gripper_to(double pos);
   bool is_holding(double eps, const char * tag = "파지 판정");
 
   void execute_move_to(const std::shared_ptr<GoalHandleMoveTo> goal_handle);

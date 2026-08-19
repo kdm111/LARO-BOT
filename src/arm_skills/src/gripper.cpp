@@ -13,6 +13,25 @@ moveit::core::MoveItErrorCode SkillServer::move_gripper(const char * named)
     moveit::core::errorCodeToString(code).c_str());
   return code;
 }
+// 그리퍼를 임의 폭으로. SRDF 이름(open/close)으로는 물체마다 다른 폭을 못 준다.
+// SRDF는 third_party라 건드리지 않고 관절값을 직접 넣는다.
+moveit::core::MoveItErrorCode SkillServer::move_gripper_to(double pos)
+{
+  // ★ 관절 이름으로 지정한다. 벡터로 넘기면 안 된다 - gripper 그룹은 관절이 둘이라
+  //   (gripper_joint_1 + 수동 gripper_joint_2) 크기가 안 맞고, MoveIt 은 그럴 때
+  //   목표 설정을 조용히 거부한 뒤 move()가 "제자리 이동"으로 SUCCESS 를 돌려준다.
+  //   로그는 성공인데 그리퍼는 안 움직인다(2026-08-19 실측).
+  if (!gripper_group_->setJointValueTarget("gripper_joint_1", pos)) {
+    RCLCPP_ERROR(get_logger(), "그리퍼 목표 %.2f 설정 실패", pos);
+    return moveit::core::MoveItErrorCode::FAILURE;
+  }
+  const auto code = gripper_group_->move();
+  RCLCPP_INFO(
+    get_logger(), "그리퍼 %.2f 로 : %s", pos,
+    moveit::core::errorCodeToString(code).c_str());
+  return code;
+}
+
 // close 결과 코드 -> 쥐고 있는가  -> 상식과 반대로 읽힌다.
 // CONTROL_FAILED(-4) = 손가락이 물체에 막혀 목표까지 못닫힌다. 쥐고 있다.
 // SUCCESS(1) -> 끝까지 닫힘 = 사이에 아무것도 없다. = 빈 그리퍼 판정

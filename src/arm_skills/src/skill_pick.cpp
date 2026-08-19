@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "arm_skills/params.hpp"
 #include "arm_skills/skill_server.hpp"
 
@@ -20,7 +22,6 @@ void SkillServer::execute_pick(const std::shared_ptr<GoalHandlePick> goal_handle
     return;
   }
   const double approach_phi = -M_PI / 2;   // 그리퍼가 아래를 향하는 접근각
-  const double approach_dz = 0.06;    // 물체 위 6cm 에서 접근
 
   // 인지가 준 물체의 긴 축을 기준으로 짧은 축의 각을 찾아야 하므로 90도 회전한다.
   // 어떻게 잡을 것인가의 주체는 skill에 있다.
@@ -35,6 +36,7 @@ void SkillServer::execute_pick(const std::shared_ptr<GoalHandlePick> goal_handle
     return;
   }
   const GraspSpec & gs = git->second;
+  const double approach_dz = gs.approach_dz;   // 물체마다 다르다(params.hpp 주석)
 
   // 파지점. 속이 빈 물체는 중심이 아니라 벽을 문다.
   double grasp_x = obj_x;
@@ -43,17 +45,27 @@ void SkillServer::execute_pick(const std::shared_ptr<GoalHandlePick> goal_handle
   if (gs.offset > 0.0) {
     // 로봇 쪽 벽으로 옮긴다. 반대편 벽을 물면 손목이 물체를 넘어가야 하고
     // 반경도 멀어져 도달 한계(실측 0.25~0.27)에 더 가까워진다.
-    const double dir = std::atan2(-obj_y, -obj_x);   // 물체 중심 -> 로봇
+    // ★ 2026-08-19 변경: 로봇 쪽이 아니라 +y(90도) 쪽 벽으로 고정한다.
+    //   링은 원이라 어느 방향의 벽을 물어도 파지는 같다. 그런데 방향을 물체 위치에
+    //   따라 바꾸면 grasp_yaw 가 매번 달라져 그리퍼를 돌려야 하고, 그 각이 조금만
+    //   틀려도 벽을 가로지르지 못하고 스친다(2026-08-19: 여섯 번 실패).
+    //   방향을 고정하면 grasp_yaw 가 항상 0 이 되어 그리퍼가 아예 안 돌아간다.
+    const double dir = M_PI_2;   // +y 쪽 벽으로 고정
     grasp_x = obj_x + gs.offset * std::cos(dir);
     grasp_y = obj_y + gs.offset * std::sin(dir);
-    grasp_yaw = std::remainder(dir, M_PI);           // 그리퍼가 반경 방향으로 닫힌다
+    // ★ 2026-08-19 수정: +M_PI_2 를 더한다. solve_ik 는 grasp_yaw 를 내부에서 90도
+    //   돌리므로(커밋 3d2c5bd) 블록 경로처럼 상쇄해야 실제로 반경 방향으로 닫힌다.
+    //   빠져 있던 동안 링은 접선 방향으로 닫혀 벽을 못 물고 스치기만 했다
+    //   (실측: pick 은 여섯 번 다 실패, 같은 좌표에서 j5=0 으로 수동 하강하니 즉시 파지).
+    grasp_yaw = std::remainder(dir + M_PI_2, M_PI);   // 그리퍼가 반경 방향으로 닫힌다
   } else {
     grasp_yaw = std::remainder(obj_yaw + M_PI_2, M_PI);
   }
   RCLCPP_INFO(
     get_logger(), "파지점 (%.3f, %.3f) z=%.3f yaw=%.1f도",
     grasp_x, grasp_y, obj_z - gs.depth, grasp_yaw * 180.0 / M_PI);
-  move_gripper("open");
+  // 물체마다 벌리는 폭이 다르다(params.hpp의 open_pos 주석 참조).
+  move_gripper_to(gs.open_pos);
   if (const auto r = move_to_pose(
       grasp_x, grasp_y, obj_z + approach_dz, approach_phi, "approach", grasp_yaw);
     r != MoveResult::OK)
@@ -93,7 +105,15 @@ void SkillServer::execute_pick(const std::shared_ptr<GoalHandlePick> goal_handle
   RCLCPP_INFO(get_logger(), "가지 %s 고정(파지 중)", *locked_elbow_ ? "up" : "down");
 
   if (const auto r = move_to_pose(
-      grasp_x, grasp_y, obj_z + approach_dz, approach_phi, "lift", grasp_yaw);
+      // ★ 2026-08-19: 들어올리는 높이는 접근 높이와 따로 둔다. approach_dz 를 링용으로
+      //   2.5cm 까지 낮췄더니 lift 도 같이 낮아져 링이 테이블에 끌렸다(TCP 0.031 -
+      //   링은 TCP 보다 2cm 아래라 바닥에서 1cm). kRetreatZ 주석의 "납작한 물체에서
+      //   6.6cm 밖에 안 올라간다"와 같은 현상이 lift 에서 난 것이다.
+      //   kRetreatZ(0.10)까지 올린다. 6cm 로는 링이 여전히 낮게 끌린다(사용자 실물 확인).
+      //   ※ 높이가 크게 바뀌면 IK 가 다른 손목 해를 골라 j5 가 뒤집히는 경우가 있다
+      //   (한 번 관측: +1.346 -> -1.352). 재발하면 손목 가지도 잠가야 한다.
+      grasp_x, grasp_y, std::max(obj_z + approach_dz, kRetreatZ), approach_phi,
+      "lift", grasp_yaw);
     r != MoveResult::OK)
   {
     goal_handle->abort(
