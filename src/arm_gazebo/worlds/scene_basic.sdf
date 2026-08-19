@@ -75,20 +75,9 @@
     </light>
 
     <!-- === 구역 판 5장 === -->
-    <model name="zone_shelf_ring">
+    <model name="zone_shelf">
       <static>true</static>
-      <pose>0.085 0.175 0.0005 0 0 0</pose>
-      <link name="link">
-        <visual name="visual">
-          <geometry><box><size>0.08 0.06 0.001</size></box></geometry>
-          <material><ambient>0.25 0.25 0.25 1</ambient><diffuse>0.25 0.25 0.25 1</diffuse></material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="zone_shelf_block">
-      <static>true</static>
-      <pose>0.085 0.085 0.0005 0 0 0</pose>
+      <pose>0.11 0.185 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
           <geometry><box><size>0.08 0.06 0.001</size></box></geometry>
@@ -110,7 +99,7 @@
 
     <model name="zone_counter">
       <static>true</static>
-      <pose>0.085 -0.085 0.0005 0 0 0</pose>
+      <pose>0.14 -0.085 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
           <geometry><box><size>0.08 0.06 0.001</size></box></geometry>
@@ -121,7 +110,7 @@
 
     <model name="zone_bin">
       <static>true</static>
-      <pose>0.085 -0.175 0.0005 0 0 0</pose>
+      <pose>0.14 -0.175 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
           <geometry><box><size>0.08 0.06 0.001</size></box></geometry>
