@@ -57,7 +57,13 @@ int32_t SkillServer::code_of(MoveResult r)
 }
 std::string SkillServer::detail_of(MoveResult r)
 {
-  return r == MoveResult::UNREACHABLE ? "두 경로 모두 IK 도달 불가" : "경로 계획 실패";
+  if (r == MoveResult::UNREACHABLE) {
+    return "두 경로 모두 IK 도달 불가";
+  }
+  if (r == MoveResult::EXEC_FAILED) {
+    return "경로는 나왔으나 실행 실패";
+  }
+  return "경로 계획 실패";
 }
 
 // 목표 수락 여부 > 지금은 무조건 수락

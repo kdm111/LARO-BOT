@@ -44,7 +44,7 @@ public:
 
 private:
   // move_to_pose의 결과 bool로는 못 닿음과 길이 막힘이 구분되지 않는다.
-  enum class MoveResult {OK, UNREACHABLE, PLAN_FAILED};
+  enum class MoveResult {OK, UNREACHABLE, PLAN_FAILED, EXEC_FAILED};
 
   // 팔꿈치 가지 고정. 값이 있으면 그 가지만 쓴다.(물체를 쥐고 있는 동안)
   // grasp에서 down으로 잡고, lift에서 up으로 계획이 잡혀 팔이 통째로 뒤집힌다.

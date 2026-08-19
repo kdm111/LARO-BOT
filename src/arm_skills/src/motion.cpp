@@ -1,4 +1,10 @@
 #include "arm_skills/skill_server.hpp"
+#include <cmath>
+
+// 실물 서보가 EEPROM으로 강제하는 관절 한계
+// sim에서는 이 한계가 없고 gz_ros2_control이 gpio 파라미터를 읽지 않음.
+static constexpr double kRealJointMin[5] = {-M_PI, -1.868, -1.571, -M_PI, -M_PI};
+static constexpr double kRealJointMax[5] = {M_PI, 1.658, 1.675, M_PI, M_PI};
 
 void SkillServer::init_move_group()
 {
@@ -60,6 +66,20 @@ SkillServer::MoveResult SkillServer::move_to_pose(
     }
     const auto m = arm_kinematics::to_motor_angles(geometry);
     std::vector<double> target = {m.theta1, m.theta2, m.theta3, m.theta4, m.theta5};
+    bool within = true;
+    for (size_t i = 0; i < target.size(); ++i) {
+      if (target[i] < kRealJointMin[i] || target[i] > kRealJointMax[i]) {
+        RCLCPP_WARN(
+          get_logger(), "%s 가지 %s 버림 : joint%zu=%.3f이 실물 한계 [%.3f, %.3f] 밖",
+          label, elbow_up ? "up" : "down", i + 1,
+          target[i], kRealJointMin[i], kRealJointMax[i]);
+        within = false;
+        break;
+      }
+    }
+    if (!within) {
+      continue;
+    }
     candidates.push_back({elbow_up, target, joint_distance(current, target)});
   }
 
@@ -78,8 +98,14 @@ SkillServer::MoveResult SkillServer::move_to_pose(
     move_group_->setJointValueTarget(c.target);
     moveit::planning_interface::MoveGroupInterface::Plan plan;
     if (move_group_->plan(plan) == moveit::core::MoveItErrorCode::SUCCESS) {
-      move_group_->execute(plan);
-      last_elbow_ = c.elbow_up;
+      const auto exec = move_group_->execute(plan);
+      if (exec != moveit::core::MoveItErrorCode::SUCCESS) {
+        RCLCPP_ERROR(
+          get_logger(), "%s 가지 %s 실행 실패 (code %d) 다음 가지로 이동",
+          label, c.elbow_up ? "up" : "down", exec.val);
+        return MoveResult::EXEC_FAILED;
+      }
+      last_elbow_ = c.elbow_up;  // 실행에 성공하면 잠금 후보로 두고 그 가지로 향하도록 설정
       // 관절각(모터)까지 찍는다. 마지막 값 theta5가 그리퍼 롤 = 파지 회전 확인용.
       RCLCPP_INFO(
         get_logger(),
