@@ -1,0 +1,45 @@
+# 실물 카메라(Sunplus 1bcf:28c4 FHD Camera Microphone)의 내부 파라미터 K.
+#
+# 왜 이 파일이 필요한가 - sim에는 없던 것이다.
+#   가제보에서는 ros_gz_bridge가 camera.urdf.xacro의 hfov 60도에서 K를 계산해
+#   발행했다. 선언과 세계가 같은 파일이라 어긋날 수가 없었다.
+#   실물 드라이버(usb_cam)는 이 파일이 없으면 k를 전부 0으로 낸다. 그러면
+#   object_detector의 pixel_to_world가 (u - cx) / fx 에서 0으로 나눈다.
+#
+# 값의 출처 - M6 §6 안 A(FOV 실측), 2026-08-17.
+#   알려진 거리에 자를 놓고 화면에 잡히는 폭을 재서 fx = (W/2)/tan(hfov/2).
+#   cx, cy는 화면 중심(320, 240)으로 두고 왜곡은 0으로 둔다.
+#   가제보 값이 554.38이었으니 이 렌즈가 그보다 넓게 본다.
+#
+# 검증(M6 §8.6) - red_block과 blue_ring 두 물체가 독립적으로 같은 카메라 높이를
+#   가리켰다. fx가 틀렸다면 둘이 서로 다른 높이를 가리켰을 것이므로,
+#   fx=485는 대체로 맞고 남은 오차는 카메라 자세(extrinsic)라는 뜻이다.
+#
+# 왜곡을 0으로 두는 대가 - 화면 가장자리 오차가 남는다. 단계 3ⓑ의 ≤5mm를
+#   못 넘기면 그때 안 B(체커보드)로 올려 왜곡 계수까지 받는다.
+image_width: 640
+image_height: 480
+camera_name: default_cam
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [485.0,   0.0, 320.0,
+           0.0, 485.0, 240.0,
+           0.0,   0.0,   1.0]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [0.0, 0.0, 0.0, 0.0, 0.0]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1.0, 0.0, 0.0,
+         0.0, 1.0, 0.0,
+         0.0, 0.0, 1.0]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [485.0,   0.0, 320.0, 0.0,
+           0.0, 485.0, 240.0, 0.0,
+           0.0,   0.0,   1.0, 0.0]
