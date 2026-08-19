@@ -1,3 +1,198 @@
+═══════════════════════════════════════════════════════════════════════
+[0] 기동 — 무엇을 띄울 것인가  (2026-08-19 재편. 여기부터 읽는다)
+═══════════════════════════════════════════════════════════════════════
+
+런치를 조각으로 쪼갰다. 팔만 / 카메라만 / 전체를 골라서 띄운다.
+전부 컨테이너 안에서 돈다. 호스트에서 여는 방법은 [0-1].
+
+  ┌ 팔        real_arm.launch.py      ros2_control + robot_state_publisher
+  │                                   + joint_state_broadcaster
+  ├ 카메라    real_camera.launch.py   usb_cam + config/camera_info.yaml
+  ├ TF        camera_tf.launch.py     world -> camera_link -> camera_optical_frame
+  ├ 인지      perception.launch.py    object_detector
+  ├ MoveIt    moveit.launch.py        move_group   ★ 팔이 먼저 떠 있어야 한다
+  ├ 스킬      skills.launch.py        skill_server (/pick /place /move_to)
+  └ 판단      agent.launch.py         agent
+  전체       real.launch.py           위를 전부 얹는다
+
+★★ 안전은 stage가 담당한다. 노드 스위치가 아니다.
+   stage:=read  (기본) 팔 컨트롤러가 없다 -> 무엇이 떠 있든 팔은 못 움직인다
+   stage:=hold        팔 컨트롤러가 붙는다 -> 여기서부터 팔이 움직인다
+
+★★ 순서를 타는 노드는 move_group 하나뿐이다 (2026-08-19 실측).
+   robot_description을 10초 안에 못 받으면 죽는다(exit -6). 그 토픽은 팔이 낸다.
+   real.launch.py가 TimerAction 8초로 알아서 늦추므로 전체로 띄우면 신경 안 써도 된다.
+   조각으로 따로 띄울 때만 팔 -> moveit 순서를 지켜라.
+
+★★ 끄기 전에 팔을 받쳐라. 끄면 토크가 풀려 팔이 그 자리에서 무너진다.
+   read 단계도 서보 토크는 켜져 있다("읽기 전용"이지 "흐물흐물"이 아니다).
+
+
+--- [0-1] 컨테이너 터미널 여는 법 (호스트에서) ---
+
+./dc730 exec sim bash
+
+  들어가면 매번 이 두 줄부터:
+
+source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash
+
+
+--- [0-2] 전체 띄우기 — 읽기만 (팔은 안 움직인다) ---
+
+ros2 launch arm_bringup real.launch.py
+
+--- [0-3] 전체 띄우기 — 팔 컨트롤러까지 (여기서부터 움직인다) ---
+   ★ 켜기 전에 팔을 낮고 안전한 자세로 손으로 두어라. 그 자세로 굳는다.
+
+ros2 launch arm_bringup real.launch.py stage:=hold
+
+--- [0-4] 조각만 띄우기 ---
+
+ros2 launch arm_bringup real_arm.launch.py
+ros2 launch arm_bringup real_camera.launch.py
+ros2 launch arm_bringup camera_tf.launch.py
+ros2 launch arm_bringup perception.launch.py
+
+--- [0-5] 일부만 빼고 띄우기 ---
+
+ros2 launch arm_bringup real.launch.py agent:=false
+ros2 launch arm_bringup real.launch.py camera:=false detector:=false
+ros2 launch arm_bringup real.launch.py moveit_rviz:=true
+
+  인자: stage / camera / detector / moveit / skills / agent
+        start_rviz(팔 URDF만) / moveit_rviz(플래닝 씬까지)
+        port_name(기본 /dev/ttyACM0) / video_device(기본 /dev/video0)
+
+--- [0-6] 잘 떴는지 확인 (다른 터미널에서) ---
+
+ros2 node list
+ros2 control list_controllers
+ros2 topic hz /joint_states
+ros2 topic hz /scene_state
+ros2 action list
+
+  2026-08-19 정상값:
+    /joint_states  100.0 Hz
+    /scene_state    30.3 Hz
+    컨트롤러 = joint_state_broadcaster 하나  (read 단계에서 정상. 팔에 명령 못 감)
+    stage:=hold 면 arm_controller / gripper_controller 가 더 붙는다
+
+--- [0-7] 전부 내리기 ---
+
+  런치를 띄운 터미널에서 Ctrl+C. ★ 누르기 전에 팔을 받쳐라.
+
+  안 죽으면 (컨테이너 안에서):
+
+pkill -f "ros2 launch"; pkill -f move_group; pkill -f skill_server; pkill -f usb_cam_node_exe; pkill -f object_detector
+
+  ★ pkill 패턴이 자기 셸을 죽이는 함정이 있다.
+    pkill -f arm_agent 처럼 치면 그 명령줄 자체가 패턴에 걸려 셸이 먼저 죽는다.
+    대괄호로 피한다:  pkill -f "[a]rm_agent"
+
+
+═══════════════════════════════════════════════════════════════════════
+[0-A] 팔 움직이기 — MoveIt 경유 (이름 붙은 자세로)
+═══════════════════════════════════════════════════════════════════════
+
+  선행: stage:=hold 로 떠 있어야 한다. moveit / skills 도 켜져 있어야 한다.
+  아래 [3]~[8]의 joint_trajectory 직접 발행과는 다른 길이다 —
+  이쪽은 MoveIt이 경로를 계획하고 skill_server가 실행 성공까지 판정한다.
+
+--- home 자세로  (joint2 -1.57 / joint3 1.57 / joint4 1.57) ---
+   2026-08-19 확인: 실물 서보 한계 안이다 (joint2 [-1.868, 1.658] / joint3 [-1.571, 1.675])
+
+ros2 action send_goal /move_to arm_interfaces/action/MoveTo "{pose_id: 'home', attempt: 0}"
+
+--- init 자세로  (전관절 0 = 팔이 수직으로 곧게 선다) ---
+   ★ 크게 휘두른다. home 이 확인된 뒤에 해라.
+
+ros2 action send_goal /move_to arm_interfaces/action/MoveTo "{pose_id: 'init', attempt: 0}"
+
+--- 진행 상황까지 보기 (--feedback) ---
+
+ros2 action send_goal --feedback /move_to arm_interfaces/action/MoveTo "{pose_id: 'home', attempt: 0}"
+
+  ★ pose_id 는 SRDF(omx_f.srdf)에 정의된 이름만 받는다. 지금 있는 것은 init / home 둘.
+    없는 이름을 주면 UNDEFINED_POSE 로 거부한다.
+  ★ move_to 는 2026-08-16 감사의 blocker 2건(execute 반환값 무시 / elbow 가지)을
+    안 밟는다. setNamedTarget + move()==SUCCESS 로 실행까지 제대로 판정한다.
+    pick/place 는 그 blocker를 밟으므로 아직 쓰지 마라.
+
+
+═══════════════════════════════════════════════════════════════════════
+[0-B] 그리퍼만 여닫기  (팔 관절은 그대로)
+═══════════════════════════════════════════════════════════════════════
+
+  선행: stage:=hold (gripper_controller 가 있어야 한다)
+  SRDF 규약: close=0, open=1
+
+--- 닫기 ---
+
+ros2 action send_goal /gripper_controller/gripper_cmd control_msgs/action/GripperCommand "{command: {position: 0.0, max_effort: 50.0}}"
+
+--- 열기 ---
+
+ros2 action send_goal /gripper_controller/gripper_cmd control_msgs/action/GripperCommand "{command: {position: 1.0, max_effort: 50.0}}"
+
+  2026-08-17 실측 (gripper_joint_1 값):
+    빈 손 닫힘   0.009   stalled:true  reached_goal:false
+    red_block    0.187   (hold_eps 0.050 이 0.009 와 0.187 사이 - 판정 가능)
+    blue_ring    0.006   ★ 빈 손보다 작다. 관절값으로 파지 판정 불가 (미해결)
+    개구부 폭    약 10cm
+
+
+═══════════════════════════════════════════════════════════════════════
+[0-C] 카메라 붙이기 · 확인
+═══════════════════════════════════════════════════════════════════════
+
+--- 카메라만 띄우기 ---
+
+ros2 launch arm_bringup real_camera.launch.py
+
+--- 화면을 눈으로 보기 (검출 결과가 그려진 그림) ---
+
+ros2 run rqt_image_view rqt_image_view /perception/debug_image
+
+  원본 그대로 보려면 창 위 드롭다운에서 /camera/image_raw 로 바꾼다.
+
+--- 그림이 오는지 / K가 0이 아닌지 ---
+
+ros2 topic hz /camera/image_raw
+ros2 topic echo /camera/camera_info --once
+
+  ★ /camera/image_raw 의 hz 는 9.65Hz 로 나오는데 카메라가 느린 게 아니다.
+    921600바이트를 파이썬 구독자가 역직렬화하느라 못 따라가는 것이다.
+    실제 속도는 /scene_state 의 30Hz 로 확인한다.
+  ★ k 가 전부 0.0 이면 config/camera_info.yaml 이 안 물린 것이다.
+    정상값: fx=fy=485.0, cx=320.0, cy=240.0
+
+--- 검출 결과 좌표 ---
+
+ros2 topic echo /scene_state --once
+
+--- 장치가 보이는지 (컨테이너 안에서) ---
+
+ls -l /dev/video0 /dev/ttyACM0
+v4l2-ctl -d /dev/video0 --list-formats-ext
+
+  ★ ls 로 보이는데 열리지 않으면 cgroup 권한이다.
+    compose.gt730.yaml 의 device_cgroup_rules 에
+    'c 81:* rmw'(카메라) 와 'c 166:* rmw'(팔) 이 있어야 한다.
+
+--- 카메라 위치(extrinsic) 바꿔 띄우기 ---
+   ★ 2026-08-19 현재 pitch 는 확정 전이다. 아래는 값을 밖에서 주는 방법.
+
+ros2 launch arm_bringup camera_tf.launch.py cam_x:=-0.12 cam_z:=0.33 cam_pitch:=1.0472 cam_yaw:=0.0
+
+  단위는 미터 / 라디안. 도 -> 라디안 = 도 x 0.0174533
+  기본값은 camera_tf.launch.py 안에 박혀 있다.
+  ★ cam_z 는 바닥이 아니라 테이블 상면 기준이다. world 의 z=0 이 팔이 놓인 면이다.
+
+--- TF가 제대로 섰는지 ---
+
+ros2 run tf2_ros tf2_echo world camera_optical_frame
+
+
 실물 팔 조작 명령 모음 — 한 줄씩 복사해서 컨테이너 터미널에 붙여넣는다.
 줄바꿈 없이 통째로 긁어라.
 
