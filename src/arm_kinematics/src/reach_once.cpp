@@ -6,13 +6,29 @@
 
 int main(int argc, char **argv)
 {
-  // 목표점 (solve_ik 프레임 : 어깨 원점, z는 어깨 기준)
-  double x = 0.20, y = 0.0, z = -0.05;
+  // 목표점 (base_link = world 기준. ik.hpp 19행 주석 참조)
+  //
+  // ★ 2026-08-19: 인자를 안 주면 기본값으로 조용히 도는 것을 막는다.
+  //   그날 호출 스크립트가 좌표 추출에 실패해 빈 문자열을 넘겼는데, 옛 기본값
+  //   (0.20, 0, -0.05)이 그대로 쓰여 팔이 테이블 아래를 향했고 서보가 과부하
+  //   알람(빨간 LED)을 띄웠다. 조용한 기본값은 실물에서 위험하다.
+  if (argc < 4) {
+    std::printf("사용법: reach_once <x> <y> <z> [elbow_up 0|1]\n");
+    std::printf("  좌표는 base_link(=world) 기준 미터. z는 테이블면이 0.\n");
+    return 2;
+  }
+  const double x = std::atof(argv[1]);
+  const double y = std::atof(argv[2]);
+  const double z = std::atof(argv[3]);
   const double phi = -M_PI / 2; // 접근각 : 그리퍼 아래로
-  if (argc >= 4) {
-    x = std::atof(argv[1]);
-    y = std::atof(argv[2]);
-    z = std::atof(argv[3]);
+
+  // ★ 작업공간 하한. 테이블면이 z=0 이므로 그 아래로 내려가는 목표는 IK 를 풀기
+  //   전에 막는다. Gate 2 S1(관절 한계)의 짝인 작업공간 검사이고, 08-16 감사에도
+  //   없던 항목이다 - sim 에서는 팔이 바닥을 뚫고 지나가도 아무 일이 없었다.
+  constexpr double kMinZ = 0.005;
+  if (z < kMinZ) {
+    std::printf("거부: z=%.3f 은 테이블면(0) 아래다. 최소 %.3f\n", z, kMinZ);
+    return 3;
   }
 
   // ★ 2026-08-19 추가: 팔꿈치 가지 선택. 기본은 기존과 같은 up.
