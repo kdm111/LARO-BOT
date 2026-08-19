@@ -8,8 +8,8 @@ void SkillServer::init_move_group()
     get_logger(), "arm 연결됨 : %zu개, planning frame=%s",
     move_group_->getJointNames().size(),
     move_group_->getPlanningFrame().c_str());
-  move_group_->setMaxVelocityScalingFactor(0.05);
-  move_group_->setMaxAccelerationScalingFactor(0.05);
+  move_group_->setMaxVelocityScalingFactor(0.1);  // 0.3
+  move_group_->setMaxAccelerationScalingFactor(0.1);  // 0.45
   gripper_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
     shared_from_this(), "gripper");   // gripper = SRDF 두 번째 그룹
   RCLCPP_INFO(
