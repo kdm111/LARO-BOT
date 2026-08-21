@@ -32,6 +32,8 @@ pass^k = 같은 케이스를 k회 돌려 k회 모두 맞아야 그 케이스 통
     cd /ws/src/arm_agent
     python3 -u -m agent.eval_llm_planner --model llama exaone --k 5
     python3 -u -m agent.eval_llm_planner --model llama --category R1 R2   # 일부만
+    python3 -u -m agent.eval_llm_planner --model llama --category L1 L2   # 다국어 일부
+    python3 -u -m agent.eval_llm_planner --model llama --lang ja zh de fr # 언어 일부
     python3 -u -m agent.eval_llm_planner --model llama --k 3 --fast       # 첫 실패에서 중단
     python3 -u -m agent.eval_llm_planner --model llama --tag promptB      # 프롬프트 고친 뒤
 """
@@ -146,10 +148,14 @@ def write_csv(path, model, tag, k, rows):
                 + [_build_prompt(case.command, case.scene)])
 
 
-def run(model, k, fast, categories, tag, out_dir):
+def run(model, k, fast, categories, languages, tag, out_dir):
     """모델 하나로 시험지를 돌린다. (카테고리별 집계, CSV 경로)를 낸다."""
     call_llm = make_ollama_caller(model)
-    cases = [c for c in CASES if not categories or c.category in categories]
+    cases = [
+        case for case in CASES
+        if (not categories or case.category in categories)
+        and (not languages or case.lang in languages)
+    ]
 
     print(f'\n{"=" * 78}\n모델={model}  k={k}  케이스={len(cases)}  '
           f'fast={fast}  tag={tag}\n{"=" * 78}', flush=True)
@@ -231,10 +237,13 @@ def main():
     parser.add_argument('--fast', action='store_true',
                         help='첫 불일치에서 중단(빠름, 대신 몇 회 맞았는지 흐려짐)')
     parser.add_argument('--category', nargs='*', default=None,
-                        help='N1 N2 ... R5 중 일부만')
+                        help='N1 ... R6 또는 L1 ... L6 중 일부만')
+    parser.add_argument('--lang', nargs='*',
+                        choices=tuple(sorted({case.lang for case in CASES})),
+                        help='언어 일부만: de en es fr it ja ko pt ru zh')
     # tag는 프롬프트 판(版)을 가리킨다. 프롬프트를 고치면 반드시 바꿔서 돌릴 것 -
     # 안 그러면 이전 CSV를 덮어써서 A/B 비교 상대가 사라진다.
-    parser.add_argument('--tag', default='base',
+    parser.add_argument('--tag', default='v3-multilingual',
                         help='프롬프트 판 이름. 파일 이름과 tag 열에 들어간다')
     parser.add_argument('--out-dir', default='eval_results',
                         help='CSV를 쓸 디렉터리')
@@ -244,7 +253,7 @@ def main():
     results = {}
     for model in args.model:
         per_category, _ = run(model, args.k, args.fast,
-                              args.category, args.tag, args.out_dir)
+                              args.category, args.lang, args.tag, args.out_dir)
         results[model] = per_category
 
     if len(results) > 1:

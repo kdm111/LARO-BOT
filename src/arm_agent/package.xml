@@ -8,6 +8,10 @@
   <license>Apache-2.0</license>
 
   <depend>rclpy</depend>
+  <!-- ★ 2026-08-22 위생: agent.py 가 arm_interfaces 의 action/msg 를 실제로
+       import 하는데 선언이 빠져 있었다 - CI 가 packages-select 순서로 우연히
+       통과하던 상태. 빌드 순서·rosdep 보장을 위해 명시한다. -->
+  <depend>arm_interfaces</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

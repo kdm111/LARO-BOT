@@ -131,7 +131,7 @@ class Agent(Node):
         if self._scene_stamp is None:
             return None
         for object_id, (zone, since) in self._first_seen.items():
-            if zone != 'work':
+            if zone != 'work':   # 08-20 저녁 두 칸을 다시 하나로 합쳤다
                 continue
             if object_id in self._ignored:
                 continue

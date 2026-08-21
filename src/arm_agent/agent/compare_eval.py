@@ -145,6 +145,31 @@ def language_compare(data):
               f'en만 {en_only:3d}  ko만 {ko_only:3d}   -> {verdict}')
 
 
+def multilingual_summary(data):
+    """L1~L6만 떼어 10개 언어별 pass^k 성공률을 같은 난이도로 비교한다."""
+    languages = sorted({
+        row['lang']
+        for cases in data.values()
+        for row in cases.values()
+        if row['category'].startswith('L')
+    })
+    if not languages:
+        return
+
+    print(f'\n{"=" * 70}\n다국어 60케이스 언어별 비교 (L1~L6)\n{"=" * 70}')
+    header = _pad('모델', 16) + ''.join(_pad(lang, 8, True) for lang in languages)
+    print(header)
+    for model, cases in data.items():
+        line = _pad(model, 16)
+        rows = [row for row in cases.values() if row['category'].startswith('L')]
+        for lang in languages:
+            selected = [row for row in rows if row['lang'] == lang]
+            passed = sum(row['passed'] == 'PASS' for row in selected)
+            value = f'{passed}/{len(selected)}' if selected else '-'
+            line += _pad(value, 8, True)
+        print(line)
+
+
 def pair_compare(data, model_a, model_b, show_cases):
     """짝 비교. 갈린 케이스만 세고 McNemar로 판정한다."""
     cases_a, cases_b = data[model_a], data[model_b]
@@ -221,6 +246,7 @@ def main():
 
     summary(data)
     language_compare(data)
+    multilingual_summary(data)
     for model_a, model_b in itertools.combinations(data, 2):
         pair_compare(data, model_a, model_b, args.show_cases)
     return 0

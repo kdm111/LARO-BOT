@@ -31,8 +31,12 @@ NO_RETRY_CODES = (2, 8, 99)
 # SRDF omx_f.srdf의 arm 그룹 group_state 실제 값. observe는 아직 없다(M5 이관).
 POSE_IDS = ('init', 'home')
 
-# place가 놓을 수 있는 유일한 장소(작업대 오른쪽 위 고정).
-# 카메라가 검출하는 물체가 아니라 고정 좌표라 scene_ids와 무관하게 검사한다.
+# place가 놓을 수 있는 장소. 카메라가 검출하는 물체가 아니라 고정 좌표라
+# scene_ids와 무관하게 검사한다. llm_prompts가 이 튜플로 프롬프트의 목록을 만들므로
+# 여기서 지우면 LLM이 그 이름을 낼 수 없게 된다.
+# ★ 2026-08-20 저녁 셋 다 자리가 바뀌었지만 이름은 그대로다(cell_layout.yaml 참조).
+#   한때 counter를 지우고 bin만 남길 뻔했는데, 그러면 eval 시험지의 'bin' 69곳을
+#   전부 고쳐야 해서 과거 결과와 견줄 수 없게 된다. 이름을 유지한 덕에 시험지가 살았다.
 TARGET_IDS = ('counter', 'bin', 'shelf')
 
 # 지금 계약에서 가장 긴 계획은 deliver의 2스텝이다.

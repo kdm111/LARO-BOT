@@ -30,8 +30,9 @@ def _build_prompt(command, scene_ids):
         # 실측 실패(2026-08-07): "빨간 블록 집어" -> object_id를 명령의 한국어 단어
         # 그대로 복사해 검증에서 거부됐다. 같은 명령이 red_block으로 나온 적도 있어
         # 비결정적이다. 번역이 필요하다는 것을 규칙과 예시로 명시한다.
-        '- The command may name objects in Korean. Translate them to the EXACT\n'
-        '  English id from the scene list. Example: "빨간 블록" -> "red_block".\n'
+        '- The command may be written in any language. Translate object, target,\n'
+        '  and pose names to the EXACT English ids from the lists above.\n'
+        '  Examples: "빨간 블록", "赤いブロック", "红色积木" -> "red_block".\n'
         '- NEVER copy a word from the command into object_id. Always pick an id\n'
         '  that appears verbatim in the scene list above.\n'
         # 거부 경로. 2026-08-15에 열었다 - _is_refusal이 검증기 앞에서 []를 가려내므로

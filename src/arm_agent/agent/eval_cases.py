@@ -1,13 +1,15 @@
 """실호출 시험지의 케이스 정의(= 테스트 계획서). 러너와 분리한다.
 
-★ 언어 짝(pair) 설계.
+★ 기존 언어 짝(pair) 설계.
 케이스를 (영어, 한국어) 쌍으로 정의하고 기계적으로 펼친다. 그래서
   - 한국어 50 : 영어 50 이 설계상 보장된다(v1은 29:71이었다)
   - 같은 의도·같은 씬·같은 기댓값에서 언어만 다르므로 언어 효과만 순수하게 뽑힌다
 v1은 명령 자체가 서로 달라 통제가 안 됐다. scene 통제쌍이 쓴 논리를 언어 축에 재적용한 것.
 
-90쌍 = 180케이스. 정상 45쌍 / 거부 45쌍.
-거부가 절반인 이유는 BFCL의 관련성 판별과 같다 -
+v2의 91쌍 = 182케이스는 내용과 번호를 그대로 유지한다. v3는 그 뒤에
+10개 언어 x 6시나리오 = 60케이스를 붙여 총 242케이스다. 새 케이스는
+L1~L6 카테고리라 과거 영어/한국어 기준선과 분리해서 실행할 수도 있다.
+기존 182개에서 거부가 절반인 이유는 BFCL의 관련성 판별과 같다 -
 할 수 있는 일을 하는 것만큼 할 수 없는 일을 참는 것이 능력이다.
 
 검토용 CSV 내보내기:
@@ -22,8 +24,13 @@ import json
 import os
 import sys
 
+from .eval_multilingual_cases import (
+    CASES as MULTILINGUAL_CASES,
+    SCENARIOS as MULTILINGUAL_SCENARIOS,
+)
+
 # 케이스 집합의 판(版). 바뀌면 이전 CSV와 케이스별 비교가 성립하지 않는다.
-CASE_SET = 'v2-paired-182'
+CASE_SET = 'v3-multilingual-242'
 
 # ---- 씬 상수 ----
 
@@ -53,6 +60,12 @@ CATEGORY_DESC = {
     'R4': '거부 - 명령이 아닌 발화',
     'R5': '거부 - 과잉·부족',
     'R6': '거부 - 빈 씬',
+    'L1': '다국어 - red_block pick',
+    'L2': '다국어 - 2물체 중 blue_ring pick',
+    'L3': '다국어 - green_block 불량품 bin 분류',
+    'L4': '다국어 - home 복귀',
+    'L5': '다국어 거부 - 씬에 없는 물체',
+    'L6': '다국어 거부 - 계약 밖 push',
 }
 
 
@@ -331,7 +344,35 @@ def _expand(pairs):
     return cases
 
 
-CASES = _expand(PAIRS)
+BASE_CASES = _expand(PAIRS)
+
+
+def _attach_multilingual(base_cases, multilingual_cases):
+    """기존 182개 뒤에 10개 언어 케이스를 기존 Case 모양으로 붙인다.
+
+    같은 시나리오의 10개 언어는 pair 번호 하나를 공유한다. 기존 pair 1~91과
+    case 1~182는 바꾸지 않아 과거 CSV와 행 단위로 대조할 수 있다.
+    """
+    pair_by_scenario = {
+        scenario.key: len(PAIRS) + index
+        for index, scenario in enumerate(MULTILINGUAL_SCENARIOS, 1)
+    }
+    attached = list(base_cases)
+    for source in multilingual_cases:
+        attached.append(Case(
+            len(attached) + 1,
+            source.category,
+            pair_by_scenario[source.scenario],
+            source.lang,
+            source.command,
+            source.scene,
+            source.expected,
+            source.note,
+        ))
+    return attached
+
+
+CASES = _attach_multilingual(BASE_CASES, MULTILINGUAL_CASES)
 
 
 def scene_label(scene):
@@ -380,8 +421,9 @@ def summarize():
     """구성 점검용 집계. 설계 의도대로 됐는지 눈으로 확인한다."""
     langs = collections.Counter(c.lang for c in CASES)
     kinds = collections.Counter('정상' if c.expected is not None else '거부' for c in CASES)
-    print(f'케이스집합 {CASE_SET} : {len(PAIRS)}쌍 -> {len(CASES)}케이스')
-    print(f'  언어   en {langs["en"]} : ko {langs["ko"]}')
+    print(f'케이스집합 {CASE_SET} : 기존 {len(PAIRS)}쌍 + '
+          f'다국어 {len(MULTILINGUAL_SCENARIOS)}시나리오 -> {len(CASES)}케이스')
+    print('  언어   ' + ' : '.join(f'{lang} {count}' for lang, count in langs.items()))
     print(f'  종류   정상 {kinds["정상"]} : 거부 {kinds["거부"]}')
     print('  카테고리')
     for category, count in sorted(collections.Counter(c.category for c in CASES).items()):
