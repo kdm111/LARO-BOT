@@ -3,6 +3,10 @@
 SkillServer::SkillServer()
 : Node("skill_server")
 {
+  // ★ 2026-08-22 실행 watchdog 예산(초). 파라미터인 이유는 검증 가능성이다 -
+  //   값을 1초로 줄이면 정상 이동에서도 발동해 실물로 시험할 수 있다.
+  //   기본 15초 : 관측된 최장 이동(~4초, 든 손 저속 포함)의 여유배.
+  declare_parameter("exec_watchdog_sec", 15.0);
   // move_to 액션 서버 등록 (상대 이름 > /move_to). 콜백 3개 연결.
   move_to_server_ = rclcpp_action::create_server<MoveTo>(
     this, "move_to",
@@ -51,9 +55,13 @@ void SkillServer::on_joint_states(const sensor_msgs::msg::JointState::SharedPtr 
 // MoveResult -> 계약. 실패 이유를 ErrorCode에 싣는다.(유일한 통로)
 int32_t SkillServer::code_of(MoveResult r)
 {
-  return r == MoveResult::UNREACHABLE ?
-         arm_interfaces::msg::ErrorCode::UNREACHABLE :
-         arm_interfaces::msg::ErrorCode::PLANNING_FAILED;
+  if (r == MoveResult::UNREACHABLE) {
+    return arm_interfaces::msg::ErrorCode::UNREACHABLE;
+  }
+  if (r == MoveResult::TIMEOUT) {
+    return arm_interfaces::msg::ErrorCode::EXECUTION_TIMEOUT;
+  }
+  return arm_interfaces::msg::ErrorCode::PLANNING_FAILED;
 }
 std::string SkillServer::detail_of(MoveResult r)
 {
@@ -63,43 +71,79 @@ std::string SkillServer::detail_of(MoveResult r)
   if (r == MoveResult::EXEC_FAILED) {
     return "경로는 나왔으나 실행 실패";
   }
+  if (r == MoveResult::TIMEOUT) {
+    return "실행 시간 초과 - watchdog 정지";
+  }
   return "경로 계획 실패";
 }
 
-// 목표 수락 여부 > 지금은 무조건 수락
+// ★ 2026-08-22 single-flight : 실행 중에는 어느 스킬이든 새 goal 을 거부한다.
+//   compare_exchange 로 busy_ 를 수락 시점에 원자적으로 잡는다 - 두 goal 이
+//   동시에 들어와도 한쪽만 통과한다. 해제는 execute_* 의 BusyRelease 가드.
 rclcpp_action::GoalResponse SkillServer::handle_goal(
   const rclcpp_action::GoalUUID & /*UUID*/, std::shared_ptr<const MoveTo::Goal> goal)
 {
   RCLCPP_INFO(get_logger(), "move_to 목표 수신: target=%s", goal->pose_id.c_str());
+  bool idle = false;
+  if (!busy_.compare_exchange_strong(idle, true)) {
+    RCLCPP_WARN(get_logger(), "move_to 거부 : 다른 스킬 실행 중(single-flight)");
+    return rclcpp_action::GoalResponse::REJECT;
+  }
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
-// 취소 요청 -> 지금은 무조건 수락
+// ★ 2026-08-22 : 취소 = 실제 정지. 전에는 ACCEPT 만 반환하고 아무도 멈추지
+//   않았다 - "받는 척"이었다. stop()은 MoveIt 실행 관리자를 통해 컨트롤러의
+//   현재 궤적 goal 까지 취소시킨다(JTC 가 현 위치에서 감속 정지).
+//   이 콜백은 executor 스레드에서 돌고 실행은 별도 스레드라 blocking 중인
+//   move()를 밖에서 끊는 구조가 성립한다. 실행 스레드는 move() 반환 후
+//   is_canceling()을 보고 canceled 로 마감한다(skill_move_to.cpp).
 rclcpp_action::CancelResponse SkillServer::handle_cancel(
   const std::shared_ptr<GoalHandleMoveTo>/*gh*/)
 {
+  RCLCPP_WARN(get_logger(), "move_to 취소 요청 - 팔 정지");
+  if (move_group_) {
+    move_group_->stop();
+  }
   return rclcpp_action::CancelResponse::ACCEPT;
 }
 rclcpp_action::GoalResponse SkillServer::handle_goal_pick(
   const rclcpp_action::GoalUUID &, std::shared_ptr<const Pick::Goal> goal)
 {
   RCLCPP_INFO(get_logger(), "pick 목표 수신: object=%s", goal->object_id.c_str());
+  bool idle = false;
+  if (!busy_.compare_exchange_strong(idle, true)) {   // single-flight(handle_goal 주석)
+    RCLCPP_WARN(get_logger(), "pick 거부 : 다른 스킬 실행 중(single-flight)");
+    return rclcpp_action::GoalResponse::REJECT;
+  }
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
+// ★ 2026-08-22 : pick/place 는 취소를 "명시적으로 거부"한다. 전에는 수락하고
+//   무시했다 - 클라이언트가 멈춘 줄 알지만 팔은 계속 가는 최악의 거짓이었다.
+//   시퀀스 중간 정지는 물건을 든 채 서는 상태를 설계해야 해서 별도 작업이다 -
+//   그때까지는 "취소 불가"를 정직하게 알린다.
 rclcpp_action::CancelResponse SkillServer::handle_cancel_pick(const std::shared_ptr<GoalHandlePick>)
 {
-  return rclcpp_action::CancelResponse::ACCEPT;
+  RCLCPP_WARN(get_logger(), "pick 취소 요청 거부 - 시퀀스 중간 정지는 미구현");
+  return rclcpp_action::CancelResponse::REJECT;
 }
 rclcpp_action::GoalResponse SkillServer::handle_goal_place(
   const rclcpp_action::GoalUUID &, std::shared_ptr<const Place::Goal> goal)
 {
   RCLCPP_INFO(get_logger(), "place 목표 수신: object=%s target=%s", goal->object_id.c_str(),
     goal->target_id.c_str());
+  bool idle = false;
+  if (!busy_.compare_exchange_strong(idle, true)) {   // single-flight(handle_goal 주석)
+    RCLCPP_WARN(get_logger(), "place 거부 : 다른 스킬 실행 중(single-flight)");
+    return rclcpp_action::GoalResponse::REJECT;
+  }
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 rclcpp_action::CancelResponse SkillServer::handle_cancel_place(
   const std::shared_ptr<GoalHandlePlace>)
 {
-  return rclcpp_action::CancelResponse::ACCEPT;
+  // pick 과 같은 이유로 거부한다(위 주석).
+  RCLCPP_WARN(get_logger(), "place 취소 요청 거부 - 시퀀스 중간 정지는 미구현");
+  return rclcpp_action::CancelResponse::REJECT;
 }
 // 수락 되면 실행은 별도의 스레드로 진행 (콜백 스레드를 막으면 안됨)
 void SkillServer::handle_accepted(const std::shared_ptr<GoalHandleMoveTo> goal_handle)

@@ -13,6 +13,7 @@ find_package(arm_interfaces REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(arm_kinematics REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(control_msgs REQUIRED)
 
 add_executable(skill_server
   src/main.cpp
@@ -33,10 +34,24 @@ ament_target_dependencies(
   "arm_interfaces"
   "moveit_ros_planning_interface"
   "sensor_msgs"
+  "control_msgs"
   "arm_kinematics"
 )
 
-install(TARGETS skill_server
+# 구역 사각형의 네 꼭지점을 짚어 보는 확인용 도구(2026-08-20). 액션 서버가 아니다.
+add_executable(trace_zone src/trace_zone.cpp)
+target_include_directories(trace_zone PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
+target_compile_features(trace_zone PUBLIC c_std_99 cxx_std_17)
+ament_target_dependencies(
+  trace_zone
+  "rclcpp"
+  "moveit_ros_planning_interface"
+  "arm_kinematics"
+)
+
+install(TARGETS skill_server trace_zone
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

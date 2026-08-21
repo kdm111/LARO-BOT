@@ -1,3 +1,4 @@
+#include "arm_skills/params.hpp"   // kGripPreload
 #include "arm_skills/skill_server.hpp"
 
 // 그리퍼를 이름 자세로 (open/close). 반환값 = MoveIt 실행 결과 코드
@@ -32,6 +33,120 @@ moveit::core::MoveItErrorCode SkillServer::move_gripper_to(double pos)
   return code;
 }
 
+// 그리퍼 목표 하나를 gripper_controller 액션으로 보낸다. 수락까지만 확인하고
+// 결과는 기다리지 않는다 - 결과는 안 오는 게 보통이다(실측: 물체를 문 채 60초
+// 무응답. 부하 때 엔코더 1틱 떨림이 stall_velocity_threshold 를 넘어 stall
+// 타이머가 계속 리셋된다. 같은 상황에서 6.7초 만에 온 적도 있다 - 들쭉날쭉).
+// async_get_result 는 등록만 해 둔다 - 안 하면 결과가 도착했을 때 rclcpp_action
+// 이 "결과 받을 사람 없음" 경고를 찍는다.
+bool SkillServer::send_gripper_goal(double pos, const char * tag, const char * what)
+{
+  using GripperCommand = control_msgs::action::GripperCommand;
+  using namespace std::chrono_literals;
+
+  if (!gripper_cmd_client_ || !gripper_cmd_client_->wait_for_action_server(2s)) {
+    RCLCPP_ERROR(get_logger(), "%s : gripper_controller 액션 서버 없음(%s)", tag, what);
+    return false;
+  }
+  GripperCommand::Goal goal;
+  goal.command.position = pos;
+  goal.command.max_effort = 0.0;   // 0 = 컨트롤러 기본. 실제 상한은 서보 Goal Current 다.
+  auto goal_future = gripper_cmd_client_->async_send_goal(goal);
+  if (goal_future.wait_for(3s) != std::future_status::ready) {
+    RCLCPP_ERROR(get_logger(), "%s : %s(%.3f) 목표 수락 대기 실패", tag, what, pos);
+    return false;
+  }
+  const auto handle = goal_future.get();
+  if (!handle) {
+    RCLCPP_ERROR(get_logger(), "%s : %s(%.3f) 목표 거부됨", tag, what, pos);
+    return false;
+  }
+  (void)gripper_cmd_client_->async_get_result(handle);
+  return true;
+}
+
+// 닫고 나서 쥐었는지 판정한다. 2026-08-20 신설, 같은 날 밤 "한 번 집고 넘어가기"로 개편.
+//
+// 왜 MoveIt(move_gripper("close"))이 아니라 액션을 직접 때리는가 - 실측 때문이다.
+//   같은 "빈 손"인데
+//     MoveIt close 직후          관절 0.2209 (임계 0.050 을 훌쩍 넘어 "쥠"으로 오판)
+//     액션을 직접 보낸 뒤        관절 0.0015 (끝까지 닫힘)
+//   MoveIt 경유는 손가락이 끝까지 닫히기 전에 끝나 버린다. 그 상태의 관절값은
+//   "물었을 때"(0.20~0.22)와 구분이 안 된다. 못 집었는데 pick 이 성공으로 끝나고,
+//   실패가 보고되지 않으니 agent 의 GRASP_FAILED -> REGRASP 도 영영 안 돈다.
+//
+// ★ 2026-08-20 밤 개편. 구 코드는 액션 결과를 10초까지 기다렸다 - 그 10초 내내
+//   서보는 목표 0.0 을 향해 전류 한계로 갈렸고, 판정 뒤에도 close 가 걸린 채
+//   운반해서 갈림이 이어졌다. 오늘 ID16 이 두 번 토크를 잃은(전원 보호 추정)
+//   유력 원인이다. 어차피 결과가 와도 판정 재료는 "정착한 관절값"이었으므로 :
+//     close 전송 -> 관절 정착 대기 -> 그 값으로 판정 -> 즉시 유지 목표로 되걸기
+//   되걸기 : 쥠이면 "잰 값 − kGripPreload"(가볍게만 눌러 쥔다),
+//            빈 손이면 잰 값 그대로(조임 해제 - 과닫힘 -0.018 도 여기서 풀린다).
+//
+// 판정 규칙 : 손가락이 끝까지(0 근처) 닫혔으면 사이에 아무것도 없다. held = q > eps.
+//   실측 : 빈 손 0.0015 / 블록 0.2025 / 링 전체 물음 0.3267.
+//   sim 은 접촉 해석에 따라 stall 신호가 안 날 수 있는데, 관절값 판정은 그와
+//   무관하게 물체 두께에서 멈춘 값을 본다 - 두 환경에서 같은 식이 선다.
+//   ★ 절댓값이 아니라 부호 있는 비교다. 물체가 있으면 관절값은 반드시 양수고,
+//     음수는 닫힘 지점을 지나쳐 들어간 것 - 빈 손에서만 생긴다(실측 -0.0184 가
+//     |x| 비교로 "쥠" 오판을 낸 적이 있다).
+//
+// 통신·정착이 실패하면 "빈 손"으로 돌려준다. 모르면 쥐었다고 말하지 않는다 -
+// 없는 물체를 들고 place 로 넘어가는 것보다 pick 이 시끄럽게 실패하는 편이 낫다.
+bool SkillServer::grasp_check(double eps, const char * tag)
+{
+  held_q_.reset();
+  if (!send_gripper_goal(0.0, tag, "close")) {
+    return false;
+  }
+  // 수락 -> 실물 손가락이 움직이기 시작할 때까지 지연이 있다(컨트롤러 주기 +
+  // 시리얼 쓰기 + 서보 프로파일 시작). 그 사이에 정착 판정(200ms 무변화)이 먼저
+  // 성립하면 "벌린 채"(kGripperOpen)를 재 버린다 - 아래 kStillOpenQ 와 이중 방어.
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  const auto q = wait_gripper_settled();
+  if (!q.has_value()) {
+    // 판정 불가. 다만 close(0.0)를 건 채 떠나면 물체를 물고 있을 때 계속 갈리므로
+    // 마지막으로 본 관절값 쪽으로 목표를 되걸어 둔다.
+    double seen_pos = 0.0;
+    bool seen = false;
+    {
+      std::lock_guard<std::mutex> lock(joint_mutex_);
+      seen_pos = gripper_pos_;
+      seen = gripper_seen_;
+    }
+    if (seen) {
+      send_gripper_goal(std::max(seen_pos - kGripPreload, kGripCloseFloor), tag, "hold(정착 실패)");
+    }
+    RCLCPP_ERROR(get_logger(), "%s : close 후 관절 정착 실패 - 쥠으로 보지 않는다", tag);
+    return false;
+  }
+  // 어떤 물체도 이보다 클 수 없다(최대 실측 0.3267 - 링 전체 물음). 이 값이면 잰
+  // 것은 물체가 아니라 아직 안 닫힌 손이다. "쥠"으로 두면 빈 손 lift 가 되고,
+  // 유지 목표가 close 를 취소해 영영 안 닫힌다 - 실패로 처리하고 제자리에 묶는다.
+  static constexpr double kStillOpenQ = 0.5;
+  if (*q > kStillOpenQ) {
+    send_gripper_goal(*q, tag, "hold(close 미반영)");
+    RCLCPP_ERROR(
+      get_logger(), "%s : 관절=%.4f - close 가 반영되지 않았다(벌린 채) - 쥠으로 보지 않는다",
+      tag, *q);
+    return false;
+  }
+  const bool held = *q > eps;
+  // 하한이 0.0 이 아니라 kGripCloseFloor 다 - 0.0 클램프는 얇은 것(링 벽 0.017)
+  // 에서 조임을 절반으로 깎아 낙하를 불렀다(2026-08-21, params.hpp 주석).
+  const double hold = held ? std::max(*q - kGripPreload, kGripCloseFloor) : *q;
+  if (!send_gripper_goal(hold, tag, "hold")) {
+    RCLCPP_WARN(get_logger(), "%s : 유지 목표 되걸기 실패 - close(0.0)가 걸린 채다", tag);
+  }
+  if (held) {
+    held_q_ = *q;
+  }
+  RCLCPP_INFO(
+    get_logger(), "%s : 관절=%.4f (임계 %.4f) -> %s (유지 목표 %.4f)",
+    tag, *q, eps, held ? "쥠" : "빈 손", hold);
+  return held;
+}
+
 // close 결과 코드 -> 쥐고 있는가  -> 상식과 반대로 읽힌다.
 // CONTROL_FAILED(-4) = 손가락이 물체에 막혀 목표까지 못닫힌다. 쥐고 있다.
 // SUCCESS(1) -> 끝까지 닫힘 = 사이에 아무것도 없다. = 빈 그리퍼 판정
@@ -55,7 +170,7 @@ bool SkillServer::is_holding(double eps, const char * tag)
     RCLCPP_WARN(get_logger(), "%s 그리퍼 정착 실패 - 쥐었다고 판정하지 않는다", tag);
     return false;
   }
-  const bool held = std::abs(*q) > eps;
+  const bool held = *q > eps;
   RCLCPP_INFO(
     get_logger(), "%s 판정 : 관절=%.4f (임계 %.4f) -> %s",
     tag, *q, eps, held ? "쥠" : "빈 손");
