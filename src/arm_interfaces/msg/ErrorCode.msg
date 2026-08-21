@@ -22,5 +22,9 @@ int32 GRIPPER_EMPTY=6  # 운반 중 낙하
 int32 EXECUTION_TIMEOUT=7 # 실행 시간 초과
 # 사전에 정의되지 않은 자세
 int32 UNDEFINED_POSE=8 # 없는 포즈
+# ★ 2026-08-22 추가. 클라이언트의 cancel 로 팔을 세우고 목표를 중단했다.
+# 실패가 아니라 지시된 정지다 - 액션 상태도 CANCELED 로 끝난다.
+# agent 복구표에 없는 코드이므로 기본 전략(ABORT = 멈춤)으로 떨어진다. 의도된 동작이다.
+int32 CANCELED=9 # 취소로 정지
 int32 INTERNAL_ERROR=99 # 알 수 없는 에러
 
