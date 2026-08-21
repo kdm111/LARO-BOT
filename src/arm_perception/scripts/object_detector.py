@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import math
+import os
 
 from arm_interfaces.msg import DetectedObject, SceneState
 import cv2
@@ -12,6 +13,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import CameraInfo, Image
 from tf2_geometry_msgs import do_transform_point
 import tf2_ros
+import yaml
 
 MIN_AREA = 100  # 이보다 작은 덩어리는 잡음으로 버린다.
 WORLD_FRAME = 'world'  # MoveIt 플래닝 프레임. skill_server가 알아듣는 좌표계
@@ -104,6 +106,19 @@ class ObjectDetector(Node):
         # ★ 2026-08-22 : 링 y 보정. 전원 세션마다 값이 흘러 다녀 파라미터로 뒀다.
         #   재보정 : poke 실측 -> ros2 param set /object_detector ring_dy <값>
         self.declare_parameter('ring_dy', OBJECTS['blue_ring']['world_dy'])
+        # ★ 2026-08-22 : 구역 오버레이. launch 가 cell_layout.yaml 경로를 넘겨주면
+        #   디버그 영상에 구역 사각형과 이름을 그린다. 좌표를 여기 박지 않는 이유는
+        #   사본 경계(cell_layout.yaml 머리 주석) - trace_zone 과 같은 "yaml 이 진실"
+        #   경로다. 경로가 비면 오버레이 없이 돈다.
+        self.declare_parameter('cell_layout_path', '')
+        self.zones = {}
+        layout_path = self.get_parameter('cell_layout_path').value
+        if layout_path and os.path.exists(layout_path):
+            with open(layout_path) as f:
+                raw_zones = yaml.safe_load(f)['zones']
+            self.zones = {name: (z['x'][0], z['x'][1], z['y'][0], z['y'][1])
+                          for name, z in raw_zones.items()}
+            self.get_logger().info(f'구역 오버레이 {len(self.zones)}개 : {sorted(self.zones)}')
         self.bridge = CvBridge()
         self.sub = self.create_subscription(
             Image, '/camera/image_raw', self.on_image, 10)
@@ -196,6 +211,35 @@ class ObjectDetector(Node):
         length = math.hypot(wa[0] - wb[0], wa[1] - wb[1])
         # 사각형의 긴축은 180도 대칭이다. 프레임마다 부호가 뒤집히지 않게 한 구간으로 접는다.
         return ((yaw + math.pi / 2.0) % math.pi - math.pi / 2.0, length)
+
+    def world_to_pixel(self, x, y, z, stamp):
+        """world 점 하나를 픽셀로 투영한다(pixel_to_world의 역방향). 못 하면 None."""
+        if self.fx is None:
+            return None
+        try:
+            tf = self.tf_buffer.lookup_transform(OPTICAL_FRAME, WORLD_FRAME, stamp)
+        except tf2_ros.TransformException:
+            return None
+        p = PointStamped()
+        p.header.frame_id = WORLD_FRAME
+        p.point.x, p.point.y, p.point.z = float(x), float(y), float(z)
+        q = do_transform_point(p, tf).point
+        if q.z <= 0.0:
+            return None   # 카메라 뒤의 점은 투영이 뒤집힌다
+        return (int(self.fx * q.x / q.z + self.cx),
+                int(self.fy * q.y / q.z + self.cy))
+
+    def draw_zones(self, frame, stamp):
+        """구역 사각형 넷과 이름을 디버그 영상에 그린다. 테이블면(z=0)에 투영."""
+        for name, (x0, x1, y0, y1) in self.zones.items():
+            corners = [(x0, y0), (x0, y1), (x1, y1), (x1, y0)]
+            pts = [self.world_to_pixel(px, py, 0.0, stamp) for px, py in corners]
+            if any(p is None for p in pts):
+                continue
+            cv2.polylines(frame, [np.array(pts, np.int32)], True, (0, 215, 255), 2)
+            top = min(pts, key=lambda p: p[1])
+            cv2.putText(frame, name, (top[0] - 10, top[1] - 6),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 215, 255), 2)
 
     def find_blob(self, hsv, frame, spec, object_id):
         """한 물체의 색 마스크에서 가장 큰 덩어리 하나를 찾는다. 없으면 None.
@@ -334,6 +378,10 @@ class ObjectDetector(Node):
 
         # BGR -> HSV 조명이 변해도 H는 변하지 않는다.
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+        # 구역 오버레이(있으면). 물체 표시보다 먼저 그려 물체 마커가 위에 오게 한다.
+        if self.zones:
+            self.draw_zones(frame, msg.header.stamp)
 
         # 스냅샷은 물체가 여럿이어도 하나다. 빈 스냅샷도 발행한다.
         scene = SceneState()

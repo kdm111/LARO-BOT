@@ -89,8 +89,11 @@ void SkillServer::execute_pick(const std::shared_ptr<GoalHandlePick> goal_handle
   //   (관절 ~0.32). 이 모드가 오늘 유일하게 "집고 + 들고"를 다 통과했다
   //   (1mm 깊이 + 수직 스텝 lift + 온전한 조임의 합작). 벽 물음은 벌림-오프셋이
   //   짝이라 벌림을 키우면 기하가 깨졌고, 물음 자체도 들 때 자주 빠졌다.
+  // ★ 2026-08-22 : +y 영역 팔 편향 보정(arm_y_bias, params.hpp 주석). 카메라
+  //   좌표가 맞아도 팔이 그 좌표로 "가면" +y 에서 오른쪽에 선다 - shelf 자리
+  //   pick 이 허공을 닫던 원인. 검출 y 에 비례 보정을 얹어 조준한다.
   const double grasp_x = obj_x + (gs.hook ? kHookXTrim : 0.0);
-  const double grasp_y = obj_y + (gs.hook ? kHookYTrim : 0.0);
+  const double grasp_y = obj_y + arm_y_bias(obj_y) + (gs.hook ? kHookYTrim : 0.0);
   const double grasp_yaw = gs.hook ? 0.0 : std::remainder(obj_yaw + M_PI_2, M_PI);
   RCLCPP_INFO(
     get_logger(), "파지점 (%.3f, %.3f) z=%.3f yaw=%.1f도",

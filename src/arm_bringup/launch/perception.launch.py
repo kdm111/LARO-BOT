@@ -5,11 +5,20 @@ detector가 하는 일은 양쪽이 완전히 같다 - HSV로 픽셀을 찾고, 
 갈리는 것은 값뿐이다: HSV 임계값(조명) · PLANE_Z(실치수) · K(캘리브) · TF(거치).
 """
 
+import os
+
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
+
+# ★ 2026-08-22 : 구역 오버레이용. detector 가 arm_bringup 에 의존하면 순환이라
+#   (arm_bringup 이 arm_perception 을 이미 exec_depend) 경로만 파라미터로 넘긴다.
+#   cell_layout.yaml 이 진실이라는 원칙은 trace_zone.launch.py 와 같다.
+LAYOUT = os.path.join(
+    get_package_share_directory('arm_bringup'), 'config', 'cell_layout.yaml')
 
 
 def generate_launch_description():
@@ -29,6 +38,7 @@ def generate_launch_description():
         parameters=[{
             'use_sim_time': ParameterValue(
                 LaunchConfiguration('use_sim_time'), value_type=bool),
+            'cell_layout_path': LAYOUT,
         }],
     )
 

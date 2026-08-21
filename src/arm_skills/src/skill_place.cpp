@@ -40,8 +40,10 @@ void SkillServer::execute_place(const std::shared_ptr<GoalHandlePlace> goal_hand
   const GraspSpec & ps = pit->second;
   // ★ 2026-08-22 감싸기 전환 : 링이 TCP 의 -y 쪽 트림만큼에 매달린다(감싸기는
   //   중심 물음이라 벽 오프셋 몫이 없다). 상쇄도 트림만 남긴다.
+  // ★ +y 영역 팔 편향 보정(arm_y_bias, params.hpp 주석). place 는 물체를 못 보는
+  //   맹목 조준이라 편향이 그대로 착지 오차가 된다 - 실측 직선으로 상쇄한다.
   const double put_x = tgt_x;
-  const double put_y = tgt_y + (ps.hook ? kHookYTrim : 0.0);
+  const double put_y = tgt_y + arm_y_bias(tgt_y) + (ps.hook ? kHookYTrim : 0.0);
   const std::optional<double> put_yaw =
     ps.hook ? std::optional<double>(0.0) : std::nullopt;
 
