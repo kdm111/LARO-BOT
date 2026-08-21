@@ -77,43 +77,46 @@
     <!-- === 구역 판 5장 === -->
     <model name="zone_shelf">
       <static>true</static>
-      <pose>0.11 0.185 0.0005 0 0 0</pose>
+      <pose>0.154 0.153 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
-          <geometry><box><size>0.08 0.06 0.001</size></box></geometry>
+          <geometry><box><size>0.05 0.03 0.001</size></box></geometry>
           <material><ambient>0.38 0.38 0.38 1</ambient><diffuse>0.38 0.38 0.38 1</diffuse></material>
         </visual>
       </link>
     </model>
 
+    <!-- 작업 구역 = 실물 A4 석 장 중 가운데 한 장(2026-08-20 저녁). 0.055 x 0.197 (종이에서 세 번 줄인 최종. 좌우가 비대칭이라 중심 y=0.010).
+         counter 판과 겹쳐 그려진다 - 겹침은 cell_layout.yaml 에 적어 둔 미해결 항목이다. -->
     <model name="zone_work">
       <static>true</static>
-      <pose>0.165 0.000 0.0005 0 0 0</pose>
+      <pose>0.157 0.010 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
-          <geometry><box><size>0.13 0.08 0.001</size></box></geometry>
+          <geometry><box><size>0.055 0.197 0.001</size></box></geometry>
           <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
         </visual>
       </link>
     </model>
 
+
     <model name="zone_counter">
       <static>true</static>
-      <pose>0.14 -0.085 0.0005 0 0 0</pose>
+      <pose>0.154 -0.156 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
-          <geometry><box><size>0.08 0.06 0.001</size></box></geometry>
-          <material><ambient>0.72 0.72 0.72 1</ambient><diffuse>0.72 0.72 0.72 1</diffuse></material>
+          <geometry><box><size>0.05 0.03 0.001</size></box></geometry>
+          <material><ambient>0.88 0.88 0.88 1</ambient><diffuse>0.88 0.88 0.88 1</diffuse></material>
         </visual>
       </link>
     </model>
 
     <model name="zone_bin">
       <static>true</static>
-      <pose>0.14 -0.175 0.0005 0 0 0</pose>
+      <pose>0.06 -0.225 0.0005 0 0 0</pose>
       <link name="link">
         <visual name="visual">
-          <geometry><box><size>0.08 0.06 0.001</size></box></geometry>
+          <geometry><box><size>0.05 0.03 0.001</size></box></geometry>
           <material><ambient>0.88 0.88 0.88 1</ambient><diffuse>0.88 0.88 0.88 1</diffuse></material>
         </visual>
       </link>
