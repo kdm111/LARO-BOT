@@ -9,13 +9,18 @@ from .llm_contract import PLAN_SCHEMA, RECOVERY_SCHEMA
 MODELS = {
     'llama': 'llama3.1:8b',
     'exaone': 'exaone3.5:7.8b',
+    'gemma': 'gemma4:26b',
+    'qwen': 'qwen3.5:9b',
 }
 
 # 컨테이너 안에서는 호스트의 Ollama를 봐야 한다. 환경변수로 갈아끼운다.
 OLLAMA_HOST = os.environ.get('OLLAMA_HOST', 'http://localhost:11434')
-# 기본 모델 = exaone3.5:7.8b (2026-08-04 확정, 근거 eval_results/eval_*_v2.csv).
-# 자체 시험지 182케이스에서 정확도 1위(128/182)이면서 지연도 1위(0.47초)였다.
-OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'exaone3.5:7.8b')
+# 기본 모델 = gemma4:26b (2026-08-22 확정, 근거 eval_*_runpod-20260821-allmodels-k3.csv).
+# 242케이스(10개 언어)에서 220/242 로 1위, N2 이중정답 재채점 시 229/242(94.6%).
+# 2위 qwen3.5:9b(218/242)와 McNemar 동률이지만 사용자가 정확도 우선으로 선택했다.
+# 지연은 3.70초/호출로 qwen(2.13초)보다 느리다 - 속도가 필요해지면 qwen 이 대안.
+# (구 기본값 exaone3.5:7.8b 는 2026-08-04 v2 시험지 기준 1위였다 - 세대 교체)
+OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'gemma4:26b')
 HTTP_TIMEOUT_SEC = 30.0
 
 

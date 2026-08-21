@@ -80,8 +80,9 @@ class Agent(Node):
             10
         )
         # 쓸 모델을 짧은 이름으로 준다.
-        # ros2 param set /agent model llama, exaone으로 바꿀 수 있다.
-        self.declare_parameter('model', 'exaone')
+        # ros2 param set /agent model llama, exaone, gemma, qwen 으로 바꿀 수 있다.
+        # ★ 2026-08-22 기본값 exaone -> gemma(=gemma4:26b). 근거는 llm_ollama.py 주석.
+        self.declare_parameter('model', 'gemma')
         # 복구 자세 정의 : 팔이 시야를 가리지 않도록 비워놓는다.
         # ros2 param set /agent recovery_pose init으로 실행 중 교체 가능
         self.declare_parameter('recovery_pose', 'home')
