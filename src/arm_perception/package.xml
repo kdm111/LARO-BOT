@@ -3,9 +3,9 @@
 <package format="3">
   <name>arm_perception</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>고정 RGB 카메라 색 검출로 /scene_state 를 발행하는 인지 노드</description>
   <maintainer email="pjsu94@naver.com">js</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

@@ -38,8 +38,16 @@ OBJECTS = {
     'green_block': {
         # 불량품. red_block과 모양·크기가 같아 plane_z/min_long을 공유한다.
         # 색 RGB(0.05, 0.75, 0.15) = H 64 부근. 빨강(0/175)·파랑(113)과 안 겹친다.
+        # ★ 2026-08-20 실물 재캘리브: H 상한 80 -> 85.
+        #   실물 블록은 sim 모델보다 청록 쪽이다 - 윗면 H 중앙값 80, 앞면 79~98.
+        #   상한 80으로는 앞면 대부분이 잘려 blob이 61x27px(면적 1102)로 조각났고
+        #   min_long 5.5cm 게이트에 걸려 발행되지 않았다(긴 변 5.3cm).
+        #   85로 올리면 70x62px(3517)로 블록 전체가 잡힌다.
+        #   blue_ring 은 H 102~119 라 17 이상 여유가 있다(누출 화소 0 실측).
+        #   red_block 의 S 하한 120->90(08-17)과 같은 종류의 실물 재캘리브다 -
+        #   그때는 채도였고 이번은 색상이다.
         'hsv': [
-            (np.array([50, 90, 70]), np.array([80, 255, 255])),
+            (np.array([50, 90, 70]), np.array([85, 255, 255])),
         ],
         'plane_z': 0.02,
         'min_long': 0.055,
@@ -53,6 +61,38 @@ OBJECTS = {
         # 2026-08-14 실측 4개 지점: 정상 5.8~6.2cm(실치수 6.0 - 납작해서 부풀림이 작다),
         # 블록에 가려 조각났을 때 4.5cm. 그 사이에 둔다.
         'min_long': 0.052,
+        # ★ 2026-08-21 : 원형 물체 표시. 마스크가 조각나면(조명 반사·팔 그림자)
+        #   "가장 큰 조각"의 무게중심이 링 중심에서 호 쪽으로 치우친다 - 그 좌표로
+        #   세 번 연속 옆(오른쪽)을 헛짚었다(2~5cm 오차 실측). 호들은 모두 같은
+        #   원 위에 있으므로 조각 전체의 최소 외접원 중심을 발행한다(find_blob).
+        'circle': True,
+        # ★ 상한 게이트(링 전용). 합성이 링이 아닌 파란 반사 조각까지 물면 관측
+        #   길이가 뛴다 - 정상 상한 6.2 에 여유를 얹은 값 밖이면 발행하지 않는다.
+        #   블록의 "상한은 두지 않는다"(6.3~8.4 흔들림)와 달리 링은 납작해 분산이 작다.
+        'max_long': 0.070,
+        # ★ 2026-08-21 저녁, 팔-자 실측으로 보정을 교체했다.
+        #   방법 : trace_zone 을 한 점으로 모아 "무보정 검출 좌표" 위 6cm 에 손끝을
+        #   세우고(팔은 같은 날 trace_zone 으로 구역 표시와 ~1cm 일치 검증됨),
+        #   손끝-링 중심의 어긋남을 눈으로 읽었다 : +y 로 1.5cm, x 는 정확.
+        #   -> 보정 dy = -0.015, dx 없음.
+        #   구 보정(dx -0.030)은 벽 집기 관찰("+x 로 벗어남")에서 추론한 값이었는데
+        #   이 실측과 어긋난다 - 추론 보정을 얹은 동안 훅 조준이 계속 빗나갔다.
+        #   ⚠️ (0.190, -0.040) 한 지점에서 잰 값이다. 다른 자리에서 어긋나면
+        #   상수가 아니라 위치 의존(왜곡·외부 파라미터)이라는 뜻이다.
+        # ★ 2026-08-22 새벽, 포크 3점 재실측으로 "상수 +0.024"로 확정.
+        #     y=-0.170 / -0.034 / +0.060 세 자리 모두 : 손끝이 -y 벽 위 = dy +0.024
+        #   첫 실측(-0.015, 21일 저녁)과 같은 y 대역에서 정반대가 나왔다 - 그 사이
+        #   카메라 체인이 틀어진 것으로 본다(낡은 값 폐기). 한때 "y 비례 1차식"을
+        #   넣었지만 그건 두 시대의 값을 섞어 만든 허상이었다 - 같은 시각에 잰
+        #   세 점이 상수로 일치한다.
+        #   ⚠️ 카메라가 움직였다면 어제 잰 구역 좌표(cell_layout)도 같이 밀렸을
+        #   수 있다 - place 정확도에서 드러나면 구역 재실측이 필요하다.
+        # ★ 2026-08-22 새벽 2:30 : 전원 리셋 직후 또 틀어졌다(+0.024 가 왼쪽 과보정).
+        #   이 값은 상수가 아니라 "전원/하드웨어 세션마다 흘러 다니는 값"이다 -
+        #   소스 상수를 버리고 런타임 파라미터 ring_dy 로 옮겼다(아래 to_object).
+        #   재보정 절차 : 링을 놓고 trace_zone 을 한 점으로 무보정 좌표를 짚어
+        #   어긋남을 읽은 뒤  ros2 param set /object_detector ring_dy <값>
+        'world_dy': 0.024,   # ring_dy 파라미터의 기본값으로만 쓰인다
     },
 }
 
@@ -61,6 +101,9 @@ class ObjectDetector(Node):
 
     def __init__(self):
         super().__init__('object_detector')
+        # ★ 2026-08-22 : 링 y 보정. 전원 세션마다 값이 흘러 다녀 파라미터로 뒀다.
+        #   재보정 : poke 실측 -> ros2 param set /object_detector ring_dy <값>
+        self.declare_parameter('ring_dy', OBJECTS['blue_ring']['world_dy'])
         self.bridge = CvBridge()
         self.sub = self.create_subscription(
             Image, '/camera/image_raw', self.on_image, 10)
@@ -172,6 +215,7 @@ class ObjectDetector(Node):
             mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         centers = []
+        kept = []   # ★ 2026-08-21 : 게이트를 통과한 외곽선 원본. 원형 물체 합성에 쓴다.
         for c in contours:
             area = cv2.contourArea(c)
             if area < MIN_AREA:
@@ -185,11 +229,34 @@ class ObjectDetector(Node):
             # 최소 외접 회전 사각형. 물체가 어느 쪽을 향하는 지는 여기서만 나온다.
             box = cv2.boxPoints(cv2.minAreaRect(c))
             centers.append((u, v, area, box))
+            kept.append(c)
             cv2.circle(frame, (u, v), 5, (0, 255, 0), -1)  # 디버그 영상에 초록색 점 표시
             cv2.drawContours(frame, [box.astype(np.int32)], 0, (255, 0, 0), 2)
 
         if not centers:
             return None
+
+        # ★ 2026-08-21 : 원형 물체(spec 'circle')는 조각을 버리지 않고 전부 합쳐 푼다.
+        #   마스크는 조명 반사·팔 그림자로 수시로 조각나는데("blob 2~3개" 다발),
+        #   큰 조각(호)의 무게중심은 링 중심이 아니라 그 호 쪽으로 치우친다 -
+        #   그 좌표가 세 번 연속 옆을 헛짚게 했다(2026-08-21 실측 오차 2~5cm).
+        #   호들은 같은 원 위에 있으므로 "모든 조각의 최소 외접원" 중심이 링 중심이다.
+        #   온전한 마스크에서는 무게중심과 같은 값이라 잃는 것이 없다.
+        #   minAreaRect 도 조각 전체로 감싼다 - min_long 가림 게이트가 그대로 살고
+        #   (호가 반 이하로 줄면 긴 변이 짧아져 걸러진다), 잡동사니가 섞여 부풀면
+        #   max_long 상한 게이트가 거른다(둘 다 to_object).
+        if spec.get('circle'):
+            pts = np.vstack(kept)
+            (cu, cv2_v), _ = cv2.minEnclosingCircle(pts)
+            u, v = int(cu), int(cv2_v)
+            box = cv2.boxPoints(cv2.minAreaRect(pts))
+            cv2.circle(frame, (u, v), 7, (0, 255, 255), 2)   # 노란 원 = 합성 중심
+            if len(centers) > 1:
+                self.get_logger().info(
+                    f'{object_id} blob {len(centers)}개 - 외접원으로 합성 발행',
+                    throttle_duration_sec=2.0
+                )
+            return (u, v, box)
 
         # 한 색 = 한 물체 계약. 같은 색 blob이 여러 개여도 가장 큰 것 하나만 쓴다.
         # 팔에 가려져 조각나면 blob이 여러 개로 보이는데, 그때 id가 흔들리면
@@ -231,13 +298,29 @@ class ObjectDetector(Node):
                 f'{object_id} 긴 변 {length * 100:.1f}cm - 가림 의심, 발행 안 함',
                 throttle_duration_sec=2.0)
             return None
+        # ★ 2026-08-21 상한 게이트. 링의 외접원 합성(find_blob)이 링 아닌 파란
+        #   조각(반사 등)까지 물면 관측 길이가 뛴다 - 부푼 좌표를 발행하느니 거른다.
+        #   max_long 이 있는 물체(지금은 blue_ring)만 적용된다.
+        if length > spec.get('max_long', float('inf')):
+            self.get_logger().warn(
+                f'{object_id} 긴 변 {length * 100:.1f}cm - 합성 부풀림 의심, 발행 안 함',
+                throttle_duration_sec=2.0)
+            return None
 
         obj = DetectedObject()
         obj.object_id = object_id   # 색이 곧 identity다
         obj.pose.header.stamp = stamp
         obj.pose.header.frame_id = WORLD_FRAME
-        obj.pose.pose.position.x = p[0]
-        obj.pose.pose.position.y = p[1]
+        # ★ 2026-08-21 물체별 실측 보정(스펙 world_dx/dy, 기본 0). 근거는 스펙 주석.
+        # ★ 2026-08-22 새벽 : 링 보정은 런타임 파라미터 ring_dy 가 우선한다.
+        #   값이 전원 세션마다 흘러 다녀서(하룻밤에 -1.5 -> +2.4 -> 또 이동)
+        #   소스에 박으면 재보정마다 빌드가 필요했다. 이제 poke 실측 후
+        #   ros2 param set /object_detector ring_dy <값> 한 줄이면 된다.
+        dy = spec.get('world_dy', 0.0)
+        if object_id == 'blue_ring':
+            dy = self.get_parameter('ring_dy').value
+        obj.pose.pose.position.x = p[0] + spec.get('world_dx', 0.0)
+        obj.pose.pose.position.y = p[1] + dy
         obj.pose.pose.position.z = spec['plane_z']
         # 테이블 평면 위의 회전이라 z축 회전 쿼터니언 하나로 계산한다.
         obj.pose.pose.orientation.z = math.sin(yaw / 2.0)
