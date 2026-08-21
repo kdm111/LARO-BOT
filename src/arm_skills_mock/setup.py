@@ -15,8 +15,8 @@ setup(
     zip_safe=True,
     maintainer='js',
     maintainer_email='pjsu94@naver.com',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    description='팔 없이 스킬 액션 계약을 흉내내는 mock 서버(파라미터로 실패 주입)',
+    license='Apache-2.0',
     extras_require={
         'test': [
             'pytest',

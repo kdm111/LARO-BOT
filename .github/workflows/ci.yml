@@ -1,4 +1,4 @@
-# push/PR 마다 패키지를 colcon으로 빌드 + 테스트 -> gtest 26개 python lint를 회귀로 지킴
+# push/PR 마다 패키지를 colcon으로 빌드 + 테스트 -> gtest 31개(IK 26 + KDL 5) python lint를 회귀로 지킴
 name: ci
 
 on:
