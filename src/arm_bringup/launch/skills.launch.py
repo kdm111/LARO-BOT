@@ -24,6 +24,29 @@ def generate_launch_description():
         default_value='false',
         description='sim이면 true(가제보 /clock), 실물이면 false(벽시계)'
     )
+    declare_pick_center_y_trim = DeclareLaunchArgument(
+        'pick_center_y_trim',
+        default_value='0.0',
+        description='work 구역 pick에만 더하는 실물 y 트림(m)'
+    )
+    declare_pick_counter_x_trim = DeclareLaunchArgument(
+        'pick_counter_x_trim', default_value='0.0',
+        description='counter 구역 pick에만 더하는 +x 트림(m)')
+    declare_pick_shelf_x_trim = DeclareLaunchArgument(
+        'pick_shelf_x_trim', default_value='0.0',
+        description='shelf 구역 pick에만 더하는 +x 트림(m)')
+    declare_pick_bin_x_trim = DeclareLaunchArgument(
+        'pick_bin_x_trim', default_value='0.0',
+        description='bin 구역 pick에만 더하는 +x 트림(m)')
+    declare_pick_counter_y_trim = DeclareLaunchArgument(
+        'pick_counter_y_trim', default_value='0.0',
+        description='counter 구역 pick에만 더하는 +y 트림(m)')
+    declare_pick_shelf_y_trim = DeclareLaunchArgument(
+        'pick_shelf_y_trim', default_value='0.0',
+        description='shelf 구역 pick에만 더하는 +y 트림(m)')
+    declare_pick_bin_y_trim = DeclareLaunchArgument(
+        'pick_bin_y_trim', default_value='0.0',
+        description='bin 구역 pick에만 더하는 +y 트림(m)')
 
     skill_server = Node(
         package='arm_skills',
@@ -32,7 +55,31 @@ def generate_launch_description():
         parameters=[{
             'use_sim_time': ParameterValue(
                 LaunchConfiguration('use_sim_time'), value_type=bool),
+            'pick_center_y_trim': ParameterValue(
+                LaunchConfiguration('pick_center_y_trim'), value_type=float),
+            'pick_counter_x_trim': ParameterValue(
+                LaunchConfiguration('pick_counter_x_trim'), value_type=float),
+            'pick_shelf_x_trim': ParameterValue(
+                LaunchConfiguration('pick_shelf_x_trim'), value_type=float),
+            'pick_bin_x_trim': ParameterValue(
+                LaunchConfiguration('pick_bin_x_trim'), value_type=float),
+            'pick_counter_y_trim': ParameterValue(
+                LaunchConfiguration('pick_counter_y_trim'), value_type=float),
+            'pick_shelf_y_trim': ParameterValue(
+                LaunchConfiguration('pick_shelf_y_trim'), value_type=float),
+            'pick_bin_y_trim': ParameterValue(
+                LaunchConfiguration('pick_bin_y_trim'), value_type=float),
         }],
     )
 
-    return LaunchDescription([declare_use_sim_time, skill_server])
+    return LaunchDescription([
+        declare_use_sim_time,
+        declare_pick_center_y_trim,
+        declare_pick_counter_x_trim,
+        declare_pick_shelf_x_trim,
+        declare_pick_bin_x_trim,
+        declare_pick_counter_y_trim,
+        declare_pick_shelf_y_trim,
+        declare_pick_bin_y_trim,
+        skill_server,
+    ])

@@ -7,6 +7,17 @@ SkillServer::SkillServer()
   //   값을 1초로 줄이면 정상 이동에서도 발동해 실물로 시험할 수 있다.
   //   기본 15초 : 관측된 최장 이동(~4초, 든 손 저속 포함)의 여유배.
   declare_parameter("exec_watchdog_sec", 15.0);
+  // work 구역 블록 집기 전용 y 트림. 실물 카메라 세션에서 중심보다
+  // 오른쪽(-y)을 무는 잔차를 런타임에 보정한다. place와 바깥 구역에는 적용하지 않는다.
+  declare_parameter("pick_center_y_trim", 0.0);
+  // 카메라 매핑의 위치별 x 오차. 각 place 구역 안에서 pick할 때만 적용한다.
+  // 값은 로봇에서 멀어지는 방향(+x)이 양수다.
+  declare_parameter("pick_counter_x_trim", 0.0);
+  declare_parameter("pick_shelf_x_trim", 0.0);
+  declare_parameter("pick_bin_x_trim", 0.0);
+  declare_parameter("pick_counter_y_trim", 0.0);
+  declare_parameter("pick_shelf_y_trim", 0.0);
+  declare_parameter("pick_bin_y_trim", 0.0);
   // move_to 액션 서버 등록 (상대 이름 > /move_to). 콜백 3개 연결.
   move_to_server_ = rclcpp_action::create_server<MoveTo>(
     this, "move_to",

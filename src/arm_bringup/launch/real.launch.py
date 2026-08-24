@@ -100,6 +100,29 @@ def generate_launch_description():
         default_value='false',
         description='MoveIt RViz (플래닝 씬까지 본다). start_rviz와 별개다'
     )
+    declare_pick_center_y_trim = DeclareLaunchArgument(
+        'pick_center_y_trim',
+        default_value='0.045',
+        description='work 구역 블록 pick을 화면 왼쪽(+y)으로 옮기는 실물 트림(m)'
+    )
+    declare_pick_counter_x_trim = DeclareLaunchArgument(
+        'pick_counter_x_trim', default_value='0.015',
+        description='counter pick을 로봇에서 먼 방향(+x)으로 옮기는 실물 트림(m)')
+    declare_pick_shelf_x_trim = DeclareLaunchArgument(
+        'pick_shelf_x_trim', default_value='0.0',
+        description='shelf pick의 실물 +x 트림(m)')
+    declare_pick_bin_x_trim = DeclareLaunchArgument(
+        'pick_bin_x_trim', default_value='0.0',
+        description='bin pick의 실물 +x 트림(m)')
+    declare_pick_counter_y_trim = DeclareLaunchArgument(
+        'pick_counter_y_trim', default_value='0.020',
+        description='counter pick을 shelf 방향(+y)으로 옮기는 실물 트림(m)')
+    declare_pick_shelf_y_trim = DeclareLaunchArgument(
+        'pick_shelf_y_trim', default_value='0.0',
+        description='shelf pick의 실물 +y 트림(m)')
+    declare_pick_bin_y_trim = DeclareLaunchArgument(
+        'pick_bin_y_trim', default_value='0.0',
+        description='bin pick의 실물 +y 트림(m)')
 
     def on(name):
         return IfCondition(LaunchConfiguration(name))
@@ -124,7 +147,14 @@ def generate_launch_description():
     perception = _include(
         share, 'perception.launch.py', condition=on('detector'), use_sim_time='false')
     skills = _include(
-        share, 'skills.launch.py', condition=on('skills'), use_sim_time='false')
+        share, 'skills.launch.py', condition=on('skills'), use_sim_time='false',
+        pick_center_y_trim=LaunchConfiguration('pick_center_y_trim'),
+        pick_counter_x_trim=LaunchConfiguration('pick_counter_x_trim'),
+        pick_shelf_x_trim=LaunchConfiguration('pick_shelf_x_trim'),
+        pick_bin_x_trim=LaunchConfiguration('pick_bin_x_trim'),
+        pick_counter_y_trim=LaunchConfiguration('pick_counter_y_trim'),
+        pick_shelf_y_trim=LaunchConfiguration('pick_shelf_y_trim'),
+        pick_bin_y_trim=LaunchConfiguration('pick_bin_y_trim'))
     agent = _include(share, 'agent.launch.py', condition=on('agent'))
 
     # ★ moveit만 늦춘다. robot_state_publisher가 /robot_description을 낼 때까지
@@ -145,6 +175,13 @@ def generate_launch_description():
         *declare_switches,
         declare_start_rviz,
         declare_moveit_rviz,
+        declare_pick_center_y_trim,
+        declare_pick_counter_x_trim,
+        declare_pick_shelf_x_trim,
+        declare_pick_bin_x_trim,
+        declare_pick_counter_y_trim,
+        declare_pick_shelf_y_trim,
+        declare_pick_bin_y_trim,
         arm,
         camera,
         camera_tf,

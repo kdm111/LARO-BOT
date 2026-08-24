@@ -324,7 +324,7 @@ Ollama 모델이 자연어를 JSON 스킬 계획으로 만들게 했다. 출력�
 - 파란 링은 pick/place 사례가 있지만 연속 반복 성공률을 확정하지 못했다.
 - 그리퍼 서보 전원 순단의 근본 원인은 완전히 닫지 못했다.
 - pick/place 시퀀스 중간 cancel은 지원하지 않으며 요청을 정직하게 거부한다.
-- 전체 recovery 상태 머신은 Gazebo 검증이며 실물 고장 주입은 부분 검증이다.
+- 전체 recovery 상태 머신은 Gazebo 검증이며 실물 고장 주입은 부분 검증이다. 다만 2026-08-22 실물에서 `GRIPPER_EMPTY → 재파지 → 복구 예산 소진 → 중단`의 전체 사이클이 자연 발생으로 1회 확인되었다(계획된 반복 주입은 아니다).
 - Planning Scene에 주변 물체와 든 물체를 자동 반영하는 기능은 없다.
 - 현재 LLM 검증기는 스텝별 계약은 검사하지만 모든 2단계 계획이 반드시 `같은 물체의 pick → place`인지 보장하는 의미 불변식은 추가 보강 여지가 있다.
 - CI는 전체 핵심 패키지를 아직 모두 포괄하지 않으며, 최신 전체 테스트를 깨끗한 한 장의 결과로 마감하는 작업이 남아 있다.
@@ -393,6 +393,152 @@ AI와 다국어는 좋은 차별점이지만 첫 번째 직무 정체성은 아�
 - 동역학·힘 제어·whole-body control
 - 산업 안전 인증 시스템
 - 범용 자율 로봇 제품
+
+### 11.1 2026-08-23 채용 공고 검색으로 다시 확인한 결론
+
+아래 표는 **2026-08-23에 공개 페이지가 열려 있거나 채용 목록에서 현재 노출되는 공고**를 기준으로 작성했다. `상시`, `채용 시 마감` 공고도 예고 없이 닫힐 수 있으므로 실제 지원 직전 48시간 안에 원문을 다시 확인한다. 여기서 `A`, `B`는 합격 가능성 예측이 아니라 **이 프로젝트가 이미 가진 증거와 JD의 거리**다.
+
+#### A 레인 — 지금 가진 증거로 설명이 바로 되는 공고
+
+| 우선 | 공고 | 공고가 요구하는 핵심 | 이 프로젝트의 직접 증거 | 지원 시 정직하게 말할 간극 |
+|---:|---|---|---|---|
+| 1 | [로보티즈 · 휴머노이드 시스템 소프트웨어 엔지니어](https://robotisrecruiter.ninehire.site/job_posting/aE8A4gYI) | ROS 2 시스템 SW, 센서·액추에이터·제어기 연동, DYNAMIXEL, ros2_control, 실로봇 이슈 분석. 경력 무관·채용 시 마감 | OpenRB/DYNAMIXEL 실기, ros2_control controller 3종, C++/Python, Linux·serial·USB 디버깅, MoveIt 연동 | 벤더 hardware interface를 **연동·진단**했지 새 HAL/driver를 처음부터 작성한 것은 아님 |
+| 2 | [어드밴텍 · Linux & Robot Application Engineer (ROS)](https://www.peoplenjob.com/jobs/6241248) | Linux application, ROS 1/2 robot application, camera interface, USB/MIPI debugging, OpenCV. 제목은 신입·채용 시 | USB RGB camera, `usb_cam`, CameraInfo·TF, OpenCV detector, ROS 2 application, C++/Python | MIPI와 상용 vision product 경험은 없음. 페이지의 제목은 신입이지만 경력 필드가 혼재하므로 지원 전 확인 |
+| 3 | [로보티즈 · 상시 인턴 Physical AI 제품 기능/RX 시스템](https://robotisrecruiter.ninehire.site/job_posting/iuFSE1yT) | ROS 2 제어·센서·통신 통합, sim-real 연동, 실패 분석, 예제·매뉴얼, MoveIt/Gazebo | 이 저장소의 전체 구조와 거의 일치. 실물 팔, Gazebo, 실패 원장, 재현 명령, 촬영 계획까지 제시 가능 | Isaac Sim과 학습 기반 정책은 이 프로젝트의 주력 증거가 아님 |
+| 4 | [리얼월드 · Robotics Deployment 인턴](https://www.wanted.co.kr/wd/322082) | 로봇·센서 HW/SW setup, 현장 테스트·디버깅·성능 검증, 데이터·기술 문서, ROS 2/C++/Python | 단계별 bring-up, 장치 권한·serial·controller·TF 진단, 실측표, rosbag, 마일스톤 문서 | 고객사 배포·3D scanner·학습 데이터 운영은 미경험 |
+| 5 | [Riibotics · 소프트웨어 엔지니어 인턴](https://riibotics.career.greetinghr.com/ko/o/122388) | ROS 2 package/architecture, sensor driver 연동, Linux, Gazebo/Isaac 기반 시험 | 8개 로컬 패키지 경계, launch/config, camera 연동, Gazebo와 실물의 동일 Action 계약 | LiDAR·IMU·Nav2 및 Isaac Sim 경험은 없음 |
+| 6 | [엑스와이지 · 로봇 제어 엔지니어](https://xyz.career.greetinghr.com/ko/o/198921) | ROS 2 기반 제어 시스템, 센서·모터 node/interface 연동. 채용 목록상 경력 무관 | sensor→Action→controller→motor 전체 연결, 그리퍼 feedback, 오류 코드, 실물 안정화 | 저수준 motor control과 동역학 제어를 직접 개발했다고 주장하면 안 됨 |
+
+이 중 **로보티즈 시스템 SW**는 단순히 ROS 2라는 단어만 겹치는 공고가 아니다. `DYNAMIXEL`, `ros2_control`, 센서·액추에이터·제어기 연동, 실로봇 이슈 분석까지 프로젝트의 실제 문제와 같은 언어로 적혀 있다. 따라서 현재 가장 강한 1순위 증거는 LLM 데모가 아니라 **실물 bring-up과 하드웨어 경계 디버깅**이다.
+
+#### B 레인 — 핵심은 맞지만 연구·경력·산업 깊이의 간극이 있는 공고
+
+| 공고 | 맞는 부분 | 현재 간극 | 지원 판단 |
+|---|---|---|---|
+| [피트인 · 매니퓰레이터 제어 엔지니어](https://www.wanted.co.kr/wd/358808) | 실물 매니퓰레이터, FK/IK, OMPL/MoveIt, vision-to-control, 반복 실험 | 동역학·진동 제어, 산업용 arm, planner 커스터마이징 경험 부족 | 조작 직무 B 레인으로 도전. analytic IK와 실물 오차 분리를 전면에 둠 |
+| [LiOps · Robotics Engineer](https://www.wanted.co.kr/wd/318704) | ROS/ROS 2 manipulation, 실물 HW 통합·디버깅, motion planning, Gazebo, fail-safe | 3D point cloud, AMR/Nav, 산업용 arm, 100ms 최적화, 현장 PoC 부족 | 공고의 핵심 요건 중 ROS와 실물 HW 두 축으로 도전하되 3D/AMR 간극 공개 |
+| [로아이 · Motion Planning Engineer](https://www.wanted.co.kr/wd/275399) | kinematics, C++/Python, ROS 2, sim-real planning 검증 | 경력 1~5년, Isaac Sim, RRT/PRM 자체 구현·최적화, dynamics 부족 | MoveIt **사용 경험**을 planner 알고리즘 개발로 부풀리지 않는 조건부 도전 |
+| [투모로 · Robotics Systems & Platform SW](https://tommoro.ai/career/robotics-systems-platform-software-engineer) | package/node/launch/config, sensor-actuator-AI interface, serial, Docker, test, 문서, 실로봇 안정화 | 석사 또는 학사+2년/동등 역량, HAL·network·telemetry·CI/CD·성능 분석 깊이 | 직무 방향은 매우 정확한 상향 지원. 시스템 증거 묶음으로 `동등 역량`을 설득 |
+| [위로보틱스 · 로봇 소프트웨어 엔지니어](https://rih.wirobotics.com/careers/robot-software) | Linux/ROS 2/DDS, logging·monitoring, Gazebo/Isaac, CI integration test | real-time Linux, multithreading, network, 대규모 시스템과 고성능 최적화 부족 | 현재 정체성의 다음 단계. 당장 주력보다 성장 방향을 보여주는 공고 |
+
+공고들을 함께 보면 회사와 로봇 형태가 달라도 다음 요구가 반복된다.
+
+1. `package/node/launch/parameter/config`로 시스템을 구성하는 ROS 2 구조화 능력
+2. camera·sensor·actuator·controller·AI 사이의 명시적인 interface
+3. C++와 Python, Linux 환경에서의 build·run·debug
+4. 실제 하드웨어 bring-up, serial/USB/network 문제 분리, field debugging
+5. kinematics·motion planning·simulation 결과를 실물에 적용하고 검증한 경험
+6. logging·bag·test·문서·재현 절차를 통해 한 번의 성공을 운영 가능한 증거로 바꾸는 능력
+
+이 반복 요구 때문에 이 프로젝트의 취업용 이름은 그대로 유지한다.
+
+> **ROS 2 기반 실물 매니퓰레이터 Application/System Integration**
+>
+> 부제: **perception·planning·control·hardware를 같은 계약으로 연결하고 실패를 측정한 작업 셀**
+
+`Physical AI`, `다국어`, `LLM`은 관심을 끄는 두 번째 문장이다. 첫 문장에서 AI를 앞세우면 실제로 가장 잘 맞는 시스템·응용·deployment 공고의 핵심 증거가 뒤로 밀린다.
+
+### 11.2 공고 요구와 저장소 증거의 정확한 연결
+
+| 반복되는 JD 문장 | 저장소에서 보여줄 증거 | 실물·수치 증거 | 촬영해야 할 장면 |
+|---|---|---|---|
+| ROS 2 package/node/interface 설계 | [`src/arm_interfaces`](src/arm_interfaces), [`src/arm_bringup`](src/arm_bringup), Action 3종과 상태 message | mock→Gazebo→real에서 같은 goal/result 계약 유지 | package tree, Action 정의, `node/action list`, 단계별 bring-up |
+| C++/Python 통합 | C++ `arm_kinematics`·`arm_skills`, Python `arm_perception`·`arm_agent` | Python scene이 C++ Action goal로 이어져 실물 실행 | 코드 두 화면과 실제 결과를 같은 clip에서 연결 |
+| sensor·actuator·controller 연동 | `usb_cam`→TF→detector→MoveIt→ros2_control→DYNAMIXEL | `/scene_state` 약 30Hz, `/joint_states` 약 100Hz, controller 3종 active | 카메라 debug, TF, controller, 실제 팔을 순서대로 촬영 |
+| kinematics·motion planning | [`src/arm_kinematics/src/ik.cpp`](src/arm_kinematics/src/ik.cpp), branch·joint-limit·FK oracle, MoveIt plan/execute 분리 | 팔 6점 목표 오차 1~6mm, red pick 3회 연속 | IK round-trip test, unreachable 거부, MoveIt 계획, 실물 pick |
+| 실로봇 bring-up·debug | [`real_arm.launch.py`](src/arm_bringup/launch/real_arm.launch.py), Docker device/cgroup, 계층별 원장 | ACM 번호 변경, serial 단절, controller, gripper torque 문제를 실측으로 분리 | USB 장치→controller→topic→motion을 하나씩 올리는 화면 |
+| 실패·안전 처리 | [`ErrorCode.msg`](src/arm_interfaces/msg/ErrorCode.msg), single-flight, stale gate, watchdog, cancel, safe park | cancel·single-flight·watchdog·stale·종료 실물 발동 확인 | 재현 위험이 낮은 terminal 증거 + 이미 검증된 cancel 1회 |
+| simulation과 실물 검증 | Gazebo scene과 real launch가 동일 Action 계층 사용 | 정상 동작은 실물, 위험한 recovery 반복은 Gazebo | 같은 `/pick` 계약의 sim/real 병렬 편집 |
+| AI와 결정론적 실행의 경계 | schema·화이트리스트·scene validation·fallback | 242개 계획 변환 평가, 최고 220/242; 로봇 성공률과 분리 | 자연어→JSON→검증→Action을 단계별 화면으로 촬영 |
+| test·logging·문서 | GTest, pytest, CSV 평가, rosbag, `handoff/milestones` | 수치의 조건·실패·한계까지 원장으로 추적 가능 | 테스트 결과, bag info, 실측표, known limitations 카드 |
+
+이 표에서 중요한 점은 “사용했다”와 “개발했다”를 구분하는 것이다.
+
+- 직접 설계·구현한 것: 사용자 정의 interface, analytic IK/FK, C++ skill orchestration, OpenCV perception adapter, agent/validator/recovery, launch/config 경계, 실물 시험과 측정 절차
+- 프레임워크를 구성·연동·디버깅한 것: MoveIt 2, ros2_control, Gazebo, DYNAMIXEL hardware interface, `usb_cam`
+- 사용하지 않은 것: Isaac Sim, LiDAR/point cloud, Nav2/SLAM, EtherCAT/CAN, force/impedance control, industrial robot language
+
+면접에서 두 번째 항목을 첫 번째처럼 말하지 않는 편이 오히려 강하다. 프레임워크 내부 알고리즘을 만들지 않았어도, 서로 다른 계층이 실제 장비에서 올바른 결과와 실패를 주고받게 만든 통합 경험은 별도의 실무 역량이다.
+
+### 11.3 이 프로젝트가 단순 튜토리얼보다 강한 이유
+
+튜토리얼은 보통 정상 경로 한 번에서 끝난다. 이 프로젝트의 채용 가치는 다음 다섯 경계를 실제 문제로 통과했다는 데 있다.
+
+1. **센서와 로봇의 경계**: 픽셀을 TF와 평면 가정으로 world 좌표로 바꾸고 오차를 별도 측정했다.
+2. **계획과 실행의 경계**: MoveIt plan 성공과 DYNAMIXEL execute 실패를 분리해 거짓 성공을 막았다.
+3. **시뮬레이션과 실물의 경계**: camera pitch, TCP 높이, 중력·마찰, USB 권한처럼 sim에 없던 오차를 다시 측정했다.
+4. **확률 모델과 결정론적 제어의 경계**: LLM은 최대 2단계 고수준 계획만 제안하고 validator와 Action server가 실행 권한을 갖는다.
+5. **기능과 운영의 경계**: cancel, stale data, single-flight, watchdog, 종료, 복구 예산과 known limitation을 명시했다.
+
+따라서 대표 영상도 “블록을 집었다”만 보여주면 프로젝트 가치의 절반 이상을 버린다. **장치가 하나씩 살아나는 과정, 실패를 올바르게 보고하는 장면, 측정값과 로그**가 함께 있어야 공고가 찾는 실무 증거가 된다.
+
+### 11.4 지원 우선순위와 포트폴리오 구성
+
+지원은 프로젝트가 더 완벽해질 때까지 미루지 않는다.
+
+1. 로보티즈 시스템 SW와 어드밴텍 Robot Application처럼 현재 증거가 JD 문장과 직접 겹치는 정규직 공고
+2. 로보티즈·리얼월드·Riibotics처럼 실물 프로젝트가 강한 구분자가 되는 인턴·전환형 공고
+3. 피트인·LiOps처럼 조작·통합 핵심은 맞고 산업 장비·3D·경력 간극이 있는 도전 공고
+4. 투모로·위로보틱스처럼 system platform의 다음 성장 방향을 보여주는 상향 공고
+5. pure VLA/RL, perception research, dynamics/force control 전담은 이 프로젝트 하나로 억지 지원하지 않음
+
+제출 묶음은 다음 순서가 좋다.
+
+```text
+1페이지 요약
+→ 60~90초 대표 영상
+→ 2~4분 기술 증거 영상
+→ 무편집 real master와 Git 저장소
+→ 실측·실패 원장 링크
+```
+
+채용 담당자는 처음부터 30분짜리 영상을 보지 않는다. 짧은 영상으로 관심을 얻고, 기술 면접관이 원하면 독립 clip과 원장으로 깊이를 확인하게 한다.
+
+### 11.5 이력서·면접에 바로 쓸 핵심 문장
+
+**이력서 제목**
+
+> ROS 2 기반 실물 매니퓰레이터 시스템 통합 — RGB perception, analytic IK, MoveIt 2, ros2_control, DYNAMIXEL
+
+**bullet 후보**
+
+- ROS 2 Action을 경계로 RGB camera, 5축 analytic IK, MoveIt 2, ros2_control, DYNAMIXEL arm/gripper를 연결하고 Gazebo와 실물에서 동일한 `pick/place/move_to` 계약을 유지했습니다.
+- 실물 `/joint_states` 약 100Hz와 `/scene_state` 약 30Hz를 확인하고, 서로 다른 위치의 camera-derived red pick 3회 연속과 3개 목적지 place 단계를 검증했습니다.
+- plan 성공과 execute 성공을 분리해 serial 단절의 거짓 성공을 차단하고, stale scene·single-flight·watchdog·cancel·안전 종료를 명시적 결과로 만들었습니다.
+- LLM을 motor command 경로에서 분리하고 schema·화이트리스트·scene validation·deterministic fallback으로 제한했으며, 10개 언어를 포함한 242개 계획 변환 시험으로 모델을 비교했습니다.
+
+한 지원서에는 2~3개만 선택한다. 로보티즈 시스템 SW에는 1·3번, 어드밴텍에는 1·2번과 camera 디버깅, deployment에는 2·3번과 실측 문서를 우선한다.
+
+**면접 첫 45초**
+
+> “저는 ROS 2에서 센서, 계획, controller, actuator 사이의 계약을 설계하고 실물에서 안정화하는 쪽을 목표로 합니다. 이 프로젝트에서는 RGB 카메라의 scene state를 C++ Action skill로 연결하고, analytic IK와 MoveIt 2를 거쳐 ros2_control과 DYNAMIXEL 팔을 움직였습니다. 특히 plan 성공과 실제 execute 실패를 분리하고 stale data, 동시 goal, timeout, cancel을 명시적인 실패로 만들었습니다. AI는 모터 제어가 아니라 검증 가능한 고수준 계획에만 제한했습니다.”
+
+### 11.6 현재 공백과 다음 학습 방향
+
+| 공고에서 반복되지만 현재 약한 영역 | 현재 사실 | 면접에서의 정직한 답 | 프로젝트를 지금 확장할지 |
+|---|---|---|---|
+| hardware interface/driver 자체 개발 | DYNAMIXEL interface를 연동·진단했지만 vendor 구현이 기반 | “상위 계약과 controller 연동, 장치·통신 진단까지 했고 HAL 신규 작성은 미경험” | 같은 요구가 지원 피드백에서 반복될 때 작은 mock driver 과제로 분리 |
+| DDS·network·real-time·latency profiling | ROS_DOMAIN_ID와 DDS 통신을 운용했지만 middleware 튜닝·RT 분석은 얕음 | “기능 통합 경험은 있고 정량 latency/RT 최적화는 다음 학습 영역” | 현재 대표 영상보다 우선하지 않음 |
+| CI/CD·diagnostics·telemetry·replay | Docker, test, rosbag, 문서는 있으나 제품 수준 자동화는 아님 | “재현·기록 기반은 만들었고 CI 범위와 telemetry는 한계로 공개” | 문서·영상 마감 후 작은 CI 보강만 검토 |
+| 3D sensor·Planning Scene | 단안 RGB+평면 가정, 주변 물체 collision scene 자동 반영 없음 | “고정 셀 가정으로 범위를 제한했고 3D 일반화는 주장하지 않음” | 이 프로젝트에는 추가하지 않음 |
+| dynamics·force/impedance·trajectory optimization | 위치 제어와 OMPL 사용 수준 | “IK와 실행 통합은 했지만 동역학·힘 제어 알고리즘 개발은 미경험” | 별도 학습 프로젝트가 필요한 영역 |
+| Isaac Sim·industrial arm·field deployment | Gazebo와 소형 DYNAMIXEL arm 실기 | “sim-real 문제 분리 경험은 있지만 해당 플랫폼·고객 현장은 미경험” | 취업 후 또는 특정 과제 요구 시 전환 학습 |
+
+이 공백을 모두 지금 채우려 하면 정체성이 다시 흐려진다. 먼저 현재 강점의 증거를 촬영하고 지원한다. 이후 여러 공고나 면접 피드백에서 같은 한 가지 공백이 반복될 때만 다음 프로젝트를 고른다.
+
+### 11.7 취업용 증거의 우선순위
+
+| 등급 | 반드시 남길 증거 | 이유 |
+|---|---|---|
+| P0 | 실물 red `pick → place → home` 무편집 원본, camera 화면, Action result | 시스템이 실제로 닫힌 루프로 작동한다는 최소 증거 |
+| P0 | 하드웨어부터 agent까지 하나씩 bring-up하고 각 층을 확인하는 화면 | 시스템 SW·application·deployment 공고에 가장 직접적 |
+| P0 | 30~45초 본인 설명 | 코드를 이해하고 의사결정을 소유한다는 증거 |
+| P1 | cancel, stale, single-flight, safe shutdown, plan/execute 분리 | 정상 데모를 넘어 실패를 설계했다는 차별점 |
+| P1 | IK test, controller, TF, `/scene_state`, rosbag·실측표 | 기술 면접에서 질문을 견디는 근거 |
+| P2 | 다국어 계획, 자가정리, Gazebo recovery | 관심을 끄는 차별점이지만 실물 통합보다 뒤에 배치 |
+| P3 | ring 사례, 긴 benchmark, 모든 로그 | 요청받았을 때만 제공하는 보조 자료 |
+
+구체적인 독립 촬영 목록과 안전한 순서는 [`VIDEO_SHOOTING_PLAN.md`](VIDEO_SHOOTING_PLAN.md)의 부록 C에 정리한다.
 
 ---
 

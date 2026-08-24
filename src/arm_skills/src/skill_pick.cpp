@@ -92,12 +92,32 @@ void SkillServer::execute_pick(const std::shared_ptr<GoalHandlePick> goal_handle
   // ★ 2026-08-22 : +y 영역 팔 편향 보정(arm_y_bias, params.hpp 주석). 카메라
   //   좌표가 맞아도 팔이 그 좌표로 "가면" +y 에서 오른쪽에 선다 - shelf 자리
   //   pick 이 허공을 닫던 원인. 검출 y 에 비례 보정을 얹어 조준한다.
-  const double grasp_x = obj_x + (gs.hook ? kHookXTrim : 0.0);
-  const double grasp_y = obj_y + arm_y_bias(obj_y) + (gs.hook ? kHookYTrim : 0.0);
+  const PickZone pick_zone = pick_zone_of(obj_x, obj_y);
+  const double zone_x_trim = zone_pick_x_trim(
+    pick_zone,
+    get_parameter("pick_counter_x_trim").as_double(),
+    get_parameter("pick_shelf_x_trim").as_double(),
+    get_parameter("pick_bin_x_trim").as_double());
+  const double zone_y_trim = zone_pick_y_trim(
+    pick_zone,
+    get_parameter("pick_counter_y_trim").as_double(),
+    get_parameter("pick_shelf_y_trim").as_double(),
+    get_parameter("pick_bin_y_trim").as_double());
+  const double grasp_x = obj_x + zone_x_trim + (gs.hook ? kHookXTrim : 0.0);
+  // work 전체에서 실물 세션 트림을 연속 적용한다. shelf/counter까지 상수 보정을
+  // 퍼뜨리지는 않는다. 경계와 불연속을 막는 근거는 params.hpp에 남겼다.
+  const double center_y_trim = work_pick_y_trim(
+    obj_x, obj_y, get_parameter("pick_center_y_trim").as_double());
+  const double grasp_y =
+    obj_y + arm_y_bias(obj_y) + center_y_trim + zone_y_trim +
+    (gs.hook ? kHookYTrim : 0.0);
   const double grasp_yaw = gs.hook ? 0.0 : std::remainder(obj_yaw + M_PI_2, M_PI);
   RCLCPP_INFO(
-    get_logger(), "파지점 (%.3f, %.3f) z=%.3f yaw=%.1f도",
-    grasp_x, grasp_y, obj_z - gs.depth, grasp_yaw * 180.0 / M_PI);
+    get_logger(),
+    "파지점 (%.3f, %.3f) z=%.3f yaw=%.1f도 "
+    "(구역 x/y 트림 %+.3f/%+.3fm, work y 트림 %+.3fm)",
+    grasp_x, grasp_y, obj_z - gs.depth, grasp_yaw * 180.0 / M_PI,
+    zone_x_trim, zone_y_trim, center_y_trim);
   // ★ 2026-08-22 : 내려가기 전에 "들 수 있는 자리인지"를 먼저 푼다.
   //   r=0.258 에서 grasp(z=0.001)는 풀리는데 lift(z=0.10)는 IK 불가였다 -
   //   물체를 문 채 4.5cm 에서 갇혀 pick 실패 + 수동 구출이 필요했다.
@@ -163,8 +183,12 @@ void SkillServer::execute_pick(const std::shared_ptr<GoalHandlePick> goal_handle
   {
     const double z_hi = obj_z + approach_dz;
     const double z_lo = obj_z - gs.depth;
-    const int steps = gs.hook ?
-      std::max(1, static_cast<int>(std::ceil((z_hi - z_lo) / 0.01))) : 1;
+    // ★ 2026-08-22 밤 : hook 도 한 번에 내려간다(사용자 결정 "blue ring 은
+    //   한꺼번에 내려가는 걸로"). 수직 스텝(1cm 단위)은 벽 옆치기 대책이었지만
+    //   조준이 편향 보정으로 정확해진 지금은 필요가 줄었고 하강이 느렸다.
+    //   스텝 하강으로 되돌리려면 아래를 gs.hook ? ceil((z_hi-z_lo)/0.01) : 1 로.
+    //   ※ 미검증 - 내일 첫 링 pick 에서 확인할 것.
+    const int steps = 1;
     for (int i = 1; i <= steps; ++i) {
       const double z = z_hi + (z_lo - z_hi) * i / steps;
       if (const auto r = move_to_pose(

@@ -103,6 +103,83 @@ inline double arm_y_bias(double y)
   return y > 0.0 ? std::min(0.43 * y, 0.07) : 0.0;
 }
 
+// work 구역의 y 경계. 진실은 arm_bringup/config/cell_layout.yaml 이고,
+// kTargets와 마찬가지로 스킬이 실시간 조준에 쓰는 사본이다.
+inline constexpr double kWorkPickYMin = -0.0885;
+inline constexpr double kWorkPickYMax = 0.0780;
+
+struct PickZoneRect
+{
+  double x_min;
+  double x_max;
+  double y_min;
+  double y_max;
+};
+
+inline constexpr PickZoneRect kWorkPickZone{0.1295, 0.1845, -0.0885, 0.0780};
+inline constexpr PickZoneRect kCounterPickZone{0.1290, 0.1790, -0.1710, -0.1410};
+inline constexpr PickZoneRect kShelfPickZone{0.1150, 0.1650, 0.1080, 0.1380};
+inline constexpr PickZoneRect kBinPickZone{0.0290, 0.0790, -0.1490, -0.1190};
+
+inline constexpr bool in_pick_zone(const PickZoneRect & zone, double x, double y)
+{
+  return x >= zone.x_min && x <= zone.x_max && y >= zone.y_min && y <= zone.y_max;
+}
+
+enum class PickZone
+{
+  WORK,
+  COUNTER,
+  SHELF,
+  BIN,
+  NONE
+};
+
+inline constexpr PickZone pick_zone_of(double x, double y)
+{
+  return in_pick_zone(kWorkPickZone, x, y) ? PickZone::WORK :
+         in_pick_zone(kCounterPickZone, x, y) ? PickZone::COUNTER :
+         in_pick_zone(kShelfPickZone, x, y) ? PickZone::SHELF :
+         in_pick_zone(kBinPickZone, x, y) ? PickZone::BIN : PickZone::NONE;
+}
+
+// 실물 카메라 중앙 트림은 work 전체에서 연속이어야 한다. 예전 |y| <= 0.06
+// 조건은 work 안쪽에 불연속을 만들어 경계를 1mm 넘는 순간 조준이 4.5cm
+// 오른쪽으로 뛰었다. shelf/counter/bin은 이 y 범위 밖이라 영향을 받지 않는다.
+// ★ 2026-08-23 실물 최종: trim=0.045에서 green_block을 work 오른쪽
+//   y≈-0.061, 중앙 y≈-0.005, 왼쪽 y≈+0.044 세 점에서 집기·lift 성공했고,
+//   세 번 모두 사용자가 손가락이 블록 중앙을 정확히 물었다고 육안 확인했다.
+inline constexpr double work_pick_y_trim(double x, double y, double trim)
+{
+  return pick_zone_of(x, y) == PickZone::WORK ? trim : 0.0;
+}
+
+inline constexpr double zone_pick_x_trim(
+  PickZone zone, double counter_trim, double shelf_trim, double bin_trim)
+{
+  return zone == PickZone::COUNTER ? counter_trim :
+         zone == PickZone::SHELF ? shelf_trim :
+         zone == PickZone::BIN ? bin_trim : 0.0;
+}
+
+inline constexpr double zone_pick_y_trim(
+  PickZone zone, double counter_trim, double shelf_trim, double bin_trim)
+{
+  return zone == PickZone::COUNTER ? counter_trim :
+         zone == PickZone::SHELF ? shelf_trim :
+         zone == PickZone::BIN ? bin_trim : 0.0;
+}
+
+static_assert(work_pick_y_trim(0.157, kWorkPickYMin, 0.045) == 0.045);
+static_assert(work_pick_y_trim(0.157, kWorkPickYMax, 0.045) == 0.045);
+static_assert(work_pick_y_trim(0.157, kWorkPickYMin - 0.0001, 0.045) == 0.0);
+static_assert(work_pick_y_trim(0.157, kWorkPickYMax + 0.0001, 0.045) == 0.0);
+static_assert(pick_zone_of(0.154, -0.156) == PickZone::COUNTER);
+static_assert(pick_zone_of(0.140, 0.123) == PickZone::SHELF);
+static_assert(pick_zone_of(0.054, -0.134) == PickZone::BIN);
+static_assert(zone_pick_x_trim(PickZone::COUNTER, 0.025, 0.0, 0.0) == 0.025);
+static_assert(zone_pick_y_trim(PickZone::COUNTER, 0.010, 0.0, 0.0) == 0.010);
+
 // 물체별 파지 파라미터. 어떻게 잡을 것인가의 주체는 skill이다.
 //   depth   : 인지가 준 물체 중심 z에서 TCP(손가락 끝)를 얼마나 더 내릴 것인가.
 //             손가락은 TCP에서 위로 뻗으므로 중심에 두면 윗절반만 물려 미끄러진다.

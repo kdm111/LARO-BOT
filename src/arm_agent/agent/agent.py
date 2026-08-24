@@ -17,7 +17,10 @@ from std_msgs.msg import String
 
 from .cell import DEST, LOITER_SEC, clean_steps, placed_in, zone_of
 from . import llm_planner
-from .llm_ollama import make_ollama_caller, make_recovery_caller
+from .llm_ollama import (
+    OLLAMA_HOST, OLLAMA_HOST_SOURCE, OLLAMA_MODEL,
+    make_ollama_caller, make_recovery_caller,
+)
 from .llm_validate import validate_steps
 from .recovery import ABORT, MAX_ATTEMPTS, MAX_RECOVERY, REGRASP, RESCAN, RETRY, STRATEGY
 
@@ -83,6 +86,10 @@ class Agent(Node):
         # ros2 param set /agent model llama, exaone, gemma, qwen 으로 바꿀 수 있다.
         # ★ 2026-08-22 기본값 exaone -> gemma(=gemma4:26b). 근거는 llm_ollama.py 주석.
         self.declare_parameter('model', 'gemma')
+        self.get_logger().info(
+            f'LLM endpoint={OLLAMA_HOST} (source={OLLAMA_HOST_SOURCE}), '
+            f'default_model={OLLAMA_MODEL}'
+        )
         # 복구 자세 정의 : 팔이 시야를 가리지 않도록 비워놓는다.
         # ros2 param set /agent recovery_pose init으로 실행 중 교체 가능
         self.declare_parameter('recovery_pose', 'home')

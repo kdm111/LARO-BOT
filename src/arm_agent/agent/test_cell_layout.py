@@ -74,6 +74,18 @@ def _skill_targets():
     return {name: (float(x), float(y)) for name, x, y in found}
 
 
+def _skill_work_y_bounds():
+    """params.hpp의 work pick 트림 y 경계를 꺼낸다."""
+    text = SKILL.read_text()
+    values = {}
+    for name in ('kWorkPickYMin', 'kWorkPickYMax'):
+        found = re.search(
+            rf'{name}\s*=\s*(-?[\d.]+)\s*;', text)
+        assert found, f'params.hpp에서 {name}을 찾지 못했다'
+        values[name] = float(found.group(1))
+    return values['kWorkPickYMin'], values['kWorkPickYMax']
+
+
 def _sdf_zones(path):
     """씬 파일의 zone_* 모델. name -> (cx, cy, width, height)."""
     root = ET.parse(path).getroot()
@@ -131,6 +143,16 @@ def test_skill_targets_match_layout_centers():
         gx, gy = got[name]
         assert math.isclose(wx, gx, abs_tol=TOL), f'{name}.x : yaml {wx} != cpp {gx}'
         assert math.isclose(wy, gy, abs_tol=TOL), f'{name}.y : yaml {wy} != cpp {gy}'
+
+
+def test_skill_work_pick_trim_bounds_match_layout():
+    """work 전체에 적용하는 pick 트림 경계가 YAML의 y 경계와 같은가."""
+    _, _, want_min, want_max, _ = _truth()['work']
+    got_min, got_max = _skill_work_y_bounds()
+    assert math.isclose(want_min, got_min, abs_tol=TOL), (
+        f'work y 최소: yaml {want_min} != cpp {got_min}')
+    assert math.isclose(want_max, got_max, abs_tol=TOL), (
+        f'work y 최대: yaml {want_max} != cpp {got_max}')
 
 
 @pytest.mark.parametrize('world', WORLDS, ids=lambda p: p.name)
