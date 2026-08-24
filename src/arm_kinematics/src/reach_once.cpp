@@ -44,7 +44,8 @@ int main(int argc, char **argv)
     return 1;
   }
   const arm_kinematics::IkSolution m = arm_kinematics::to_motor_angles(sol);
-  std::printf("목표 (%.3f, %.3f, %.3f), phi=%.2f, elbow=%s\n", x, y, z, phi, elbow_up ? "up" : "down");
+  std::printf("목표 (%.3f, %.3f, %.3f), phi=%.2f, elbow=%s\n", x, y, z, phi,
+    elbow_up ? "up" : "down");
   std::printf("모터각 j1..j5 = [%.4f, %.4f, %.4f, %.4f, %.4f]\n\n",
     m.theta1, m.theta2, m.theta3, m.theta4, m.theta5);
   std::printf("아래 Gazebo 띄운 셀에 붙여 넣기\n");
